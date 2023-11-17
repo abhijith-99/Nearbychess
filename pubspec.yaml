@@ -1,0 +1,56 @@
+name: mychessapp
+description: A new Flutter project.
+publish_to: 'none' # Remove this line if you wish to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.1.5 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  chess: ^0.7.0
+  cupertino_icons: ^1.0.2
+  location: ^5.0.3
+  geolocator: ^10.1.0
+  permission_handler: ^11.0.1
+  firebase_core: ^2.21.0
+  firebase_auth: ^4.12.1
+  cloud_firestore: ^4.12.2
+  firebase_storage: ^11.4.1
+  flutter_launcher_icons: ^0.13.1
+  flutter_svg: ^2.0.9
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/chess_king.png
+    - assets/location_icon.png
+    - assets/chess_pieces/black/
+    - assets/chess_pieces/white/
+    - assets/avatars/
+    - assets/battle.png
+    - assets/chess_logo.svg
+    - assets/google_logo.svg
+    - assets/phone_logo.svg
+    - assets/Animation.gif
+
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: assets/fonts/Poppins-Regular.ttf
+        - asset: assets/fonts/Poppins-Bold.ttf
+          weight: 700
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/appicon.png" # Replace with your icon file's path
+  adaptive_icon_background: "#FFFFFF" # Optional: Background color for Android adaptive icon
+
