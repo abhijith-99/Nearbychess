@@ -86,8 +86,8 @@ class _ChessBoardState extends State<ChessBoard> {
 
   void updateCapturedPiecesInFirestore() {
     FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
-      'whiteCapturedPieces': whiteCapturedPieces, // Assuming this is a List<String>
-      'blackCapturedPieces': blackCapturedPieces, // Assuming this is a List<String>
+      'whiteCapturedPieces': whiteCapturedPieces,
+      'blackCapturedPieces': blackCapturedPieces,
     });
   }
 
@@ -338,298 +338,321 @@ class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Color(0xffacacaf),
       appBar: AppBar(
-        title: const Text(
-          'Au-Ki Chess',
-        ),
+        title: const Text('NearbyChess'),
         centerTitle: true,
+        backgroundColor: Color(0xFF3c3d3e),
         bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(30.0), // Set the height
+          preferredSize: const Size.fromHeight(30.0), // Set the height as required
           child: Container(
-            color: Colors.grey[200], // Choose an appropriate color
+            color: Color(0xFF595a5c), // Background color for the strip
+            width: double.infinity, // Ensures the container takes full width
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(pgnNotation, style: TextStyle(fontSize: 16)), // Display PGN notation
+                padding: const EdgeInsets.all(4.0),
+                  child: Text(
+                    pgnNotation,
+                    style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFFc4c4c5),
+                        fontWeight:FontWeight.bold
+                    ),
+                  ),
               ),
             ),
           ),
         ),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center, // Align items to the center
-        children: [
-
-          // _buildPlayerArea(blackCapturedPieces, true),
-          isBoardFlipped ? _buildPlayerArea(whiteCapturedPieces, false) : _buildPlayerArea(blackCapturedPieces, true),
-          Expanded(
-            child: Center(
-              child: AspectRatio(
-                aspectRatio: 1,
-                child: Container(
-                  child: GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8,),
-                    itemCount: 64,
-                    itemBuilder: (context, index) {
-                      int rank, file;
-                      if (isBoardFlipped) {
-                        file = 7 - (index % 8); // Flip file
-                        rank = index ~/ 8;      // Flip rank
-                      } else {
-                        file = index % 8;
-                        rank = 7 - (index ~/ 8);
-                      }
-                      //final int file = index % 8;
-                      //final int rank = 7 - index ~/ 8;
-                      final squareName = '${String.fromCharCode(97 + file)}${rank + 1}';
-                      final piece = game.get(squareName);
-
-                      Color colorA = const Color(0xFFA09B9B);
-                      Color colorB = const Color(0xFFEFE8E8);
-
-                      // Determine the color of the square
-                      var squareColor = (file + rank) % 2 == 0 ? colorA : colorB;
-
-                      // Determine the color for the label (opposite of the square)
-                      Color labelColor = squareColor == colorA ? colorB : colorA;
-
-                      // Declare a border variable
-                      Border? border;
-
-                      // Define a variable to check if the square is a legal move
-                      bool isLegalMove = legalMovesForSelected.contains(squareName);
-
-                      // Check if the square is the starting or ending position of the last move
-                      bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
-                      if (isLastMoveSquare) {
-                        squareColor = Colors.lightBlue.withOpacity(0.3); // Adjust the color and opacity as needed
-                      }
 
 
+      body: Center(
+        child:Column(
+          mainAxisSize: MainAxisSize.min,
+          //mainAxisAlignment: MainAxisAlignment.center, // Align items to the center
+          children: [
 
-                      return GestureDetector(
-                        onTap: () {
+            Container(
+            height: 30,
+            child: isBoardFlipped ? _buildPlayerArea(whiteCapturedPieces, false) : _buildPlayerArea(blackCapturedPieces, true),
+            ),
 
-                          if (currentUserUID != currentTurnUID) {
-                            print("Not your turn");
-                            return;
-                          }
+            //SizedBox(height: 20),
 
-                          setState(() {
-                            //if (game.get(squareName)?.color == game.turn) {
-                            if (piece != null && piece.color == game.turn) {
-                              // Select the piece at the tapped square
-                              selectedSquare = squareName;
-                              var moves = game.generate_moves();
-                              legalMovesForSelected = moves
-                                  .where((move) => move.fromAlgebraic == selectedSquare)
-                                  .map((move) => move.toAlgebraic)
-                                  .toList();
-                              print('Piece selected at $selectedSquare. Legal moves: $legalMovesForSelected');
+            Container(
+              height: MediaQuery.of(context).size.width,
+              //child: Center(
+                child: AspectRatio(
+                  aspectRatio: 1,
+                  child: Container(
+                    child: GridView.builder(
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8,),
+                      itemCount: 64,
+                      itemBuilder: (context, index) {
+                        int rank, file;
+                        if (isBoardFlipped) {
+                          file = 7 - (index % 8); // Flip file
+                          rank = index ~/ 8;      // Flip rank
+                        } else {
+                          file = index % 8;
+                          rank = 7 - (index ~/ 8);
+                        }
+                        //final int file = index % 8;
+                        //final int rank = 7 - index ~/ 8;
+                        final squareName = '${String.fromCharCode(97 + file)}${rank + 1}';
+                        final piece = game.get(squareName);
 
-                              // If no legal moves, deselect the piece
-                              if (legalMovesForSelected.isEmpty) {
+                        Color colorA = const Color(0xFFCCDEFC);
+                        Color colorB = const Color(0xFF7395B8);
+
+                        // Determine the color of the square
+                        var squareColor = (file + rank) % 2 == 0 ? colorA : colorB;
+
+                        // Determine the color for the label (opposite of the square)
+                        Color labelColor = squareColor == colorA ? colorB : colorA;
+
+                        // Declare a border variable
+                        Border? border;
+
+                        // Define a variable to check if the square is a legal move
+                        bool isLegalMove = legalMovesForSelected.contains(squareName);
+
+                        // Check if the square is the starting or ending position of the last move
+                        bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
+                        if (isLastMoveSquare) {
+                          squareColor = Colors.blueGrey.withOpacity(0.5); // Adjust the color and opacity as needed
+                        }
+
+
+
+                        return GestureDetector(
+                          onTap: () {
+
+                            if (currentUserUID != currentTurnUID) {
+                              print("Not your turn");
+                              return;
+                            }
+
+                            setState(() {
+                              //if (game.get(squareName)?.color == game.turn) {
+                              if (piece != null && piece.color == game.turn) {
+                                // Select the piece at the tapped square
+                                selectedSquare = squareName;
+                                var moves = game.generate_moves();
+                                legalMovesForSelected = moves
+                                    .where((move) => move.fromAlgebraic == selectedSquare)
+                                    .map((move) => move.toAlgebraic)
+                                    .toList();
+                                print('Piece selected at $selectedSquare. Legal moves: $legalMovesForSelected');
+
+                                // If no legal moves, deselect the piece
+                                if (legalMovesForSelected.isEmpty) {
+                                  selectedSquare = null;
+                                }
+                              }
+                              // If no square is selected and there is a piece on the current square
+                              else if (selectedSquare != null &&
+                                  legalMovesForSelected.contains(squareName)) {
+                                final String fromSquare = selectedSquare!;  // 'from' square is the currently selected square
+                                final String toSquare = squareName;         // 'to' square is the square being moved to
+                                final chess.Piece? pieceBeforeMove = game.get(toSquare);
+
+                                // Check if the move is a capture
+                                bool isCapture = pieceBeforeMove != null && pieceBeforeMove.color != game.turn;
+                                // Execute the move
+
+                                final chess.Piece? piece = game.get(fromSquare);
+
+                                if (piece != null) { // Execute the move
+                                  game.move({
+                                    "from": selectedSquare!,
+                                    "to": squareName
+                                  });
+                                  // Call updatePGNNotation with the piece type
+                                  updatePGNNotation(piece.type, fromSquare, toSquare, isCapture);
+                                }
+
+                                lastMoveFrom = selectedSquare;
+                                lastMoveTo = squareName;
+
+
+
+                                // After move, check if the move was a capture
+                                if (pieceBeforeMove != null &&
+                                    pieceBeforeMove.color != game
+                                        .get(selectedSquare!)
+                                        ?.color) {
+                                  final capturedPiece = getPieceAsset(
+                                      pieceBeforeMove.type,
+                                      pieceBeforeMove.color);
+                                  if (game.turn == chess.Color.BLACK) {
+                                    whiteCapturedPieces.add(capturedPiece);
+                                    updateCapturedPiecesInFirestore();
+                                  } else {
+                                    blackCapturedPieces.add(capturedPiece);
+                                    updateCapturedPiecesInFirestore();
+                                  }
+                                }
+
+
+                                // Check for check or checkmate
+                                if (game.in_checkmate ||
+                                    game.in_stalemate ||
+                                    game.in_threefold_repetition ||
+                                    game.insufficient_material) {
+                                  String status;
+                                  if (game.in_checkmate) {
+                                    status = game.turn == chess.Color.WHITE
+                                        ? 'Black wins by checkmate!'
+                                        : 'White wins by checkmate!';
+                                  } else if (game.in_stalemate) {
+                                    status = 'Draw by stalemate!';
+                                  } else if (game.in_threefold_repetition) {
+                                    status = 'Draw by threefold repetition!';
+                                  } else if (game.insufficient_material) {
+                                    status =
+                                    'Draw due to insufficient material!';
+                                  } else {
+                                    status = 'Unexpected game status';
+                                  }
+
+                                  // Show dialog for checkmate or draw
+                                  showDialog(
+                                    context: context,
+                                    builder: (context) => AlertDialog(
+                                      title: const Text('Game Over'),
+                                      content: Text(status),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            setState(() {
+                                              game.reset();
+                                              whiteCapturedPieces.clear();
+                                              blackCapturedPieces.clear();
+                                            });
+                                          },
+                                          child: const Text('Restart'),
+                                        ),
+                                        TextButton(
+                                          onPressed: () {
+                                            Navigator.of(context).pop();
+                                            Navigator.of(context).pushReplacement(
+                                              MaterialPageRoute(
+                                                builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Home'),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }
+
+                                else {
+                                  _switchTimer(); // Switch the timer for the next player
+                                }
+
                                 selectedSquare = null;
+                                legalMovesForSelected = [];
+                              } else
+                              if (selectedSquare == null && piece != null) {
+                                selectedSquare = squareName;
+                                var moves = game.generate_moves();
+                                legalMovesForSelected = moves
+                                    .where((move) =>
+                                move.fromAlgebraic == selectedSquare)
+                                    .map((move) => move.toAlgebraic)
+                                    .toList();
                               }
-                            }
-                            // If no square is selected and there is a piece on the current square
-                            else if (selectedSquare != null &&
-                                legalMovesForSelected.contains(squareName)) {
-                              final String fromSquare = selectedSquare!;  // 'from' square is the currently selected square
-                              final String toSquare = squareName;         // 'to' square is the square being moved to
-                              final chess.Piece? pieceBeforeMove = game.get(toSquare);
+                              //}
+                            });
+                            print('Updated game state: ${game.fen}');
+                            String currentFen = game.fen;  // Generate FEN string of the current state
 
-                              // Check if the move is a capture
-                              bool isCapture = pieceBeforeMove != null && pieceBeforeMove.color != game.turn;
-                              // Execute the move
+                            // Update the game state in Firebase
+                            FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+                              'currentBoardState': currentFen,
+                              'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,  // Assuming player1UID and player2UID are available
+                            });
 
-                              final chess.Piece? piece = game.get(fromSquare);
-
-                              if (piece != null) { // Execute the move
-                                game.move({
-                                  "from": selectedSquare!,
-                                  "to": squareName
-                                });
-                                // Call updatePGNNotation with the piece type
-                                updatePGNNotation(piece.type, fromSquare, toSquare, isCapture);
-                              }
-
-                              lastMoveFrom = selectedSquare;
-                              lastMoveTo = squareName;
-
-
-
-                              // After move, check if the move was a capture
-                              if (pieceBeforeMove != null &&
-                                  pieceBeforeMove.color != game
-                                      .get(selectedSquare!)
-                                      ?.color) {
-                                final capturedPiece = getPieceAsset(
-                                    pieceBeforeMove.type,
-                                    pieceBeforeMove.color);
-                                if (game.turn == chess.Color.BLACK) {
-                                  whiteCapturedPieces.add(capturedPiece);
-                                  updateCapturedPiecesInFirestore();
-                                } else {
-                                  blackCapturedPieces.add(capturedPiece);
-                                  updateCapturedPiecesInFirestore();
-                                }
-                              }
-
-
-                              // Check for check or checkmate
-                              if (game.in_checkmate ||
-                                  game.in_stalemate ||
-                                  game.in_threefold_repetition ||
-                                  game.insufficient_material) {
-                                String status;
-                                if (game.in_checkmate) {
-                                  status = game.turn == chess.Color.WHITE
-                                      ? 'Black wins by checkmate!'
-                                      : 'White wins by checkmate!';
-                                } else if (game.in_stalemate) {
-                                  status = 'Draw by stalemate!';
-                                } else if (game.in_threefold_repetition) {
-                                  status = 'Draw by threefold repetition!';
-                                } else if (game.insufficient_material) {
-                                  status =
-                                  'Draw due to insufficient material!';
-                                } else {
-                                  status = 'Unexpected game status';
-                                }
-
-                                // Show dialog for checkmate or draw
-                                showDialog(
-                                  context: context,
-                                  builder: (context) => AlertDialog(
-                                    title: const Text('Game Over'),
-                                    content: Text(status),
-                                    actions: [
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          setState(() {
-                                            game.reset();
-                                            whiteCapturedPieces.clear();
-                                            blackCapturedPieces.clear();
-                                          });
-                                        },
-                                        child: const Text('Restart'),
-                                      ),
-                                      TextButton(
-                                        onPressed: () {
-                                          Navigator.of(context).pop();
-                                          Navigator.of(context).pushReplacement(
-                                            MaterialPageRoute(
-                                              builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
-                                            ),
-                                          );
-                                        },
-                                        child: const Text('Home'),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              }
-
-                              else {
-                                _switchTimer(); // Switch the timer for the next player
-                              }
-
-                              selectedSquare = null;
-                              legalMovesForSelected = [];
-                            } else
-                            if (selectedSquare == null && piece != null) {
-                              selectedSquare = squareName;
-                              var moves = game.generate_moves();
-                              legalMovesForSelected = moves
-                                  .where((move) =>
-                              move.fromAlgebraic == selectedSquare)
-                                  .map((move) => move.toAlgebraic)
-                                  .toList();
-                            }
-                            //}
-                          });
-                          print('Updated game state: ${game.fen}');
-                          String currentFen = game.fen;  // Generate FEN string of the current state
-
-                          // Update the game state in Firebase
-                          FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
-                            'currentBoardState': currentFen,
-                            'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,  // Assuming player1UID and player2UID are available
-                          });
-
-                          updateLastMoveInFirestore(lastMoveFrom!, lastMoveTo!);
-                        },
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color: squareColor,
-                            border: border,
-                          ),
-                          child: Stack(
-                            children: [
-                              Align(
-                                alignment: Alignment.center,
-                                child: displayPiece(piece),
-                              ),
-
-                              // Add a circle for legal moves
-                              if (isLegalMove)
+                            updateLastMoveInFirestore(lastMoveFrom!, lastMoveTo!);
+                          },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: squareColor,
+                              border: border,
+                            ),
+                            child: Stack(
+                              children: [
                                 Align(
                                   alignment: Alignment.center,
-                                  child: Container(
-                                    width: 10, // Adjust the size of the circle
-                                    height: 10, // Adjust the size of the circle
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5), // Adjust the color and opacity as needed
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
+                                  child: displayPiece(piece),
                                 ),
 
-                              // Add row labels
-                              if (file == 0)
-                                Align(
-                                  alignment: Alignment.topLeft,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: Text(_getRowLabel(rank),
-                                      style: TextStyle(color: labelColor,
+                                // Add a circle for legal moves
+                                if (isLegalMove)
+                                  Align(
+                                    alignment: Alignment.center,
+                                    child: Container(
+                                      width: 10, // Adjust the size of the circle
+                                      height: 10, // Adjust the size of the circle
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.5), // Adjust the color and opacity as needed
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                  ),
+
+                                // Add row labels
+                                if (file == 0)
+                                  Align(
+                                    alignment: Alignment.topLeft,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: Text(_getRowLabel(rank),
+                                        style: TextStyle(color: labelColor,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                // Add column labels
+                                if (rank == 0)
+                                  Align(
+                                    alignment: Alignment.bottomRight,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(2.0),
+                                      child: Text(_getColumnLabel(file), style: TextStyle(color: labelColor,
                                         fontSize: 12,
                                         fontWeight: FontWeight.bold,
                                       ),
+                                      ),
                                     ),
                                   ),
-                                ),
-
-                              // Add column labels
-                              if (rank == 0)
-                                Align(
-                                  alignment: Alignment.bottomRight,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: Text(_getColumnLabel(file), style: TextStyle(color: labelColor,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    ),
-                                  ),
-                                ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      );
-                    },
-                    //itemCount: 64,
+                        );
+                      },
+                    ),
                   ),
                 ),
-              ),
+              //),
             ),
-          ),
-          // _buildPlayerArea(whiteCapturedPieces, false), // Bottom area for white player
-          isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true) : _buildPlayerArea(whiteCapturedPieces, false),
-        ],
+
+            //SizedBox(height: 20),
+
+            Container(
+              height: 30,
+              child: isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true) : _buildPlayerArea(whiteCapturedPieces, false),
+            )
+          ],
+        ),
       ),
     );
   }
