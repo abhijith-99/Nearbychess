@@ -257,7 +257,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                 Navigator.pop(context);
               },
               child: Padding(
-                padding: const EdgeInsets.all(8.0),
+                padding: const EdgeInsets.all(10.0),
                 child: Image.asset(avatarImages[index]),
               ),
             );
