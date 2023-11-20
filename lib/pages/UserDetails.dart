@@ -41,7 +41,6 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     if (doc.exists) {
       setState(() {
         userDetails = doc.data() as Map<String, dynamic>?;
-        String avatarUrl = userDetails?['avatar'];
       });
     }
   }

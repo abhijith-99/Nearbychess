@@ -244,9 +244,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     super.dispose();
   }
 
-// ... [Include all your authentication methods like signInWithEmailAndPassword, createUserWithEmailAndPassword, etc. here]
-
-
 
   Future<void> signInWithEmailAndPassword() async {
     try {
@@ -378,9 +375,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                   isLoginMode = !isLoginMode;
                 });
               },
-              child: const Text(
-                'Log In',
-                style: TextStyle(color: Colors.black),
+              child: Text(
+                isLoginMode ? 'Sign Up' : 'Log In',
+                style: const TextStyle(color: Colors.black),
               ),
             ),
           ],
@@ -430,6 +427,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                       submitButton('Verify OTP', signInWithOTP),
                   ],
                 ],
+                const SizedBox(height: 16),
                 if (!isLoginMode)
                   const Text(
                     'OR',

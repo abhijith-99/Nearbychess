@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-
 import '../firebase_game_service.dart';
-import '../main.dart';
 import '../utils.dart';
 import 'ChessBoard.dart';
 

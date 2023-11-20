@@ -372,7 +372,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           FutureBuilder<Map<String, dynamic>?>(
             future: fetchCurrentUserProfile(),
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+              if (snapshot.connectionState == ConnectionState.done &&
+                  snapshot.hasData) {
                 String avatarUrl = snapshot.data!['avatar'];
                 String userName = snapshot.data!['name'] ?? 'Unknown';
                 return Padding(
@@ -381,7 +382,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(builder: (context) => const UserProfileDetailsPage()),
+                          MaterialPageRoute(
+                              builder: (context) =>
+                              const UserProfileDetailsPage()),
                         ),
                         child: CircleAvatar(
                           radius: 60,
@@ -389,12 +392,17 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                          color: Color.fromARGB(255, 12, 6, 6),
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
+
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10.0), // Padding after username
+                        child: Text(
+                          userName,
+                          style: const TextStyle(
+                            fontFamily: 'Poppins',
+                            color: Color.fromARGB(255, 12, 6, 6),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 20,
+                          ),
                         ),
                       ),
                     ],
@@ -417,8 +425,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           const Text(
             'Players Nearby',
             style: TextStyle(
+              fontFamily: 'Poppins',
               color: Color.fromARGB(255, 12, 4, 4),
-              fontSize: 24,
+              fontSize: 30,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -468,7 +477,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                                   colorFilter: isOnline ? null : ColorFilter.mode(Colors.grey, BlendMode.saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-                                  color: isOnline ? Colors.green : Colors.red, // Red border for offline users
+                                  color: isOnline ? Colors.green : Colors.red.shade900, // Red border for offline users
                                   width: 5,
                                 ),
                               ),
@@ -478,6 +487,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                           Text(
                             userData['name'] ?? 'Username',
                             style: const TextStyle(
+                              fontFamily: 'Poppins',
                               color: Color.fromARGB(255, 12, 6, 6),
                               fontWeight: FontWeight.bold,
                             ),
@@ -494,8 +504,5 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
       ),
     );
   }
-
-
-
 
 }
