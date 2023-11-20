@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mychessapp/pages/login_register_page.dart';
 import 'dart:async';
@@ -6,6 +7,9 @@ import 'package:mychessapp/splash_screen.dart';
 import 'package:mychessapp/userprofiledetails.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'web_listener_stub.dart'
+if (dart.library.html) 'web_listener.dart';
+
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -30,6 +34,11 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (kIsWeb) {
+      setupBeforeUnloadListener(() async {
+        await _updateUserStatus(false);
+      });
+    }
   }
 
   @override
@@ -48,6 +57,7 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       _updateUserStatus(true);
     }
   }
+
 
   Future<void> _updateUserStatus(bool isOnline) async {
     try {

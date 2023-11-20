@@ -20,9 +20,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
-
   // Declare betAmount as a class field
   String betAmount = '5\$'; // Default value
+  Map<String, bool> challengeButtonCooldown = {};
 
   @override
   void initState() {
@@ -30,7 +30,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
     listenToChallengeRequests();
-    onlineUsersStream = Stream<List<DocumentSnapshot>>.empty();
+    onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
   }
 
   //new change
@@ -44,46 +44,46 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           .where('status', isEqualTo: 'pending')
           .snapshots()
           .listen((snapshot) {
+        Map<String, DocumentSnapshot> latestRequests = {};
         for (var change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.added) {
             var challengeData = change.doc.data() as Map<String, dynamic>;
             String challengerId = challengeData['challengerId'];
-            String betAmount = challengeData['betAmount'];
-            String challengeRequestId =
-                change.doc.id; // Get the challenge request ID
-            // Fetch the challenger's user data
-            FirebaseFirestore.instance
-                .collection('users')
-                .doc(challengerId)
-                .get()
-                .then((userDoc) {
-              if (userDoc.exists) {
-                var challengerData = userDoc.data() as Map<String, dynamic>;
-                String challengerName = challengerData['name'];
-
-                // Show the challenge request dialog
-                showDialog<bool>(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return ChallengeRequestScreen(
-                      challengerName: challengerName,
-                      challengerUID: challengerId,
-                      opponentUID: currentUserId,
-                      betAmount: betAmount,
-                      challengeId:
-                      challengeRequestId, // Pass the challenge request ID here
-                    );
-                  },
-                ).then((accepted) {
-                  // Handle post-acceptance logic if needed
-                });
-              }
-            });
+            if (latestRequests.containsKey(challengerId)) {
+              FirebaseFirestore.instance.collection('challengeRequests').doc(latestRequests[challengerId]!.id).delete();
+            }
+            latestRequests[challengerId] = change.doc;
           }
         }
+
+        latestRequests.forEach((challengerId, latestRequestDoc) async {
+          var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
+
+          // Fetch the challenger's user data
+          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
+          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
+
+          // Show the challenge request dialog for the latest request
+          showDialog<bool>(
+            context: context,
+            builder: (BuildContext context) {
+              return ChallengeRequestScreen(
+                challengerName: challengerName,
+                challengerUID: challengerId,
+                opponentUID: currentUserId,
+                betAmount: challengeData['betAmount'],
+                challengeId: latestRequestDoc.id,
+              );
+            },
+          ).then((accepted) {
+            // Handle post-acceptance logic if needed
+          });
+        });
       });
     }
   }
+
+
 
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
@@ -189,11 +189,15 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
         .map((snapshot) => snapshot.docs);
   }
 
-  void _showChallengeModal(
-      BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
+    String opponentId = opponentData['uid'];
+
+    // Initialize the button state for this user if not already set
+    challengeButtonCooldown[opponentId] ??= true;
+    bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
 
     showModalBottomSheet(
       context: context,
@@ -267,13 +271,18 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: isChallengeable ? () async {
-                      // Use localBetAmount to send the challenge
+                    onPressed: isChallengeable && isButtonEnabled
+                        ? () async {
+                      setModalState(() => challengeButtonCooldown[opponentId] = false);
                       await _sendChallenge(opponentData['uid'], localBetAmount);
-
-                      // Close the modal after sending the challenge
                       Navigator.pop(context);
-                    } : (currentGameId != null
+
+                      // Start a timer to re-enable the button after 30 seconds
+                      Timer(Duration(seconds: 30), () {
+                        setState(() => challengeButtonCooldown[opponentId] = true);
+                      });
+                    }
+                        : (currentGameId != null
                         ? () {
                       // Logic to watch the game
                       Navigator.push(
@@ -319,7 +328,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
         );
 
-        Future.delayed(const Duration(minutes: 1), () async {
+        Future.delayed(const Duration(seconds: 30), () async {
           // Retrieve the challenge again to see if its status has changed
           DocumentSnapshot challengeSnapshot = await challengeDocRef.get();
 
