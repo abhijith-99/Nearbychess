@@ -169,6 +169,19 @@ class _ChessBoardState extends State<ChessBoard> {
     setState(() {});
   }
 
+  void requestRestartGame() {
+    FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+      'restartRequested': true,
+      'currentBoardState': "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+      'whiteCapturedPieces': [],
+      'blackCapturedPieces': [],
+      'lastMoveFrom': null,
+      'lastMoveTo': null,
+      'pgnNotation': '',
+      // You can add other fields to reset here if needed
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -179,6 +192,13 @@ class _ChessBoardState extends State<ChessBoard> {
     gameSubscription = FirebaseFirestore.instance.collection('games').doc(widget.gameId).snapshots().listen((snapshot) async {
       if (snapshot.exists) {
         var gameData = snapshot.data() as Map<String, dynamic>;
+        if (gameData['restartRequested'] == true) {
+          resetGameState();
+          FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+            'restartRequested': false,
+            // Reset other game state fields as needed
+          });
+        }
         var newFen = gameData['currentBoardState'];
         currentTurnUID = gameData['currentTurn'];
         player1UID = gameData['player1UID'];
@@ -215,6 +235,16 @@ class _ChessBoardState extends State<ChessBoard> {
 
   }
 
+  void resetGameState() {
+    setState(() {
+      game.reset();
+      whiteCapturedPieces.clear();
+      blackCapturedPieces.clear();
+      _whiteTimeRemaining = 600;
+      _blackTimeRemaining = 600;
+      _startTimer();
+    });
+  }
 
 
 
@@ -259,16 +289,20 @@ class _ChessBoardState extends State<ChessBoard> {
           TextButton(
             onPressed: () {
               Navigator.of(context).pop();
-              setState(() {
-                game.reset();
-                whiteCapturedPieces.clear();
-                blackCapturedPieces.clear();
-                _whiteTimeRemaining = 600; // Reset the timer
-                _blackTimeRemaining = 600; // Reset the timer
-                _startTimer(); // Restart the timer for the new game
-              });
+              requestRestartGame();
             },
             child: const Text('Restart'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
+                ),
+              );
+            },
+            child: const Text('Home'),
           ),
         ],
       ),
@@ -612,11 +646,7 @@ class _ChessBoardState extends State<ChessBoard> {
                                         TextButton(
                                           onPressed: () {
                                             Navigator.of(context).pop();
-                                            setState(() {
-                                              game.reset();
-                                              whiteCapturedPieces.clear();
-                                              blackCapturedPieces.clear();
-                                            });
+                                            requestRestartGame();
                                           },
                                           child: const Text('Restart'),
                                         ),
