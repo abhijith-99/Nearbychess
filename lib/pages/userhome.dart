@@ -199,135 +199,78 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     challengeButtonCooldown[opponentId] ??= true;
     bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
 
-    // showModalBottomSheet(
-    //   context: context,
-    //   builder: (BuildContext context) {
-    //     return StatefulBuilder(
-    //       // Using StatefulBuilder here
-    //       builder: (BuildContext context, StateSetter setModalState) {
-    //         return Padding(
-    //           padding:
-    //           const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-    //           child: Column(
-    //             mainAxisSize: MainAxisSize.min,
-    //             children: <Widget>[
-    //               Align(
-    //                 alignment: Alignment.topRight,
-    //                 child: IconButton(
-    //                   icon: Icon(Icons.close),
-    //                   onPressed: () => Navigator.pop(context),
-    //                 ),
-    //               ),
-    //               Row(
-    //                 mainAxisAlignment: MainAxisAlignment.center,
-    //                 children: [
-    //                   CircleAvatar(
-    //                     radius: 30,
-    //                     backgroundImage: AssetImage(opponentData['avatar']),
-    //                     backgroundColor: Colors.transparent,
-    //                   ),
-    //                   SizedBox(width: 5), // Space between avatar and name
-    //                   Text(opponentData['name'],
-    //                       style: TextStyle(fontSize: 20)),
-    //                   Spacer(), // Spacer to push the button to the end of the row
-    //                   ElevatedButton(
-    //                     onPressed: () {
-    //                       String? userId = opponentData['uid'];
-    //                       if (userId != null) {
-    //                         navigateToUserDetails(context, userId);
-    //                       } else {
-    //                         // Handle the null case, maybe show an error message
-    //                         ScaffoldMessenger.of(context).showSnackBar(
-    //                           SnackBar(content: Text("Error: User ID is null")),
-    //                         );
-    //                       }
-    //                     },
-    //                     child: Text('Visit'),
-    //                   ),
-    //                 ],
-    //               ),
-    //               SizedBox(height: 20),
-    //               Row(
-    //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    //                 children: [
-    //                   Text("Bet Amount:"),
-    //                   DropdownButton<String>(
-    //                     value: localBetAmount,
-    //                     items: ['5\$', '10\$', '15\$'].map((String value) {
-    //                       return DropdownMenuItem<String>(
-    //                         value: value,
-    //                         child: Text(value),
-    //                       );
-    //                     }).toList(),
-    //                     onChanged: (newValue) {
-    //                       if (newValue != null) {
-    //                         setModalState(() {
-    //                           // Update localBetAmount using the modal's local setState
-    //                           localBetAmount = newValue;
-    //                         });
-    //                       }
-    //                     },
-    //                   ),
-    //                 ],
-    //               ),
-    //               ElevatedButton(
-    //                 onPressed: isChallengeable ? () async {
-    //                   // Use localBetAmount to send the challenge
-    //                   await _sendChallenge(opponentData['uid'], localBetAmount);
-
-    //                   // Close the modal after sending the challenge
-    //                   Navigator.pop(context);
-    //                 } : (currentGameId != null
-    //                     ? () {
-    //                   // Logic to watch the game
-    //                   Navigator.push(
-    //                     context,
-    //                     MaterialPageRoute(
-    //                       builder: (context) => ChessBoard(gameId: currentGameId),
-    //                     ),
-    //                   );
-    //                 }
-    //                     : null), // Disable the button if no game ID is available
-    //                 child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
-    //               ),
-    //             ],
-    //           ),
-    //         );
-    //       },
-    //     );
-    //   },
-    // );
     showModalBottomSheet(
-  context: context,
-  shape: RoundedRectangleBorder( // Rounded corners for the modal
-    borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-  ),
-  builder: (BuildContext context) {
-    return StatefulBuilder(
-      builder: (BuildContext context, StateSetter setModalState) {
-        return Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              CircleAvatar(
-                radius: 30,
-                backgroundImage: AssetImage(opponentData['avatar']),
-                backgroundColor: Colors.transparent,
-              ),
-              const SizedBox(height: 10), // Space below the avatar
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      opponentData['name'],
-                      style: const TextStyle(fontSize: 20),
-                      overflow: TextOverflow.ellipsis, // Prevents text overflow
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          // Using StatefulBuilder here
+          builder: (BuildContext context, StateSetter setModalState) {
+            return Padding(
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
                     ),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      CircleAvatar(
+                        radius: 30,
+                        backgroundImage: AssetImage(opponentData['avatar']),
+                        backgroundColor: Colors.transparent,
+                      ),
+                      SizedBox(width: 5), // Space between avatar and name
+                      Text(opponentData['name'],
+                          style: TextStyle(fontSize: 20)),
+                      Spacer(), // Spacer to push the button to the end of the row
+                      ElevatedButton(
+                        onPressed: () {
+                          String? userId = opponentData['uid'];
+                          if (userId != null) {
+                            navigateToUserDetails(context, userId);
+                          } else {
+                            // Handle the null case, maybe show an error message
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: User ID is null")),
+                            );
+                          }
+                        },
+                        child: Text('Visit'),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Bet Amount:"),
+                      DropdownButton<String>(
+                        value: localBetAmount,
+                        items: ['5\$', '10\$', '15\$'].map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          if (newValue != null) {
+                            setModalState(() {
+                              // Update localBetAmount using the modal's local setState
+                              localBetAmount = newValue;
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                   ElevatedButton(
-
                     onPressed: isChallengeable && isButtonEnabled
                         ? () async {
                       setModalState(() => challengeButtonCooldown[opponentId] = false);
@@ -348,60 +291,17 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                           builder: (context) => ChessBoard(gameId: currentGameId),
                         ),
                       );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      if (newValue != null) {
-                        setModalState(() {
-                          localBetAmount = newValue;
-                        });
-                      }
-                    },
+                    }
+                        : null), // Disable the button if no game ID is available
+                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity, // Full width button
-                child: ElevatedButton(
-                  onPressed: isChallengeable ? () async {
-                    await _sendChallenge(opponentData['uid'], localBetAmount);
-                    Navigator.pop(context);
-                  } : (currentGameId != null
-                      ? () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChessBoard(gameId: currentGameId),
-                          ),
-                        );
-                      }
-                      : null),
-                  child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
-                  style: ElevatedButton.styleFrom(
-                    primary: Colors.green, // Green color
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18.0),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
-  },
-);
-
-
-
-
-
-
-
-
-
-
   }
 
   // Function to send a challenge
