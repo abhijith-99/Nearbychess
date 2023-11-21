@@ -279,23 +279,36 @@ class _ChessBoardState extends State<ChessBoard> {
   Widget _buildPlayerArea(List<String> capturedPieces, bool isTop) {
     String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;
     return Container(
-      color: Colors.grey[200], // Just for visibility, adjust the color as needed
+      color: Colors.transparent, // Just for visibility, adjust the color as needed
       height: 50, // Adjust the height as needed
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
+
+          Container(
+            width: 50,
+            height: 50,
+            padding: const EdgeInsets.all(2),
+            child: CircleAvatar(
+              backgroundImage: AssetImage(avatarUrl), // Assuming avatarUrl is a valid network image URL
+              backgroundColor: Colors.transparent,
+            ),
+          ),
+
           // Timer and captured pieces area
           Expanded(
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: capturedPieces.length,
               itemBuilder: (context, index) {
+                double imageSize = 20;
                 return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 0.0),
                   child: Image.asset(
                     capturedPieces[index],
-                    fit: BoxFit.cover,
-                    height: 50, // Half the square size, adjust as needed
+                    fit: BoxFit.contain,
+                    height: imageSize,
+                    width: imageSize,// Half the square size, adjust as needed
                   ),
                 );
               },
@@ -313,15 +326,7 @@ class _ChessBoardState extends State<ChessBoard> {
             ),
           ),
           // Placeholder for circle, replace with actual circle widget if needed
-          Container(
-            width: 50,
-            height: 50,
-            padding: const EdgeInsets.all(2),
-            child: CircleAvatar(
-              backgroundImage: AssetImage(avatarUrl), // Assuming avatarUrl is a valid network image URL
-              backgroundColor: Colors.transparent,
-            ),
-          ),
+
         ],
       ),
     );
@@ -374,7 +379,7 @@ class _ChessBoardState extends State<ChessBoard> {
           children: [
 
             Container(
-            height: 30,
+            height: 50,
             child: isBoardFlipped ? _buildPlayerArea(whiteCapturedPieces, false) : _buildPlayerArea(blackCapturedPieces, true),
             ),
 
@@ -404,7 +409,7 @@ class _ChessBoardState extends State<ChessBoard> {
                         final piece = game.get(squareName);
 
                         Color colorA = const Color(0xFFCCDEFC);
-                        Color colorB = const Color(0xFF7395B8);
+                        Color colorB = const Color(0xFF8BA1B9);
 
                         // Determine the color of the square
                         var squareColor = (file + rank) % 2 == 0 ? colorA : colorB;
@@ -648,7 +653,7 @@ class _ChessBoardState extends State<ChessBoard> {
             //SizedBox(height: 20),
 
             Container(
-              height: 30,
+              height: 50,
               child: isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true) : _buildPlayerArea(whiteCapturedPieces, false),
             )
           ],
