@@ -38,6 +38,12 @@ class _ChessBoardState extends State<ChessBoard> {
   String player1AvatarUrl = ''; // Default or placeholder URL
   String player2AvatarUrl = ''; // Default or placeholder URL
   String pgnNotation = ""; // Variable to store PGN notation
+  String player1Name = ''; // Add this
+  String player2Name = ''; // Add this
+  bool _blackTimerActive = false;
+  bool _whiteTimerActive = false;
+
+
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -180,15 +186,17 @@ class _ChessBoardState extends State<ChessBoard> {
         bool isCurrentUserBlack = currentUserUID == player1UID;
         var newPgnNotation = gameData['pgnNotation'] ?? "";
 
-        // Fetch player1's avatar
+        // Fetch player1's name
         var player1Doc = await FirebaseFirestore.instance.collection('users').doc(player1UID).get();
         var player1Data = player1Doc.data();
-        String player1AvatarUrl = player1Data?['avatar'] ?? ''; // Default or placeholder URL if not found
+        player1Name = player1Data?['name'] ?? ''; // Set player1Name here
+        player1AvatarUrl = player1Data?['avatar'] ?? ''; // Existing code
 
-        // Fetch player2's avatar
+        // Fetch player2's name
         var player2Doc = await FirebaseFirestore.instance.collection('users').doc(player2UID).get();
         var player2Data = player2Doc.data();
-        String player2AvatarUrl = player2Data?['avatar'] ?? ''; // Default or placeholder URL if not found
+        player2Name = player2Data?['name'] ?? ''; // Set player2Name here
+        player2AvatarUrl = player2Data?['avatar'] ?? ''; // Existing code
 
         // Update the board state based on new FEN
         setState(() {
@@ -222,6 +230,8 @@ class _ChessBoardState extends State<ChessBoard> {
             timer.cancel();
             _handleTimeout(chess.Color.WHITE);
           }
+          _whiteTimerActive = true;
+          _blackTimerActive = false;
         } else {
           if (_blackTimeRemaining > 0) {
             _blackTimeRemaining--;
@@ -229,10 +239,13 @@ class _ChessBoardState extends State<ChessBoard> {
             timer.cancel();
             _handleTimeout(chess.Color.BLACK);
           }
+          _blackTimerActive = true;
+          _whiteTimerActive = false;
         }
       });
     });
   }
+
 
   void _handleTimeout(chess.Color color) {
     // Logic for handling timer timeout
@@ -276,56 +289,125 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 
 
-  Widget _buildPlayerArea(List<String> capturedPieces, bool isTop) {
+  Widget _buildPlayerArea(List<String> capturedPieces, bool isTop, String playerName) {
     String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;
-    return Container(
-      color: Colors.grey[200], // Just for visibility, adjust the color as needed
+    return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 15.0),
+    child: Container(
+      color: Colors.transparent,
       height: 50, // Adjust the height as needed
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          // Timer and captured pieces area
-          Expanded(
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: capturedPieces.length,
-              itemBuilder: (context, index) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Image.asset(
-                    capturedPieces[index],
-                    fit: BoxFit.cover,
-                    height: 50, // Half the square size, adjust as needed
-                  ),
-                );
-              },
-            ),
-          ),
-          // Timer display
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 2.0),
-            child: Text(
-              isTop ? _formatTime(_blackTimeRemaining) : _formatTime(_whiteTimeRemaining),
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 14, // Adjust font size as needed
-              ),
-            ),
-          ),
-          // Placeholder for circle, replace with actual circle widget if needed
+          // Avatar container
           Container(
             width: 50,
             height: 50,
-            padding: const EdgeInsets.all(2),
-            child: CircleAvatar(
-              backgroundImage: AssetImage(avatarUrl), // Assuming avatarUrl is a valid network image URL
-              backgroundColor: Colors.transparent,
+            decoration: BoxDecoration(
+              image: DecorationImage(
+                image: AssetImage(avatarUrl),
+                fit: BoxFit.cover,
+              ),
+              borderRadius: BorderRadius.all(Radius.circular(5)),
+              border: Border.all(color: Colors.black, width: 1.0),
             ),
           ),
+          SizedBox(width: 8),
+          // Column for player name and captured pieces
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Player name text
+                Padding(
+                  padding: const EdgeInsets.only(left: 4.0),
+                  child: Text(
+                    playerName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'Roboto',
+                      fontSize: 14, // Adjust font size as needed
+                    ),
+                  ),
+                ),
+                // Captured pieces ListView.builder
+                Expanded(
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: capturedPieces.length,
+                    itemBuilder: (context, index) {
+                      double imageSize = 20; // Adjust the image size as needed
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 0.0),
+                        child: Image.asset(
+                          capturedPieces[index],
+                          fit: BoxFit.contain,
+                          height: imageSize,
+                          width: imageSize,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          // Timer display
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 2.0),
+            child: _buildTimer(isTop ? _blackTimerActive : _whiteTimerActive,
+                isTop ? _formatTime(_blackTimeRemaining) : _formatTime(_whiteTimeRemaining)),
+          ),
+
+
         ],
+      ),
+    ),
+    );
+  }
+
+  Widget _buildTimer(bool isActive, String time) {
+    return AnimatedContainer(
+      duration: Duration(milliseconds: 500),
+      curve: Curves.easeInOut,
+      width: 70,
+      height: 35,
+      decoration: BoxDecoration(
+        color: isActive ? Colors.white : Colors.grey.withOpacity(0.7),
+        border: Border.all(
+          color: isActive ? Colors.black : (isActive ? Colors.black : Colors.grey.withOpacity(0.7)),
+          width: 1.0,
+        ),
+        borderRadius: BorderRadius.circular(5),
+      ),
+      child: Center(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (isActive)
+              Icon(
+                Icons.play_arrow,
+                size: 20,
+                color: Colors.black,
+              ),
+            Text(
+              time,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: isActive ? Colors.black : Colors.white,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+
+
 
   String _formatTime(int totalSeconds) {
     int minutes = totalSeconds ~/ 60;
@@ -374,11 +456,13 @@ class _ChessBoardState extends State<ChessBoard> {
           children: [
 
             Container(
-            height: 30,
-            child: isBoardFlipped ? _buildPlayerArea(whiteCapturedPieces, false) : _buildPlayerArea(blackCapturedPieces, true),
+            height: 50,
+            child: isBoardFlipped?
+            _buildPlayerArea(whiteCapturedPieces, false, player2Name):
+            _buildPlayerArea(blackCapturedPieces, true, player1Name),
             ),
 
-            //SizedBox(height: 20),
+            SizedBox(height: 20),
 
             Container(
               height: MediaQuery.of(context).size.width,
@@ -387,7 +471,8 @@ class _ChessBoardState extends State<ChessBoard> {
                   aspectRatio: 1,
                   child: Container(
                     child: GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8,),
+                      gridDelegate:
+                      const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 8,),
                       itemCount: 64,
                       itemBuilder: (context, index) {
                         int rank, file;
@@ -404,7 +489,7 @@ class _ChessBoardState extends State<ChessBoard> {
                         final piece = game.get(squareName);
 
                         Color colorA = const Color(0xFFCCDEFC);
-                        Color colorB = const Color(0xFF7395B8);
+                        Color colorB = const Color(0xFF8BA1B9);
 
                         // Determine the color of the square
                         var squareColor = (file + rank) % 2 == 0 ? colorA : colorB;
@@ -645,11 +730,11 @@ class _ChessBoardState extends State<ChessBoard> {
               //),
             ),
 
-            //SizedBox(height: 20),
+            SizedBox(height: 20),
 
             Container(
-              height: 30,
-              child: isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true) : _buildPlayerArea(whiteCapturedPieces, false),
+              height: 50,
+              child: isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true,player1Name) : _buildPlayerArea(whiteCapturedPieces, false,player2Name),
             )
           ],
         ),
