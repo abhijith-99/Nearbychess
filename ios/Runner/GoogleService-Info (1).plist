@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CLIENT_ID</key>
+	<string>820296910788-5h9t8v99o464ucmk673j7ah8jdhbuob5.apps.googleusercontent.com</string>
+	<key>REVERSED_CLIENT_ID</key>
+	<string>com.googleusercontent.apps.820296910788-5h9t8v99o464ucmk673j7ah8jdhbuob5</string>
+	<key>ANDROID_CLIENT_ID</key>
+	<string>820296910788-jm0siftrqn4d8pvp4ca38ormambfvrvi.apps.googleusercontent.com</string>
+	<key>API_KEY</key>
+	<string>AIzaSyAqYxYZKOERYSKNgOo34HNKj8e_j2cEflk</string>
+	<key>GCM_SENDER_ID</key>
+	<string>820296910788</string>
+	<key>PLIST_VERSION</key>
+	<string>1</string>
+	<key>BUNDLE_ID</key>
+	<string>com.example.mychessapp.RunnerTests</string>
+	<key>PROJECT_ID</key>
+	<string>chessapp-68652</string>
+	<key>STORAGE_BUCKET</key>
+	<string>chessapp-68652.appspot.com</string>
+	<key>IS_ADS_ENABLED</key>
+	<false></false>
+	<key>IS_ANALYTICS_ENABLED</key>
+	<false></false>
+	<key>IS_APPINVITE_ENABLED</key>
+	<true></true>
+	<key>IS_GCM_ENABLED</key>
+	<true></true>
+	<key>IS_SIGNIN_ENABLED</key>
+	<true></true>
+	<key>GOOGLE_APP_ID</key>
+	<string>1:820296910788:ios:c8be77a5eca658d4cd8691</string>
+	<key>DATABASE_URL</key>
+	<string>https://chessapp-68652-default-rtdb.firebaseio.com</string>
+</dict>
+</plist>
