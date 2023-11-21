@@ -105,9 +105,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
 
-
-
-
   Widget entryField(String title, TextEditingController controller, bool isPassword, {double bottomPadding = 10}) {
     return Padding(
       padding: EdgeInsets.only(bottom: bottomPadding),
