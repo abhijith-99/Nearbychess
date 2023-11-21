@@ -513,5 +513,4 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
       ),
     );
   }
-
 }
