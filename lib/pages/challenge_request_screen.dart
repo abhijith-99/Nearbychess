@@ -10,6 +10,7 @@ class ChallengeRequestScreen extends StatelessWidget {
   final String opponentUID; // UID of the opponent (current user)
   final String betAmount; // The bet amount for the game
   final String challengeId; // The challenge request ID
+  final String challengerImageUrl; // Add this line
 
   const ChallengeRequestScreen({super.key,
     required this.challengerName,
@@ -17,6 +18,7 @@ class ChallengeRequestScreen extends StatelessWidget {
     required this.opponentUID,
     required this.betAmount,
     required this.challengeId,
+    required this.challengerImageUrl, // Add this line
   });
 
   @override
@@ -36,9 +38,8 @@ class ChallengeRequestScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            const CircleAvatar(
-              // Placeholder for now
-              backgroundImage: AssetImage('assets/battle.png'),
+            CircleAvatar(
+              backgroundImage: AssetImage(challengerImageUrl), // Use NetworkImage
               radius: 40,
             ),
             const SizedBox(height: 10),
