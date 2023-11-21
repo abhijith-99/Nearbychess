@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:google_sign_in/google_sign_in.dart';
+
 void main() {
   runApp(const LoginRegisterPage());
 }
@@ -33,7 +35,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     otpController.dispose();
     super.dispose();
   }
-
 
   Future<void> signInWithEmailAndPassword() async {
     try {
@@ -104,8 +105,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     }
   }
 
-
-  Widget entryField(String title, TextEditingController controller, bool isPassword, {double bottomPadding = 10}) {
+  Widget entryField(
+      String title, TextEditingController controller, bool isPassword,
+      {double bottomPadding = 10}) {
     return Padding(
       padding: EdgeInsets.only(bottom: bottomPadding),
       child: TextFormField(
@@ -130,6 +132,46 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           borderRadius: BorderRadius.circular(30),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      ),
+    );
+  }
+
+  // Google Sign-In function
+  Future<void> signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        return; // User canceled the sign-in process
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      await _auth.signInWithCredential(credential);
+      // Navigate to your home page if sign-in is successful
+    } catch (error) {
+      setState(() {
+        errorMessage = error.toString();
+      });
+    }
+  }
+
+  // Google Sign-In button
+  Widget googleSignInButton() {
+    return ElevatedButton.icon(
+      icon: SvgPicture.asset('assets/google_logo.svg', height: 24, width: 24),
+      label: const Text('Sign in with Google'),
+      onPressed: signInWithGoogle,
+      style: ElevatedButton.styleFrom(
+        primary: Color.fromARGB(255, 63, 102, 105),
+        minimumSize: const Size(double.infinity, 50),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(30),
+        ),
       ),
     );
   }
@@ -183,9 +225,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
 
-
-
-
                 const SizedBox(height: 32),
                 SvgPicture.asset(
                   'assets/chess_logo.svg',
@@ -202,7 +241,8 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                     entryField('Email', emailController, false),
                     entryField('Password', passwordController, true),
                     const SizedBox(height: 20),
-                    submitButton('Sign Up with Email', createUserWithEmailAndPassword),
+                    submitButton(
+                        'Sign Up with Email', createUserWithEmailAndPassword),
                   ] else ...[
                     entryField('Phone Number', phoneController, false),
                     if (_verificationId.isNotEmpty)
@@ -215,6 +255,30 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                   ],
                 ],
                 const SizedBox(height: 16),
+                //   if (!isLoginMode)
+                //     const Text(
+                //       'OR',
+                //       textAlign: TextAlign.center,
+                //       style: TextStyle(color: Colors.grey),
+                //     ),
+                //   const SizedBox(height: 16),
+
+                //   if (!isLoginMode && !isEmailLogin)
+                //     submitButton('Continue with Email', () {
+                //       setState(() {
+                //         isEmailLogin = true;
+                //       });
+                //     }),
+                //   if (!isLoginMode && isEmailLogin)
+                //     submitButton('Continue with Phone', () {
+                //       setState(() {
+                //         isEmailLogin = false;
+                //       });
+                //     }),
+
+                //  if (!isLoginMode && !isEmailLogin)
+                //     googleSignInButton(), // Add Google Sign-In button
+
                 if (!isLoginMode)
                   const Text(
                     'OR',
@@ -222,7 +286,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                     style: TextStyle(color: Colors.grey),
                   ),
                 const SizedBox(height: 16),
-                if (!isLoginMode && !isEmailLogin)
+                if (!isLoginMode && isEmailLogin)
                   submitButton('Continue with Email', () {
                     setState(() {
                       isEmailLogin = true;
@@ -234,6 +298,13 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                       isEmailLogin = false;
                     });
                   }),
+// Place the Google Sign-In button here
+                if (!isLoginMode) // No need to check for !isEmailLogin because it's implied
+                  googleSignInButton(),
+
+
+                  
+
                 if (errorMessage.isNotEmpty)
                   Padding(
                     padding: const EdgeInsets.only(top: 20),
