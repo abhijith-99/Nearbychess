@@ -23,10 +23,13 @@ class UserHomePageState extends State<UserHomePage>
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
+
   String betAmount = '5\$'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
+  
+
 
   @override
   void initState() {
@@ -66,12 +69,19 @@ class UserHomePageState extends State<UserHomePage>
           var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
 
           // Fetch the challenger's user data
-          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
-          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
-          String challengerImageUrl = userDoc.exists ? (userDoc.data()!['avatar'] ?? '') : ''; // Assuming the field name is 'avatarUrl'
-
+          var userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(challengerId)
+              .get();
+          String challengerName = userDoc.exists
+              ? (userDoc.data()!['name'] ?? 'Unknown Challenger')
+              : 'Unknown Challenger';
+          String challengerImageUrl = userDoc.exists
+              ? (userDoc.data()!['avatar'] ?? '')
+              : ''; // Assuming the field name is 'avatarUrl'
 
           // Show the challenge request dialog for the latest request
+          // ignore: use_build_context_synchronously
           showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
@@ -81,7 +91,8 @@ class UserHomePageState extends State<UserHomePage>
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
                 challengeId: latestRequestDoc.id,
-                challengerImageUrl: challengerImageUrl, // Pass the image URL here
+                challengerImageUrl:
+                    challengerImageUrl, // Pass the image URL here
               );
             },
           ).then((accepted) {
@@ -91,8 +102,6 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
-
-
 
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
@@ -149,7 +158,7 @@ class UserHomePageState extends State<UserHomePage>
   @override
   void dispose() {
     userSubscription.cancel();
-    challengeRequestsSubscription.cancel();
+    challengeRequestsSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     super.dispose();
@@ -175,19 +184,18 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
   Stream<List<DocumentSnapshot>> fetchOnlineUsers(String? location) {
     Query query = FirebaseFirestore.instance.collection('users');
 
     if (location != null && location.isNotEmpty) {
       query = query.where('location', isEqualTo: location);
-
     }
 
     if (searchText.isNotEmpty) {
       String searchEnd = searchText.substring(0, searchText.length - 1) +
           String.fromCharCode(searchText.codeUnitAt(searchText.length - 1) + 1);
-      query = query.where('name', isGreaterThanOrEqualTo: searchText)
+      query = query
+          .where('name', isGreaterThanOrEqualTo: searchText)
           .where('name', isLessThan: searchEnd);
     }
 
@@ -324,67 +332,55 @@ class UserHomePageState extends State<UserHomePage>
     );
   }
 
+  Future<void> _sendChallenge(String opponentId, String betAmount) async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId != null) {
+      try {
+        String opponentName = await getUserName(opponentId);
+        String currentUserName = await getUserName(currentUserId);
 
+        print('Creating challenge request...');
 
+        DocumentReference challengeDocRef = await FirebaseFirestore.instance
+            .collection('challengeRequests')
+            .add({
+          'challengerId': currentUserId,
+          'opponentId': opponentId,
+          'betAmount': betAmount,
+          'status': 'pending',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
+        print('Challenge request created with ID: ${challengeDocRef.id}');
 
-
-
-
-
-Future<void> _sendChallenge(String opponentId, String betAmount) async {
-  final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-  if (currentUserId != null) {
-    try {
-      String opponentName = await getUserName(opponentId);
-      String currentUserName = await getUserName(currentUserId);
-
-      print('Creating challenge request...');
-
-      DocumentReference challengeDocRef = await FirebaseFirestore.instance
-          .collection('challengeRequests')
-          .add({
-        'challengerId': currentUserId,
-        'opponentId': opponentId,
-        'betAmount': betAmount,
-        'status': 'pending',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      print('Challenge request created with ID: ${challengeDocRef.id}');
-
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (context) => ChallengeWaitingScreen(
-              currentUserName: currentUserName,
-              opponentName: opponentName,
-              challengeRequestId: challengeDocRef.id,
-              currentUserId: currentUserId,
-              opponentId: opponentId,
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => ChallengeWaitingScreen(
+                currentUserName: currentUserName,
+                opponentName: opponentName,
+                challengeRequestId: challengeDocRef.id,
+                currentUserId: currentUserId,
+                opponentId: opponentId,
+              ),
             ),
-          ),
-        );
-      });
+          );
+        });
 
+        print('Navigating to ChallengeWaitingScreen...');
 
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
+        // );
 
-
-      print('Navigating to ChallengeWaitingScreen...');
-
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
-      // );
-
-      listenToMyChallenge(challengeDocRef.id);
+        listenToMyChallenge(challengeDocRef.id);
+      } catch (e) {
+        print('Error sending challenge: $e');
+      }
+    } else {
+      print('User is not logged in.');
     }
-     catch (e) {
-      print('Error sending challenge: $e');
-    }
-  } else {
-    print('User is not logged in.');
   }
-}
 
 
 
@@ -416,12 +412,12 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
       ),
       body: Column(
         children: <Widget>[
-
           if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
             child: Container(
-              constraints: BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
+              constraints: BoxConstraints(
+                  maxWidth: 600), // Set a maximum width for the search bar
               child: TextField(
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
@@ -429,23 +425,24 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                   hintText: 'Enter player name...',
                   prefixIcon: Icon(Icons.search), // Add search icon
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10), // Rounded corners for the border
-                    borderSide: BorderSide(color: Colors.blueGrey.shade800), // Custom border color
-
+                    borderRadius: BorderRadius.circular(
+                        10), // Rounded corners for the border
+                    borderSide: BorderSide(
+                        color: Colors.blueGrey.shade800), // Custom border color
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
-                  hintStyle: TextStyle(color: Colors.grey.shade500), // Lighter hint text color
+                  contentPadding: EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 20), // Padding inside the text field
+                  hintStyle: TextStyle(
+                      color: Colors.grey.shade500), // Lighter hint text color
                 ),
               ),
             ),
           ),
 
-
-
           Text(
             'Players in $userLocation',
             style: const TextStyle(
-
               fontFamily: 'Poppins',
               color: Color.fromARGB(255, 12, 4, 4),
               fontSize: 30,
@@ -457,7 +454,6 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: onlineUsersStream,
               builder: (context, snapshot) {
-
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No players Here'));
                 }
@@ -507,10 +503,11 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                                               .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-
-                                  color: isOnline ? Colors.green : Colors.grey.shade500, // Red border for offline users
+                                  color: isOnline
+                                      ? Colors.green
+                                      : Colors.grey
+                                          .shade500, // Red border for offline users
                                   width: 3,
-
                                 ),
                               ),
                             ),
@@ -544,7 +541,8 @@ class UserProfileHeader extends StatelessWidget {
   UserProfileHeader({Key? key, required this.userId}) : super(key: key);
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
-    var doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    var doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -553,8 +551,10 @@ class UserProfileHeader extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>?>(
       future: fetchCurrentUserProfile(userId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-          String avatarUrl = snapshot.data!['avatar'] ?? 'path/to/default/avatar.png'; // Provide a default path if null
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          String avatarUrl = snapshot.data!['avatar'] ??
+              'path/to/default/avatar.png'; // Provide a default path if null
           String userName = snapshot.data!['name'] ?? 'Unknown User';
 
           return Padding(
@@ -569,7 +569,8 @@ class UserProfileHeader extends StatelessWidget {
                   ),
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundImage: AssetImage(avatarUrl), // Using NetworkImage for the avatar
+                    backgroundImage: AssetImage(
+                        avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -588,10 +589,10 @@ class UserProfileHeader extends StatelessWidget {
         }
         return const Padding(
           padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
-          child: CircularProgressIndicator(), // Show loading indicator while fetching data
+          child:
+              CircularProgressIndicator(), // Show loading indicator while fetching data
         );
       },
     );
   }
 }
-
