@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mychessapp/main.dart';
+import 'package:mychessapp/pages/challengewaitingscreen.dart';
 import '../userprofiledetails.dart';
 import '../utils.dart';
 import 'ChessBoard.dart';
@@ -15,7 +17,8 @@ class UserHomePage extends StatefulWidget {
   UserHomePageState createState() => UserHomePageState();
 }
 
-class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver {
+class UserHomePageState extends State<UserHomePage>
+    with WidgetsBindingObserver {
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
@@ -50,7 +53,10 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
             var challengeData = change.doc.data() as Map<String, dynamic>;
             String challengerId = challengeData['challengerId'];
             if (latestRequests.containsKey(challengerId)) {
-              FirebaseFirestore.instance.collection('challengeRequests').doc(latestRequests[challengerId]!.id).delete();
+              FirebaseFirestore.instance
+                  .collection('challengeRequests')
+                  .doc(latestRequests[challengerId]!.id)
+                  .delete();
             }
             latestRequests[challengerId] = change.doc;
           }
@@ -60,8 +66,13 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
 
           // Fetch the challenger's user data
-          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
-          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
+          var userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(challengerId)
+              .get();
+          String challengerName = userDoc.exists
+              ? (userDoc.data()!['name'] ?? 'Unknown Challenger')
+              : 'Unknown Challenger';
 
           // Show the challenge request dialog for the latest request
           showDialog<bool>(
@@ -83,8 +94,6 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     }
   }
 
-
-
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
         .collection('challengeRequests')
@@ -95,8 +104,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
         var challengeData = challengeSnapshot.data() as Map<String, dynamic>;
         if (challengeData['status'] == 'accepted') {
           // Challenge accepted, navigate to the ChessBoard
-          String gameId = challengeData['gameId']; // Assuming the game ID is stored in the challenge data
-          print("challenger"+gameId);
+          String gameId = challengeData[
+              'gameId']; // Assuming the game ID is stored in the challenge data
+          print("challenger" + gameId);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -156,13 +166,13 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
   Future<void> setUserOnlineStatus(bool isOnline) async {
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
-      CollectionReference users = FirebaseFirestore.instance.collection('users');
+      CollectionReference users =
+          FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline});
     } catch (e) {
       print('Error updating online status: $e');
     }
   }
-
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile() async {
     var user = FirebaseAuth.instance.currentUser;
@@ -189,7 +199,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
         .map((snapshot) => snapshot.docs);
   }
 
-  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(
+      BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
@@ -207,7 +218,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -273,26 +284,30 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                   ElevatedButton(
                     onPressed: isChallengeable && isButtonEnabled
                         ? () async {
-                      setModalState(() => challengeButtonCooldown[opponentId] = false);
-                      await _sendChallenge(opponentData['uid'], localBetAmount);
-                      Navigator.pop(context);
+                            setModalState(() =>
+                                challengeButtonCooldown[opponentId] = false);
+                            await _sendChallenge(
+                                opponentData['uid'], localBetAmount);
+                            Navigator.pop(context);
 
-                      // Start a timer to re-enable the button after 30 seconds
-                      Timer(Duration(seconds: 30), () {
-                        setState(() => challengeButtonCooldown[opponentId] = true);
-                      });
-                    }
+                            // Start a timer to re-enable the button after 30 seconds
+                            Timer(Duration(seconds: 30), () {
+                              setState(() =>
+                                  challengeButtonCooldown[opponentId] = true);
+                            });
+                          }
                         : (currentGameId != null
-                        ? () {
-                      // Logic to watch the game
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChessBoard(gameId: currentGameId),
-                        ),
-                      );
-                    }
-                        : null), // Disable the button if no game ID is available
+                            ? () {
+                                // Logic to watch the game
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ChessBoard(gameId: currentGameId),
+                                  ),
+                                );
+                              }
+                            : null), // Disable the button if no game ID is available
                     child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
                   ),
                 ],
@@ -304,69 +319,85 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     );
   }
 
-  // Function to send a challenge
-  Future<void> _sendChallenge(String opponentId, String betAmount) async {
-    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-    if (currentUserId != null) {
-      // Try to send the challenge and handle any potential errors
 
-      try {
-        String opponentName = await getUserName(opponentId);
-        DocumentReference challengeDocRef = await FirebaseFirestore.instance
-            .collection('challengeRequests')
-            .add({
-          'challengerId': currentUserId,
-          'opponentId': opponentId,
-          'betAmount': betAmount,
-          'status': 'pending',
-          'timestamp': FieldValue
-              .serverTimestamp(), // It's a good practice to store the time of the challenge
-        });
 
-        // After sending the challenge, display an alert on the challenger's screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
+
+
+
+
+
+
+Future<void> _sendChallenge(String opponentId, String betAmount) async {
+  final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+  if (currentUserId != null) {
+    try {
+      String opponentName = await getUserName(opponentId);
+      String currentUserName = await getUserName(currentUserId);
+
+      print('Creating challenge request...');
+
+      DocumentReference challengeDocRef = await FirebaseFirestore.instance
+          .collection('challengeRequests')
+          .add({
+        'challengerId': currentUserId,
+        'opponentId': opponentId,
+        'betAmount': betAmount,
+        'status': 'pending',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      print('Challenge request created with ID: ${challengeDocRef.id}');
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        navigatorKey.currentState?.push(
+          MaterialPageRoute(
+            builder: (context) => ChallengeWaitingScreen(
+              currentUserName: currentUserName,
+              opponentName: opponentName,
+              challengeRequestId: challengeDocRef.id,
+              currentUserId: currentUserId,
+              opponentId: opponentId,
+            ),
+          ),
         );
+      });
 
-        Future.delayed(const Duration(seconds: 30), () async {
-          // Retrieve the challenge again to see if its status has changed
-          DocumentSnapshot challengeSnapshot = await challengeDocRef.get();
 
-          if (challengeSnapshot.exists &&
-              challengeSnapshot['status'] == 'pending') {
-            // If the challenge is still pending, delete it
-            await challengeDocRef.delete();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Challenge to $opponentName has expired and been removed')),
-            );
-          }
-        });
-        // Call listenToMyChallenge here with the new challenge ID
-        listenToMyChallenge(challengeDocRef.id);
-        // Return the challenge ID
-        // return challengeDocRef.id;
-      } catch (e) {
-        // If sending the challenge fails, log the error and return an empty string or handle the error as needed
-        print('Error sending challenge: $e');
-        // return ''; // Or handle the error appropriately
-      }
-    } else {
-      // If the user is not logged in, handle this case as well
-      print('User is not logged in.');
-      // return ''; // Or handle the error appropriately
+
+
+      print('Navigating to ChallengeWaitingScreen...');
+
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
+      // );
+
+      listenToMyChallenge(challengeDocRef.id);
     }
+     catch (e) {
+      print('Error sending challenge: $e');
+    }
+  } else {
+    print('User is not logged in.');
   }
+}
+
+
+
+
+
+
 
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
-      return userDoc['name'] ?? 'Unknown User'; // Replace 'Unknown User' with a default name of your choice
+      return userDoc['name'] ??
+          'Unknown User'; // Replace 'Unknown User' with a default name of your choice
     } else {
       return 'Unknown User';
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -393,7 +424,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                         onTap: () => Navigator.of(context).push(
                           MaterialPageRoute(
                               builder: (context) =>
-                              const UserProfileDetailsPage()),
+                                  const UserProfileDetailsPage()),
                         ),
                         child: CircleAvatar(
                           radius: 60,
@@ -401,9 +432,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                         ),
                       ),
                       const SizedBox(height: 8),
-
                       Padding(
-                        padding: const EdgeInsets.only(bottom: 10.0), // Padding after username
+                        padding: const EdgeInsets.only(
+                            bottom: 10.0), // Padding after username
                         child: Text(
                           userName,
                           style: const TextStyle(
@@ -429,8 +460,6 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
               );
             },
           ),
-
-
           const Text(
             'Players Nearby',
             style: TextStyle(
@@ -466,27 +495,40 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                   ),
                   itemCount: filteredUsers.length,
                   itemBuilder: (context, index) {
-                    var userData = filteredUsers[index].data() as Map<String, dynamic>;
+                    var userData =
+                        filteredUsers[index].data() as Map<String, dynamic>;
                     String avatarUrl = userData['avatar'];
-                    bool isOnline = userData['isOnline'] ?? false; // Assuming 'isOnline' is a field in your document
+                    bool isOnline = userData['isOnline'] ??
+                        false; // Assuming 'isOnline' is a field in your document
                     return GestureDetector(
-                      onTap: isOnline ? () => _showChallengeModal(context, userData) : null, // Disable onTap for offline players
+                      onTap: isOnline
+                          ? () => _showChallengeModal(context, userData)
+                          : null, // Disable onTap for offline players
                       child: Column(
                         children: <Widget>[
                           CircleAvatar(
                             backgroundImage: AssetImage(avatarUrl),
                             radius: 36,
-                            backgroundColor: Colors.transparent, // Ensures the background is transparent
+                            backgroundColor: Colors
+                                .transparent, // Ensures the background is transparent
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 image: DecorationImage(
                                   image: AssetImage(avatarUrl),
                                   fit: BoxFit.cover,
-                                  colorFilter: isOnline ? null : ColorFilter.mode(Colors.grey, BlendMode.saturation), // Dim the avatar if offline
+                                  colorFilter: isOnline
+                                      ? null
+                                      : ColorFilter.mode(
+                                          Colors.grey,
+                                          BlendMode
+                                              .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-                                  color: isOnline ? Colors.green : Colors.red.shade900, // Red border for offline users
+                                  color: isOnline
+                                      ? Colors.green
+                                      : Colors.red
+                                          .shade900, // Red border for offline users
                                   width: 5,
                                 ),
                               ),

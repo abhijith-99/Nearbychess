@@ -254,30 +254,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                       submitButton('Verify OTP', signInWithOTP),
                   ],
                 ],
-                const SizedBox(height: 16),
-                //   if (!isLoginMode)
-                //     const Text(
-                //       'OR',
-                //       textAlign: TextAlign.center,
-                //       style: TextStyle(color: Colors.grey),
-                //     ),
-                //   const SizedBox(height: 16),
-
-                //   if (!isLoginMode && !isEmailLogin)
-                //     submitButton('Continue with Email', () {
-                //       setState(() {
-                //         isEmailLogin = true;
-                //       });
-                //     }),
-                //   if (!isLoginMode && isEmailLogin)
-                //     submitButton('Continue with Phone', () {
-                //       setState(() {
-                //         isEmailLogin = false;
-                //       });
-                //     }),
-
-                //  if (!isLoginMode && !isEmailLogin)
-                //     googleSignInButton(), // Add Google Sign-In button
+                const SizedBox(height: 16),                
 
                 if (!isLoginMode)
                   const Text(
@@ -303,7 +280,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                   googleSignInButton(),
 
 
-                  
+
 
                 if (errorMessage.isNotEmpty)
                   Padding(
