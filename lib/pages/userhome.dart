@@ -23,9 +23,10 @@ class UserHomePageState extends State<UserHomePage>
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
-  // Declare betAmount as a class field
   String betAmount = '5\$'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
+  String searchText = '';
+  Timer? _debounce;
 
   @override
   void initState() {
@@ -33,11 +34,10 @@ class UserHomePageState extends State<UserHomePage>
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
     listenToChallengeRequests();
-    onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
+    onlineUsersStream = Stream<List<DocumentSnapshot>>.empty();
   }
 
-  //new change
-
+  // This function remains unchanged
   void listenToChallengeRequests() {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
@@ -66,13 +66,10 @@ class UserHomePageState extends State<UserHomePage>
           var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
 
           // Fetch the challenger's user data
-          var userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(challengerId)
-              .get();
-          String challengerName = userDoc.exists
-              ? (userDoc.data()!['name'] ?? 'Unknown Challenger')
-              : 'Unknown Challenger';
+          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
+          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
+          String challengerImageUrl = userDoc.exists ? (userDoc.data()!['avatar'] ?? '') : ''; // Assuming the field name is 'avatarUrl'
+
 
           // Show the challenge request dialog for the latest request
           showDialog<bool>(
@@ -84,6 +81,7 @@ class UserHomePageState extends State<UserHomePage>
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
                 challengeId: latestRequestDoc.id,
+                challengerImageUrl: challengerImageUrl, // Pass the image URL here
               );
             },
           ).then((accepted) {
@@ -93,6 +91,8 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
+
+
 
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
@@ -149,9 +149,10 @@ class UserHomePageState extends State<UserHomePage>
   @override
   void dispose() {
     userSubscription.cancel();
-    super.dispose();
     challengeRequestsSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
+    _debounce?.cancel();
+    super.dispose();
   }
 
   @override
@@ -174,29 +175,33 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-  Future<Map<String, dynamic>?> fetchCurrentUserProfile() async {
-    var user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      var doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      return doc.exists ? doc.data() as Map<String, dynamic> : null;
-    }
-    return null;
-  }
 
   Stream<List<DocumentSnapshot>> fetchOnlineUsers(String? location) {
-    if (location == null || location.isEmpty) {
-      // Return an empty stream or handle the null case as needed
-      return const Stream<List<DocumentSnapshot>>.empty();
+    Query query = FirebaseFirestore.instance.collection('users');
+
+    if (location != null && location.isNotEmpty) {
+      query = query.where('location', isEqualTo: location);
+
     }
 
-    return FirebaseFirestore.instance
-        .collection('users')
-        .where('location', isEqualTo: location)
-        .snapshots()
-        .map((snapshot) => snapshot.docs);
+    if (searchText.isNotEmpty) {
+      String searchEnd = searchText.substring(0, searchText.length - 1) +
+          String.fromCharCode(searchText.codeUnitAt(searchText.length - 1) + 1);
+      query = query.where('name', isGreaterThanOrEqualTo: searchText)
+          .where('name', isLessThan: searchEnd);
+    }
+
+    return query.snapshots().map((snapshot) => snapshot.docs);
+  }
+
+  void _onSearchChanged(String query) {
+    if (_debounce?.isActive ?? false) _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      setState(() {
+        searchText = query;
+        onlineUsersStream = fetchOnlineUsers(userLocation);
+      });
+    });
   }
 
   void _showChallengeModal(
@@ -401,6 +406,8 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
 
   @override
   Widget build(BuildContext context) {
+    var currentUser = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 223, 225, 237),
       appBar: AppBar(
@@ -409,73 +416,48 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
       ),
       body: Column(
         children: <Widget>[
-          FutureBuilder<Map<String, dynamic>?>(
-            future: fetchCurrentUserProfile(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.done &&
-                  snapshot.hasData) {
-                String avatarUrl = snapshot.data!['avatar'];
-                String userName = snapshot.data!['name'] ?? 'Unknown';
-                return Padding(
-                  padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
-                  child: Column(
-                    children: [
-                      GestureDetector(
-                        onTap: () => Navigator.of(context).push(
-                          MaterialPageRoute(
-                              builder: (context) =>
-                                  const UserProfileDetailsPage()),
-                        ),
-                        child: CircleAvatar(
-                          radius: 60,
-                          backgroundImage: AssetImage(avatarUrl),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.only(
-                            bottom: 10.0), // Padding after username
-                        child: Text(
-                          userName,
-                          style: const TextStyle(
-                            fontFamily: 'Poppins',
-                            color: Color.fromARGB(255, 12, 6, 6),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                          ),
-                        ),
-                      ),
-                    ],
+
+          if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
+              child: TextField(
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  labelText: 'Search Players in $userLocation',
+                  hintText: 'Enter player name...',
+                  prefixIcon: Icon(Icons.search), // Add search icon
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10), // Rounded corners for the border
+                    borderSide: BorderSide(color: Colors.blueGrey.shade800), // Custom border color
+
                   ),
-                );
-              }
-              return const Padding(
-                padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
-                child: Center(
-                  child: CircleAvatar(
-                    radius: 60,
-                    child: Text('?', style: TextStyle(fontSize: 30)),
-                  ),
+                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
+                  hintStyle: TextStyle(color: Colors.grey.shade500), // Lighter hint text color
                 ),
-              );
-            },
+              ),
+            ),
           ),
-          const Text(
-            'Players Nearby',
-            style: TextStyle(
+
+
+
+          Text(
+            'Players in $userLocation',
+            style: const TextStyle(
+
               fontFamily: 'Poppins',
               color: Color.fromARGB(255, 12, 4, 4),
               fontSize: 30,
               fontWeight: FontWeight.bold,
             ),
           ),
+          // ... rest of the code for GridView.builder ...
           Expanded(
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: onlineUsersStream,
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
+
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No players Here'));
                 }
@@ -525,11 +507,10 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                                               .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-                                  color: isOnline
-                                      ? Colors.green
-                                      : Colors.red
-                                          .shade900, // Red border for offline users
-                                  width: 5,
+
+                                  color: isOnline ? Colors.green : Colors.grey.shade500, // Red border for offline users
+                                  width: 3,
+
                                 ),
                               ),
                             ),
@@ -556,3 +537,61 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
     );
   }
 }
+
+class UserProfileHeader extends StatelessWidget {
+  final String userId;
+
+  UserProfileHeader({Key? key, required this.userId}) : super(key: key);
+
+  Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
+    var doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    return doc.exists ? doc.data() as Map<String, dynamic> : null;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Map<String, dynamic>?>(
+      future: fetchCurrentUserProfile(userId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+          String avatarUrl = snapshot.data!['avatar'] ?? 'path/to/default/avatar.png'; // Provide a default path if null
+          String userName = snapshot.data!['name'] ?? 'Unknown User';
+
+          return Padding(
+            padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+            child: Column(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => UserProfileDetailsPage(),
+                    ),
+                  ),
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: AssetImage(avatarUrl), // Using NetworkImage for the avatar
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  userName,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+        return const Padding(
+          padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
+          child: CircularProgressIndicator(), // Show loading indicator while fetching data
+        );
+      },
+    );
+  }
+}
+
