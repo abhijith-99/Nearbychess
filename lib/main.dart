@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mychessapp/pages/challengewaitingscreen.dart';
 import 'package:mychessapp/pages/login_register_page.dart';
 import 'dart:async';
 import 'package:mychessapp/splash_screen.dart';
@@ -9,6 +10,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'web_listener_stub.dart'
 if (dart.library.html) 'web_listener.dart';
+
+
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 
 Future<void> main() async {
@@ -89,10 +93,12 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       theme: ThemeData(primarySwatch: primaryBlack), // Use the custom primaryBlack MaterialColor
       home: const ChessSplashScreen(),
       debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey, // Assign the global navigator key here
       routes: {
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
         '/login_register': (context) => const LoginRegisterPage(),
         // other routes...
+
       },
     );
   }
