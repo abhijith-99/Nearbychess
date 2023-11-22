@@ -59,7 +59,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: NetworkImage(currentUserAvatar),
+                      backgroundImage: AssetImage(currentUserAvatar),
                     ),
                     SizedBox(height: 10),
                     Text(
@@ -95,7 +95,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 40,
-                      backgroundImage: NetworkImage(opponentUserAvatar),
+                      backgroundImage: AssetImage(opponentUserAvatar),
                     ),
                     const SizedBox(height: 10),
                     Text(
