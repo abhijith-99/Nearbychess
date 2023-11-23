@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mychessapp/main.dart';
+import 'package:mychessapp/pages/challengewaitingscreen.dart';
 import '../userprofiledetails.dart';
 import '../utils.dart';
 import 'ChessBoard.dart';
@@ -15,15 +17,19 @@ class UserHomePage extends StatefulWidget {
   UserHomePageState createState() => UserHomePageState();
 }
 
-class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver {
+class UserHomePageState extends State<UserHomePage>
+    with WidgetsBindingObserver {
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
+
   String betAmount = '5\$'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
+  
+
 
   @override
   void initState() {
@@ -50,7 +56,10 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
             var challengeData = change.doc.data() as Map<String, dynamic>;
             String challengerId = challengeData['challengerId'];
             if (latestRequests.containsKey(challengerId)) {
-              FirebaseFirestore.instance.collection('challengeRequests').doc(latestRequests[challengerId]!.id).delete();
+              FirebaseFirestore.instance
+                  .collection('challengeRequests')
+                  .doc(latestRequests[challengerId]!.id)
+                  .delete();
             }
             latestRequests[challengerId] = change.doc;
           }
@@ -60,11 +69,19 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
 
           // Fetch the challenger's user data
-          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
-          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
-          String challengerImageUrl = userDoc.exists ? (userDoc.data()!['avatar'] ?? '') : ''; // Assuming the field name is 'avatarUrl'
+          var userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(challengerId)
+              .get();
+          String challengerName = userDoc.exists
+              ? (userDoc.data()!['name'] ?? 'Unknown Challenger')
+              : 'Unknown Challenger';
+          String challengerImageUrl = userDoc.exists
+              ? (userDoc.data()!['avatar'] ?? '')
+              : ''; // Assuming the field name is 'avatarUrl'
 
           // Show the challenge request dialog for the latest request
+          // ignore: use_build_context_synchronously
           showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
@@ -74,7 +91,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
                 challengeId: latestRequestDoc.id,
-                challengerImageUrl: challengerImageUrl, // Pass the image URL here
+                challengerImageUrl:
+                    challengerImageUrl, // Pass the image URL here
               );
             },
           ).then((accepted) {
@@ -85,7 +103,6 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     }
   }
 
-  // This function remains unchanged
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
         .collection('challengeRequests')
@@ -96,8 +113,9 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
         var challengeData = challengeSnapshot.data() as Map<String, dynamic>;
         if (challengeData['status'] == 'accepted') {
           // Challenge accepted, navigate to the ChessBoard
-          String gameId = challengeData['gameId']; // Assuming the game ID is stored in the challenge data
-          print("challenger"+gameId);
+          String gameId = challengeData[
+              'gameId']; // Assuming the game ID is stored in the challenge data
+          print("challenger" + gameId);
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -140,7 +158,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
   @override
   void dispose() {
     userSubscription.cancel();
-    challengeRequestsSubscription.cancel();
+    challengeRequestsSubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     super.dispose();
@@ -158,7 +176,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
   Future<void> setUserOnlineStatus(bool isOnline) async {
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
-      CollectionReference users = FirebaseFirestore.instance.collection('users');
+      CollectionReference users =
+          FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline});
     } catch (e) {
       print('Error updating online status: $e');
@@ -175,7 +194,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     if (searchText.isNotEmpty) {
       String searchEnd = searchText.substring(0, searchText.length - 1) +
           String.fromCharCode(searchText.codeUnitAt(searchText.length - 1) + 1);
-      query = query.where('name', isGreaterThanOrEqualTo: searchText)
+      query = query
+          .where('name', isGreaterThanOrEqualTo: searchText)
           .where('name', isLessThan: searchEnd);
     }
 
@@ -192,7 +212,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     });
   }
 
-  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(
+      BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
@@ -210,7 +231,7 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -276,26 +297,30 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                   ElevatedButton(
                     onPressed: isChallengeable && isButtonEnabled
                         ? () async {
-                      setModalState(() => challengeButtonCooldown[opponentId] = false);
-                      await _sendChallenge(opponentData['uid'], localBetAmount);
-                      Navigator.pop(context);
+                            setModalState(() =>
+                                challengeButtonCooldown[opponentId] = false);
+                            await _sendChallenge(
+                                opponentData['uid'], localBetAmount);
+                            Navigator.pop(context);
 
-                      // Start a timer to re-enable the button after 30 seconds
-                      Timer(Duration(seconds: 30), () {
-                        setState(() => challengeButtonCooldown[opponentId] = true);
-                      });
-                    }
+                            // Start a timer to re-enable the button after 30 seconds
+                            Timer(Duration(seconds: 30), () {
+                              setState(() =>
+                                  challengeButtonCooldown[opponentId] = true);
+                            });
+                          }
                         : (currentGameId != null
-                        ? () {
-                      // Logic to watch the game
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => ChessBoard(gameId: currentGameId),
-                        ),
-                      );
-                    }
-                        : null), // Disable the button if no game ID is available
+                            ? () {
+                                // Logic to watch the game
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ChessBoard(gameId: currentGameId),
+                                  ),
+                                );
+                              }
+                            : null), // Disable the button if no game ID is available
                     child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
                   ),
                 ],
@@ -307,14 +332,15 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
     );
   }
 
-  // Function to send a challenge
   Future<void> _sendChallenge(String opponentId, String betAmount) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
-      // Try to send the challenge and handle any potential errors
-
       try {
         String opponentName = await getUserName(opponentId);
+        String currentUserName = await getUserName(currentUserId);
+
+        print('Creating challenge request...');
+
         DocumentReference challengeDocRef = await FirebaseFirestore.instance
             .collection('challengeRequests')
             .add({
@@ -322,49 +348,53 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           'opponentId': opponentId,
           'betAmount': betAmount,
           'status': 'pending',
-          'timestamp': FieldValue
-              .serverTimestamp(), // It's a good practice to store the time of the challenge
+          'timestamp': FieldValue.serverTimestamp(),
         });
 
-        // After sending the challenge, display an alert on the challenger's screen
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
-        );
+        print('Challenge request created with ID: ${challengeDocRef.id}');
 
-        Future.delayed(const Duration(seconds: 30), () async {
-          // Retrieve the challenge again to see if its status has changed
-          DocumentSnapshot challengeSnapshot = await challengeDocRef.get();
-
-          if (challengeSnapshot.exists &&
-              challengeSnapshot['status'] == 'pending') {
-            // If the challenge is still pending, delete it
-            await challengeDocRef.delete();
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Challenge to $opponentName has expired and been removed')),
-            );
-          }
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => ChallengeWaitingScreen(
+                currentUserName: currentUserName,
+                opponentName: opponentName,
+                challengeRequestId: challengeDocRef.id,
+                currentUserId: currentUserId,
+                opponentId: opponentId,
+              ),
+            ),
+          );
         });
-        // Call listenToMyChallenge here with the new challenge ID
+
+        print('Navigating to ChallengeWaitingScreen...');
+
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
+        // );
+
         listenToMyChallenge(challengeDocRef.id);
-        // Return the challenge ID
-        // return challengeDocRef.id;
       } catch (e) {
-        // If sending the challenge fails, log the error and return an empty string or handle the error as needed
         print('Error sending challenge: $e');
-        // return ''; // Or handle the error appropriately
       }
     } else {
-      // If the user is not logged in, handle this case as well
       print('User is not logged in.');
-      // return ''; // Or handle the error appropriately
     }
   }
 
+
+
+
+
+
+
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
-      return userDoc['name'] ?? 'Unknown User'; // Replace 'Unknown User' with a default name of your choice
+      return userDoc['name'] ??
+          'Unknown User'; // Replace 'Unknown User' with a default name of your choice
     } else {
       return 'Unknown User';
     }
@@ -386,7 +416,8 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
             child: Container(
-              constraints: BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
+              constraints: BoxConstraints(
+                  maxWidth: 600), // Set a maximum width for the search bar
               child: TextField(
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
@@ -394,16 +425,20 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                   hintText: 'Enter player name...',
                   prefixIcon: Icon(Icons.search), // Add search icon
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(10), // Rounded corners for the border
-                    borderSide: BorderSide(color: Colors.blueGrey.shade800), // Custom border color
+                    borderRadius: BorderRadius.circular(
+                        10), // Rounded corners for the border
+                    borderSide: BorderSide(
+                        color: Colors.blueGrey.shade800), // Custom border color
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
-                  hintStyle: TextStyle(color: Colors.grey.shade500), // Lighter hint text color
+                  contentPadding: EdgeInsets.symmetric(
+                      vertical: 20,
+                      horizontal: 20), // Padding inside the text field
+                  hintStyle: TextStyle(
+                      color: Colors.grey.shade500), // Lighter hint text color
                 ),
               ),
             ),
           ),
-
 
           Text(
             'Players in $userLocation',
@@ -419,7 +454,6 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: onlineUsersStream,
               builder: (context, snapshot) {
-
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No players Here'));
                 }
@@ -439,27 +473,40 @@ class UserHomePageState extends State<UserHomePage> with WidgetsBindingObserver 
                   ),
                   itemCount: filteredUsers.length,
                   itemBuilder: (context, index) {
-                    var userData = filteredUsers[index].data() as Map<String, dynamic>;
+                    var userData =
+                        filteredUsers[index].data() as Map<String, dynamic>;
                     String avatarUrl = userData['avatar'];
-                    bool isOnline = userData['isOnline'] ?? false; // Assuming 'isOnline' is a field in your document
+                    bool isOnline = userData['isOnline'] ??
+                        false; // Assuming 'isOnline' is a field in your document
                     return GestureDetector(
-                      onTap: isOnline ? () => _showChallengeModal(context, userData) : null, // Disable onTap for offline players
+                      onTap: isOnline
+                          ? () => _showChallengeModal(context, userData)
+                          : null, // Disable onTap for offline players
                       child: Column(
                         children: <Widget>[
                           CircleAvatar(
                             backgroundImage: AssetImage(avatarUrl),
                             radius: 36,
-                            backgroundColor: Colors.transparent, // Ensures the background is transparent
+                            backgroundColor: Colors
+                                .transparent, // Ensures the background is transparent
                             child: Container(
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 image: DecorationImage(
                                   image: AssetImage(avatarUrl),
                                   fit: BoxFit.cover,
-                                  colorFilter: isOnline ? null : ColorFilter.mode(Colors.grey, BlendMode.saturation), // Dim the avatar if offline
+                                  colorFilter: isOnline
+                                      ? null
+                                      : ColorFilter.mode(
+                                          Colors.grey,
+                                          BlendMode
+                                              .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-                                  color: isOnline ? Colors.green : Colors.grey.shade500, // Red border for offline users
+                                  color: isOnline
+                                      ? Colors.green
+                                      : Colors.grey
+                                          .shade500, // Red border for offline users
                                   width: 3,
                                 ),
                               ),
@@ -494,7 +541,8 @@ class UserProfileHeader extends StatelessWidget {
   UserProfileHeader({Key? key, required this.userId}) : super(key: key);
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
-    var doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    var doc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -503,8 +551,10 @@ class UserProfileHeader extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>?>(
       future: fetchCurrentUserProfile(userId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-          String avatarUrl = snapshot.data!['avatar'] ?? 'path/to/default/avatar.png'; // Provide a default path if null
+        if (snapshot.connectionState == ConnectionState.done &&
+            snapshot.hasData) {
+          String avatarUrl = snapshot.data!['avatar'] ??
+              'path/to/default/avatar.png'; // Provide a default path if null
           String userName = snapshot.data!['name'] ?? 'Unknown User';
 
           return Padding(
@@ -519,7 +569,8 @@ class UserProfileHeader extends StatelessWidget {
                   ),
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundImage: AssetImage(avatarUrl), // Using NetworkImage for the avatar
+                    backgroundImage: AssetImage(
+                        avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -538,10 +589,10 @@ class UserProfileHeader extends StatelessWidget {
         }
         return const Padding(
           padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
-          child: CircularProgressIndicator(), // Show loading indicator while fetching data
+          child:
+              CircularProgressIndicator(), // Show loading indicator while fetching data
         );
       },
     );
   }
 }
-

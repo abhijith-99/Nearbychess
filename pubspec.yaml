@@ -23,6 +23,9 @@ dependencies:
   flutter_svg: ^2.0.9
   intl: ^0.17.0
 
+  google_sign_in: ^6.1.6
+  google_sign_in_web: ^0.12.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
