@@ -73,6 +73,40 @@ class _ChessBoardState extends State<ChessBoard> {
     return assetPath;
   }
 
+  Future<void> updateMatchHistory({
+    required String userId1,
+    required String userId2,
+    required String result, // 'win', 'lose', or 'draw'
+    required double bet,
+  }) async {
+    // Reference to the Firestore collection
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
+
+    // Create a match record for user1
+    Map<String, dynamic> matchForUser1 = {
+      'opponentUid': userId2,
+      'result': result,
+      'time': Timestamp.fromDate(DateTime.now()), // Current time as timestamp
+      'bet': bet,
+    };
+
+    // For user1, if they won, result is 'win', if they lost, result is 'lose', otherwise 'draw'
+    await users.doc(userId1).collection('matches').doc(matchId).set(matchForUser1);
+
+    // Create a match record for user2, which will be the inverse of user1's result
+    Map<String, dynamic> matchForUser2 = {
+      'opponentUid': userId1,
+      'result': result == 'win' ? 'lose' : (result == 'lose' ? 'win' : 'draw'), // Inverse the result for the opponent
+      'time': matchForUser1['time'],
+      'bet': bet,
+    };
+
+    // For user2, if user1 won, result is 'lose', if user1 lost, result is 'win', otherwise 'draw'
+    await users.doc(userId2).collection('matches').doc(matchId).set(matchForUser2);
+  }
+
+
   // Widget to display a chess piece
   Widget displayPiece(chess.Piece? piece) {
     if (piece != null) {
@@ -250,6 +284,18 @@ class _ChessBoardState extends State<ChessBoard> {
   void _handleTimeout(chess.Color color) {
     // Logic for handling timer timeout
     String winner = color == chess.Color.WHITE ? "Black" : "White";
+
+    String winnerUID = color == chess.Color.WHITE ? player2UID : player1UID;
+    String loserUID = color == chess.Color.WHITE ? player1UID : player2UID;
+
+    updateMatchHistory(
+      userId1: winnerUID,
+      userId2: loserUID,
+      result: 'win', // The winner's perspective
+      bet: 0.0, // Replace with actual bet amount if applicable
+    );
+
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -273,6 +319,8 @@ class _ChessBoardState extends State<ChessBoard> {
         ],
       ),
     );
+
+
   }
 
   void _switchTimer() {
@@ -520,7 +568,7 @@ class _ChessBoardState extends State<ChessBoard> {
                             }
 
                             setState(() {
-                              //if (game.get(squareName)?.color == game.turn) {
+
                               if (piece != null && piece.color == game.turn) {
                                 // Select the piece at the tapped square
                                 selectedSquare = squareName;
@@ -586,20 +634,42 @@ class _ChessBoardState extends State<ChessBoard> {
                                     game.in_stalemate ||
                                     game.in_threefold_repetition ||
                                     game.insufficient_material) {
+
                                   String status;
+                                  String result;
+
                                   if (game.in_checkmate) {
+
+                                    result = game.turn == chess.Color.WHITE ? 'lose' : 'win';
+
                                     status = game.turn == chess.Color.WHITE
                                         ? 'Black wins by checkmate!'
                                         : 'White wins by checkmate!';
                                   } else if (game.in_stalemate) {
                                     status = 'Draw by stalemate!';
+                                    result = 'draw'; // For draw conditions
                                   } else if (game.in_threefold_repetition) {
                                     status = 'Draw by threefold repetition!';
+                                    result = 'draw'; // For draw conditions
                                   } else if (game.insufficient_material) {
                                     status =
                                     'Draw due to insufficient material!';
+                                    result = 'draw'; // For draw conditions
                                   } else {
                                     status = 'Unexpected game status';
+                                    result = 'draw'; // For draw conditions
+                                  }
+
+                                  String winnerUID = result == 'win' ? currentUserUID : (result == 'lose' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
+                                  String loserUID = result == 'lose' ? currentUserUID : (result == 'win' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
+
+                                  if (result != 'draw') {
+                                    updateMatchHistory(
+                                      userId1: winnerUID,
+                                      userId2: loserUID,
+                                      result: result,
+                                      bet: 0.0, // Replace with actual bet amount if applicable
+                                    );
                                   }
 
                                   // Show dialog for checkmate or draw
