@@ -204,12 +204,12 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  void _showChallengeModal(
-      BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
     String opponentId = opponentData['uid'];
+    bool isOnline = opponentData['isOnline'] ?? false;
 
     // Initialize the button state for this user if not already set
     challengeButtonCooldown[opponentId] ??= true;
@@ -219,11 +219,9 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          // Using StatefulBuilder here
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -243,8 +241,7 @@ class UserHomePageState extends State<UserHomePage>
                         backgroundColor: Colors.transparent,
                       ),
                       SizedBox(width: 5), // Space between avatar and name
-                      Text(opponentData['name'],
-                          style: TextStyle(fontSize: 20)),
+                      Text(opponentData['name'], style: TextStyle(fontSize: 20)),
                       Spacer(), // Spacer to push the button to the end of the row
                       ElevatedButton(
                         onPressed: () {
@@ -252,7 +249,6 @@ class UserHomePageState extends State<UserHomePage>
                           if (userId != null) {
                             navigateToUserDetails(context, userId);
                           } else {
-                            // Handle the null case, maybe show an error message
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text("Error: User ID is null")),
                             );
@@ -278,7 +274,6 @@ class UserHomePageState extends State<UserHomePage>
                         onChanged: (newValue) {
                           if (newValue != null) {
                             setModalState(() {
-                              // Update localBetAmount using the modal's local setState
                               localBetAmount = newValue;
                             });
                           }
@@ -287,33 +282,28 @@ class UserHomePageState extends State<UserHomePage>
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: isChallengeable && isButtonEnabled
+                    onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
                         ? () async {
-                            setModalState(() =>
-                                challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount);
-                            Navigator.pop(context);
-
-                            // Start a timer to re-enable the button after 30 seconds
-                            Timer(Duration(seconds: 30), () {
-                              setState(() =>
-                                  challengeButtonCooldown[opponentId] = true);
-                            });
-                          }
-                        : (currentGameId != null
-                            ? () {
-                                // Logic to watch the game
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ChessBoard(gameId: currentGameId),
-                                  ),
-                                );
-                              }
-                            : null), // Disable the button if no game ID is available
-                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
+                      if (isChallengeable) {
+                        setModalState(() => challengeButtonCooldown[opponentId] = false);
+                        await _sendChallenge(opponentData['uid'], localBetAmount);
+                        Navigator.pop(context);
+                        Timer(Duration(seconds: 30), () {
+                          setState(() => challengeButtonCooldown[opponentId] = true);
+                        });
+                      } else if (currentGameId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChessBoard(gameId: currentGameId),
+                          ),
+                        );
+                      }
+                    }
+                        : null,
+                    child: Text(isOnline
+                        ? (isChallengeable ? 'Challenge' : 'Watch Game')
+                        : 'Player Offline'),
                   ),
                 ],
               ),
@@ -323,7 +313,6 @@ class UserHomePageState extends State<UserHomePage>
       },
     );
   }
-
 
 
 
@@ -463,9 +452,19 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                 }
 
                 var currentUser = FirebaseAuth.instance.currentUser;
-                var filteredUsers = snapshot.data!
+                var users = snapshot.data!
                     .where((doc) => doc.id != currentUser!.uid)
+                    .map((doc) => doc.data() as Map<String, dynamic>)
                     .toList();
+
+                // Sorting users based on 'isOnline' status
+                users.sort((a, b) {
+                  bool isOnlineA = a['isOnline'] ?? false;
+                  bool isOnlineB = b['isOnline'] ?? false;
+                  if (isOnlineA == isOnlineB) return 0;
+                  if (isOnlineA && !isOnlineB) return -1;
+                  return 1;
+                });
 
                 return GridView.builder(
                   padding: const EdgeInsets.all(16),
@@ -475,17 +474,14 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                     mainAxisSpacing: 16,
                     childAspectRatio: 1,
                   ),
-                  itemCount: filteredUsers.length,
+                  itemCount: users.length,
                   itemBuilder: (context, index) {
-                    var userData =
-                        filteredUsers[index].data() as Map<String, dynamic>;
+                    var userData = users[index];
                     String avatarUrl = userData['avatar'];
                     bool isOnline = userData['isOnline'] ??
                         false; // Assuming 'isOnline' is a field in your document
                     return GestureDetector(
-                      onTap: isOnline
-                          ? () => _showChallengeModal(context, userData)
-                          : null, // Disable onTap for offline players
+                      onTap: () => _showChallengeModal(context, userData),
                       child: Column(
                         children: <Widget>[
                           CircleAvatar(
