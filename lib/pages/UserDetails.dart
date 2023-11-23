@@ -214,7 +214,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('User Details',style: TextStyle(fontSize: 18),)),
+      appBar: AppBar(title: Text('User Details',style: TextStyle(fontSize: 16),)),
       backgroundColor: Colors.grey[200],
       body: userDetails == null
           ? Center(child: CircularProgressIndicator())
@@ -266,11 +266,8 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20), // Spacing between user details and match history
-            Text(
-              'Games Played',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[800]),
-            ),
+            SizedBox(height: 10), // Spacing between user details and match history
+
             FutureBuilder<Map<String, dynamic>>(
               future: fetchMatchStatistics(widget.userId),
               builder: (context, snapshot) {
@@ -279,15 +276,32 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 }
                 var stats = snapshot.data!;
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${stats['totalMatches']}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Games Played :',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        SizedBox(width: 10),
+                        Text(
+                          '${stats['totalMatches']}',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
+
+                    SizedBox(height: 20),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
