@@ -6,7 +6,7 @@ class FirebaseGameService {
   // Example: Using FEN notation for the initial position, or you can use your format
   static final String initialBoardState = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-  static Future<String> createNewGame(String player1UID, String player2UID, String challengeId) async {
+  static Future<String> createNewGame(String player1UID, String player2UID, String challengeId,String betAmount) async {
     DocumentReference gameRef = await FirebaseFirestore.instance.collection('games').add({
       'player1UID': player1UID,
       'player2UID': player2UID,
@@ -14,6 +14,7 @@ class FirebaseGameService {
       'currentTurn': player2UID, // Initially, player 1 starts
       'gameStatus': 'ongoing',
       'challengeId': challengeId, // Associate the game with the challenge
+      'betAmount': betAmount,
     });
 
     // Update the challenge request with the new game ID

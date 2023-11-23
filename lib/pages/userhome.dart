@@ -23,13 +23,10 @@ class UserHomePageState extends State<UserHomePage>
   String userLocation = 'Unknown';
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
-
   String betAmount = '5\$'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-  
-
 
   @override
   void initState() {
@@ -69,19 +66,12 @@ class UserHomePageState extends State<UserHomePage>
           var challengeData = latestRequestDoc.data() as Map<String, dynamic>;
 
           // Fetch the challenger's user data
-          var userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(challengerId)
-              .get();
-          String challengerName = userDoc.exists
-              ? (userDoc.data()!['name'] ?? 'Unknown Challenger')
-              : 'Unknown Challenger';
-          String challengerImageUrl = userDoc.exists
-              ? (userDoc.data()!['avatar'] ?? '')
-              : ''; // Assuming the field name is 'avatarUrl'
+          var userDoc = await FirebaseFirestore.instance.collection('users').doc(challengerId).get();
+          String challengerName = userDoc.exists ? (userDoc.data()!['name'] ?? 'Unknown Challenger') : 'Unknown Challenger';
+          String challengerImageUrl = userDoc.exists ? (userDoc.data()!['avatar'] ?? '') : ''; // Assuming the field name is 'avatarUrl'
+
 
           // Show the challenge request dialog for the latest request
-          // ignore: use_build_context_synchronously
           showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
@@ -91,8 +81,7 @@ class UserHomePageState extends State<UserHomePage>
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
                 challengeId: latestRequestDoc.id,
-                challengerImageUrl:
-                    challengerImageUrl, // Pass the image URL here
+                challengerImageUrl: challengerImageUrl, // Pass the image URL here
               );
             },
           ).then((accepted) {
@@ -102,6 +91,8 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
+
+
 
   void listenToMyChallenge(String challengeId) {
     FirebaseFirestore.instance
@@ -114,7 +105,7 @@ class UserHomePageState extends State<UserHomePage>
         if (challengeData['status'] == 'accepted') {
           // Challenge accepted, navigate to the ChessBoard
           String gameId = challengeData[
-              'gameId']; // Assuming the game ID is stored in the challenge data
+          'gameId']; // Assuming the game ID is stored in the challenge data
           print("challenger" + gameId);
           Navigator.push(
             context,
@@ -158,7 +149,7 @@ class UserHomePageState extends State<UserHomePage>
   @override
   void dispose() {
     userSubscription.cancel();
-    challengeRequestsSubscription?.cancel();
+    challengeRequestsSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
     super.dispose();
@@ -177,25 +168,26 @@ class UserHomePageState extends State<UserHomePage>
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
       CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline});
     } catch (e) {
       print('Error updating online status: $e');
     }
   }
 
+
   Stream<List<DocumentSnapshot>> fetchOnlineUsers(String? location) {
     Query query = FirebaseFirestore.instance.collection('users');
 
     if (location != null && location.isNotEmpty) {
       query = query.where('location', isEqualTo: location);
+
     }
 
     if (searchText.isNotEmpty) {
       String searchEnd = searchText.substring(0, searchText.length - 1) +
           String.fromCharCode(searchText.codeUnitAt(searchText.length - 1) + 1);
-      query = query
-          .where('name', isGreaterThanOrEqualTo: searchText)
+      query = query.where('name', isGreaterThanOrEqualTo: searchText)
           .where('name', isLessThan: searchEnd);
     }
 
@@ -212,12 +204,12 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  void _showChallengeModal(
-      BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
     String opponentId = opponentData['uid'];
+    bool isOnline = opponentData['isOnline'] ?? false;
 
     // Initialize the button state for this user if not already set
     challengeButtonCooldown[opponentId] ??= true;
@@ -227,11 +219,9 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          // Using StatefulBuilder here
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
@@ -251,8 +241,7 @@ class UserHomePageState extends State<UserHomePage>
                         backgroundColor: Colors.transparent,
                       ),
                       SizedBox(width: 5), // Space between avatar and name
-                      Text(opponentData['name'],
-                          style: TextStyle(fontSize: 20)),
+                      Text(opponentData['name'], style: TextStyle(fontSize: 20)),
                       Spacer(), // Spacer to push the button to the end of the row
                       ElevatedButton(
                         onPressed: () {
@@ -260,7 +249,6 @@ class UserHomePageState extends State<UserHomePage>
                           if (userId != null) {
                             navigateToUserDetails(context, userId);
                           } else {
-                            // Handle the null case, maybe show an error message
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text("Error: User ID is null")),
                             );
@@ -286,7 +274,6 @@ class UserHomePageState extends State<UserHomePage>
                         onChanged: (newValue) {
                           if (newValue != null) {
                             setModalState(() {
-                              // Update localBetAmount using the modal's local setState
                               localBetAmount = newValue;
                             });
                           }
@@ -295,33 +282,28 @@ class UserHomePageState extends State<UserHomePage>
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: isChallengeable && isButtonEnabled
+                    onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
                         ? () async {
-                            setModalState(() =>
-                                challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount);
-                            Navigator.pop(context);
-
-                            // Start a timer to re-enable the button after 30 seconds
-                            Timer(Duration(seconds: 30), () {
-                              setState(() =>
-                                  challengeButtonCooldown[opponentId] = true);
-                            });
-                          }
-                        : (currentGameId != null
-                            ? () {
-                                // Logic to watch the game
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ChessBoard(gameId: currentGameId),
-                                  ),
-                                );
-                              }
-                            : null), // Disable the button if no game ID is available
-                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
+                      if (isChallengeable) {
+                        setModalState(() => challengeButtonCooldown[opponentId] = false);
+                        await _sendChallenge(opponentData['uid'], localBetAmount);
+                        Navigator.pop(context);
+                        Timer(Duration(seconds: 30), () {
+                          setState(() => challengeButtonCooldown[opponentId] = true);
+                        });
+                      } else if (currentGameId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChessBoard(gameId: currentGameId),
+                          ),
+                        );
+                      }
+                    }
+                        : null,
+                    child: Text(isOnline
+                        ? (isChallengeable ? 'Challenge' : 'Watch Game')
+                        : 'Player Offline'),
                   ),
                 ],
               ),
@@ -331,6 +313,13 @@ class UserHomePageState extends State<UserHomePage>
       },
     );
   }
+
+
+
+
+
+
+
 
   Future<void> _sendChallenge(String opponentId, String betAmount) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
@@ -367,14 +356,15 @@ class UserHomePageState extends State<UserHomePage>
           );
         });
 
+
+
+
         print('Navigating to ChallengeWaitingScreen...');
 
-        // ScaffoldMessenger.of(context).showSnackBar(
-        //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
-        // );
 
         listenToMyChallenge(challengeDocRef.id);
-      } catch (e) {
+      }
+      catch (e) {
         print('Error sending challenge: $e');
       }
     } else {
@@ -391,7 +381,7 @@ class UserHomePageState extends State<UserHomePage>
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
     DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
       return userDoc['name'] ??
           'Unknown User'; // Replace 'Unknown User' with a default name of your choice
@@ -412,12 +402,12 @@ class UserHomePageState extends State<UserHomePage>
       ),
       body: Column(
         children: <Widget>[
+
           if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
             child: Container(
-              constraints: BoxConstraints(
-                  maxWidth: 600), // Set a maximum width for the search bar
+              constraints: BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
               child: TextField(
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
@@ -425,24 +415,23 @@ class UserHomePageState extends State<UserHomePage>
                   hintText: 'Enter player name...',
                   prefixIcon: Icon(Icons.search), // Add search icon
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                        10), // Rounded corners for the border
-                    borderSide: BorderSide(
-                        color: Colors.blueGrey.shade800), // Custom border color
+                    borderRadius: BorderRadius.circular(10), // Rounded corners for the border
+                    borderSide: BorderSide(color: Colors.blueGrey.shade800), // Custom border color
+
                   ),
-                  contentPadding: EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 20), // Padding inside the text field
-                  hintStyle: TextStyle(
-                      color: Colors.grey.shade500), // Lighter hint text color
+                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
+                  hintStyle: TextStyle(color: Colors.grey.shade500), // Lighter hint text color
                 ),
               ),
             ),
           ),
 
+
+
           Text(
             'Players in $userLocation',
             style: const TextStyle(
+
               fontFamily: 'Poppins',
               color: Color.fromARGB(255, 12, 4, 4),
               fontSize: 30,
@@ -454,14 +443,25 @@ class UserHomePageState extends State<UserHomePage>
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: onlineUsersStream,
               builder: (context, snapshot) {
+
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No players Here'));
                 }
 
                 var currentUser = FirebaseAuth.instance.currentUser;
-                var filteredUsers = snapshot.data!
+                var users = snapshot.data!
                     .where((doc) => doc.id != currentUser!.uid)
+                    .map((doc) => doc.data() as Map<String, dynamic>)
                     .toList();
+
+                // Sorting users based on 'isOnline' status
+                users.sort((a, b) {
+                  bool isOnlineA = a['isOnline'] ?? false;
+                  bool isOnlineB = b['isOnline'] ?? false;
+                  if (isOnlineA == isOnlineB) return 0;
+                  if (isOnlineA && !isOnlineB) return -1;
+                  return 1;
+                });
 
                 return GridView.builder(
                   padding: const EdgeInsets.all(16),
@@ -471,17 +471,14 @@ class UserHomePageState extends State<UserHomePage>
                     mainAxisSpacing: 16,
                     childAspectRatio: 1,
                   ),
-                  itemCount: filteredUsers.length,
+                  itemCount: users.length,
                   itemBuilder: (context, index) {
-                    var userData =
-                        filteredUsers[index].data() as Map<String, dynamic>;
+                    var userData = users[index];
                     String avatarUrl = userData['avatar'];
                     bool isOnline = userData['isOnline'] ??
                         false; // Assuming 'isOnline' is a field in your document
                     return GestureDetector(
-                      onTap: isOnline
-                          ? () => _showChallengeModal(context, userData)
-                          : null, // Disable onTap for offline players
+                      onTap: () => _showChallengeModal(context, userData),
                       child: Column(
                         children: <Widget>[
                           CircleAvatar(
@@ -498,16 +495,15 @@ class UserHomePageState extends State<UserHomePage>
                                   colorFilter: isOnline
                                       ? null
                                       : ColorFilter.mode(
-                                          Colors.grey,
-                                          BlendMode
-                                              .saturation), // Dim the avatar if offline
+                                      Colors.grey,
+                                      BlendMode
+                                          .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
-                                  color: isOnline
-                                      ? Colors.green
-                                      : Colors.grey
-                                          .shade500, // Red border for offline users
+
+                                  color: isOnline ? Colors.green : Colors.grey.shade500, // Red border for offline users
                                   width: 3,
+
                                 ),
                               ),
                             ),
@@ -541,8 +537,7 @@ class UserProfileHeader extends StatelessWidget {
   UserProfileHeader({Key? key, required this.userId}) : super(key: key);
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
-    var doc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    var doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -551,10 +546,8 @@ class UserProfileHeader extends StatelessWidget {
     return FutureBuilder<Map<String, dynamic>?>(
       future: fetchCurrentUserProfile(userId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.done &&
-            snapshot.hasData) {
-          String avatarUrl = snapshot.data!['avatar'] ??
-              'path/to/default/avatar.png'; // Provide a default path if null
+        if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
+          String avatarUrl = snapshot.data!['avatar'] ?? 'path/to/default/avatar.png'; // Provide a default path if null
           String userName = snapshot.data!['name'] ?? 'Unknown User';
 
           return Padding(
@@ -569,8 +562,7 @@ class UserProfileHeader extends StatelessWidget {
                   ),
                   child: CircleAvatar(
                     radius: 60,
-                    backgroundImage: AssetImage(
-                        avatarUrl), // Using NetworkImage for the avatar
+                    backgroundImage: AssetImage(avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -589,8 +581,7 @@ class UserProfileHeader extends StatelessWidget {
         }
         return const Padding(
           padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
-          child:
-              CircularProgressIndicator(), // Show loading indicator while fetching data
+          child: CircularProgressIndicator(), // Show loading indicator while fetching data
         );
       },
     );

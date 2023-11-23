@@ -59,7 +59,7 @@ class ChallengeRequestScreen extends StatelessWidget {
                 onPressed: () async {
                   // Accept the challenge
                   String newGameId = await FirebaseGameService.createNewGame(
-                      challengerUID, opponentUID, challengeId);
+                      challengerUID, opponentUID, challengeId,betAmount);
 
                   // Update the challenge request in Firestore
                   await FirebaseFirestore.instance.collection('challengeRequests').doc(challengeId).update({

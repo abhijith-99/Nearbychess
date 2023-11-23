@@ -262,19 +262,51 @@ class _ChessBoardState extends State<ChessBoard> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Game Over'),
-        content: Text(statusMessage),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
+        backgroundColor: Colors.brown.shade300, // A color reminiscent of a chessboard
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
+        ),
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.white), // Chess-related icon
+            SizedBox(width: 8),
+            Text(
+              'Game Over',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Center(
+                child: Text(
+                  statusMessage,
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
-              );
-            },
-            child: const Text('Home'),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          Center(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                primary: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const UserHomePage(),
+                  ),
+                );
+              },
+              child: const Text('Return to Home'),
+            ),
           ),
         ],
       ),
