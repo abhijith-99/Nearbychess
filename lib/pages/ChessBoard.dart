@@ -758,7 +758,7 @@ class _ChessBoardState extends State<ChessBoard> {
                                   .map((move) => move.toAlgebraic)
                                   .toList();
                             }
-                            //}
+                          }
                           });
                           print('Updated game state after move: ${game.fen}');
                           // Update the game state in Firebase
