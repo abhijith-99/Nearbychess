@@ -224,29 +224,6 @@ class _ChessBoardState extends State<ChessBoard> {
 
   }
 
-  // void _showGameOverDialog(String statusMessage) {
-  //   showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: const Text('Game Over'),
-  //       content: Text(statusMessage),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop();
-  //             Navigator.of(context).pushReplacement(
-  //               MaterialPageRoute(
-  //                 builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
-  //               ),
-  //             );
-  //           },
-  //           child: const Text('Home'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
-
   void _showGameOverDialog(String statusMessage) {
     showDialog(
       context: context,

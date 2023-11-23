@@ -105,7 +105,7 @@ class UserHomePageState extends State<UserHomePage>
         if (challengeData['status'] == 'accepted') {
           // Challenge accepted, navigate to the ChessBoard
           String gameId = challengeData[
-              'gameId']; // Assuming the game ID is stored in the challenge data
+          'gameId']; // Assuming the game ID is stored in the challenge data
           print("challenger" + gameId);
           Navigator.push(
             context,
@@ -168,7 +168,7 @@ class UserHomePageState extends State<UserHomePage>
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
       CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline});
     } catch (e) {
       print('Error updating online status: $e');
@@ -321,59 +321,56 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-Future<void> _sendChallenge(String opponentId, String betAmount) async {
-  final currentUserId = FirebaseAuth.instance.currentUser?.uid;
-  if (currentUserId != null) {
-    try {
-      String opponentName = await getUserName(opponentId);
-      String currentUserName = await getUserName(currentUserId);
+  Future<void> _sendChallenge(String opponentId, String betAmount) async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId != null) {
+      try {
+        String opponentName = await getUserName(opponentId);
+        String currentUserName = await getUserName(currentUserId);
 
-      print('Creating challenge request...');
+        print('Creating challenge request...');
 
-      DocumentReference challengeDocRef = await FirebaseFirestore.instance
-          .collection('challengeRequests')
-          .add({
-        'challengerId': currentUserId,
-        'opponentId': opponentId,
-        'betAmount': betAmount,
-        'status': 'pending',
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+        DocumentReference challengeDocRef = await FirebaseFirestore.instance
+            .collection('challengeRequests')
+            .add({
+          'challengerId': currentUserId,
+          'opponentId': opponentId,
+          'betAmount': betAmount,
+          'status': 'pending',
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
-      print('Challenge request created with ID: ${challengeDocRef.id}');
+        print('Challenge request created with ID: ${challengeDocRef.id}');
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (context) => ChallengeWaitingScreen(
-              currentUserName: currentUserName,
-              opponentName: opponentName,
-              challengeRequestId: challengeDocRef.id,
-              currentUserId: currentUserId,
-              opponentId: opponentId,
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          navigatorKey.currentState?.push(
+            MaterialPageRoute(
+              builder: (context) => ChallengeWaitingScreen(
+                currentUserName: currentUserName,
+                opponentName: opponentName,
+                challengeRequestId: challengeDocRef.id,
+                currentUserId: currentUserId,
+                opponentId: opponentId,
+              ),
             ),
-          ),
-        );
-      });
+          );
+        });
 
 
 
 
-      print('Navigating to ChallengeWaitingScreen...');
+        print('Navigating to ChallengeWaitingScreen...');
 
-      // ScaffoldMessenger.of(context).showSnackBar(
-      //   SnackBar(content: Text('Challenge sent to $opponentName with bet $betAmount')),
-      // );
 
-      listenToMyChallenge(challengeDocRef.id);
+        listenToMyChallenge(challengeDocRef.id);
+      }
+      catch (e) {
+        print('Error sending challenge: $e');
+      }
+    } else {
+      print('User is not logged in.');
     }
-     catch (e) {
-      print('Error sending challenge: $e');
-    }
-  } else {
-    print('User is not logged in.');
   }
-}
 
 
 
@@ -384,7 +381,7 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
     DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
       return userDoc['name'] ??
           'Unknown User'; // Replace 'Unknown User' with a default name of your choice
@@ -498,9 +495,9 @@ Future<void> _sendChallenge(String opponentId, String betAmount) async {
                                   colorFilter: isOnline
                                       ? null
                                       : ColorFilter.mode(
-                                          Colors.grey,
-                                          BlendMode
-                                              .saturation), // Dim the avatar if offline
+                                      Colors.grey,
+                                      BlendMode
+                                          .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
 
@@ -590,4 +587,3 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
-
