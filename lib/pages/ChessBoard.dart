@@ -291,7 +291,9 @@ class _ChessBoardState extends State<ChessBoard> {
                 primary: Colors.white,
               ),
               onPressed: () {
+
                 updateInGameState(false);
+
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
@@ -306,6 +308,16 @@ class _ChessBoardState extends State<ChessBoard> {
       ),
     );
   }
+
+
+
+
+
+
+
+
+
+
 
 
   void updateGameStatus(String statusMessage) {
@@ -552,8 +564,19 @@ class _ChessBoardState extends State<ChessBoard> {
 
 
 
+
+
+
+
   @override
   Widget build(BuildContext context) {
+  
+  // Get the size of the screen
+  Size screenSize = MediaQuery.of(context).size;
+  // Set the size for the chessboard to be responsive
+  double boardSize = screenSize.width < 600 ? screenSize.width : 600; 
+
+
     return Scaffold(
       backgroundColor: Color(0xffacacaf),
       appBar: AppBar(
@@ -584,10 +607,19 @@ class _ChessBoardState extends State<ChessBoard> {
       ),
 
 
-      body: Center(
-        child:Column(
-          mainAxisSize: MainAxisSize.min,
-          //mainAxisAlignment: MainAxisAlignment.center, // Align items to the center
+
+
+      // body: Center(
+      //   child:Column(
+      //     mainAxisSize: MainAxisSize.min,
+      //     // mainAxisAlignment: MainAxisAlignment.center 
+
+
+
+      body: SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
 
             Container(
@@ -837,7 +869,7 @@ class _ChessBoardState extends State<ChessBoard> {
                   ),
                 ),
               ),
-              //),
+            
             ),
 
             SizedBox(height: 20),
@@ -849,7 +881,11 @@ class _ChessBoardState extends State<ChessBoard> {
           ],
         ),
       ),
+    )
     );
+
+
   }
 
 }
+

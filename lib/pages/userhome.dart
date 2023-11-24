@@ -240,9 +240,16 @@ class UserHomePageState extends State<UserHomePage>
                         backgroundImage: AssetImage(opponentData['avatar']),
                         backgroundColor: Colors.transparent,
                       ),
-                      const SizedBox(width: 5), // Space between avatar and name
-                      Text(opponentData['name'], style: const TextStyle(fontSize: 20)),
-                      const Spacer(), // Spacer to push the button to the end of the row
+
+                      SizedBox(width: 5), // Space between avatar and name
+                      Text(
+                        opponentData['name'],
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold), // Added bold weight
+                      ),
+                      Spacer(), // Spacer to push the button to the end of the row
+
                       ElevatedButton(
                         onPressed: () {
                           String? userId = opponentData['uid'];
@@ -262,7 +269,13 @@ class UserHomePageState extends State<UserHomePage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text("Bet Amount:"),
+
+                      Text(
+                        "Bet Amount:",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold), // Added bold weight
+                      ),
+
                       DropdownButton<String>(
                         value: localBetAmount,
                         items: ['5\$', '10\$', '15\$'].map((String value) {
@@ -282,28 +295,40 @@ class UserHomePageState extends State<UserHomePage>
                     ],
                   ),
                   ElevatedButton(
-                    onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
+
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 20),
+                    ),
+                    onPressed: isChallengeable && isButtonEnabled
                         ? () async {
-                      if (isChallengeable) {
-                        setModalState(() => challengeButtonCooldown[opponentId] = false);
-                        await _sendChallenge(opponentData['uid'], localBetAmount);
-                        Navigator.pop(context);
-                        Timer(const Duration(seconds: 30), () {
-                          setState(() => challengeButtonCooldown[opponentId] = true);
-                        });
-                      } else if (currentGameId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChessBoard(gameId: currentGameId),
-                          ),
-                        );
-                      }
-                    }
-                        : null,
-                    child: Text(isOnline
-                        ? (isChallengeable ? 'Challenge' : 'Watch Game')
-                        : 'Player Offline'),
+                            setModalState(() =>
+                                challengeButtonCooldown[opponentId] = false);
+                            await _sendChallenge(
+                                opponentData['uid'], localBetAmount);
+                            Navigator.pop(context);
+
+                            // Start a timer to re-enable the button after 30 seconds
+                            Timer(Duration(seconds: 30), () {
+                              setState(() =>
+                                  challengeButtonCooldown[opponentId] = true);
+                            });
+                          }
+                        : (currentGameId != null
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ChessBoard(gameId: currentGameId),
+                                  ),
+                                );
+                              }
+                            : null), // Disable the button if no game ID is available
+                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
+
                   ),
                 ],
               ),
@@ -371,12 +396,6 @@ class UserHomePageState extends State<UserHomePage>
       print('User is not logged in.');
     }
   }
-
-
-
-
-
-
 
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
