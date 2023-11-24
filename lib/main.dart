@@ -94,12 +94,14 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       home: const ChessSplashScreen(),
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey, // Assign the global navigator key here
+     
       routes: {
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
         '/login_register': (context) => const LoginRegisterPage(),
         // other routes...
 
       },
+      
     );
   }
 }

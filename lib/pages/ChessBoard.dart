@@ -228,24 +228,66 @@ class _ChessBoardState extends State<ChessBoard> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Game Over'),
-        content: Text(statusMessage),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(
-                  builder: (context) => const UserHomePage(), // Replace HomeScreen with the actual home screen widget
+        backgroundColor: Colors.brown.shade300, // A color reminiscent of a chessboard
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
+        ),
+        title: const Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.check_circle_outline, color: Colors.white), // Chess-related icon
+            SizedBox(width: 8),
+            Text(
+              'Game Over',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+            ),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: ListBody(
+            children: <Widget>[
+              Center(
+                child: Text(
+                  statusMessage,
+                  style: TextStyle(color: Colors.white, fontSize: 18),
                 ),
-              );
-            },
-            child: const Text('Home'),
+              ),
+            ],
+          ),
+        ),
+        actions: <Widget>[
+          Center(
+            child: TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.black,
+                primary: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(
+                    builder: (context) => const UserHomePage(),
+                  ),
+                );
+              },
+              child: const Text('Return to Home'),
+            ),
           ),
         ],
       ),
     );
   }
+
+
+
+
+
+
+
+
+
+
 
 
   void updateGameStatus(String statusMessage) {
@@ -358,7 +400,7 @@ class _ChessBoardState extends State<ChessBoard> {
                     padding: const EdgeInsets.only(left: 4.0),
                     child: Text(
                       playerName,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Roboto',
                         fontSize: 14, // Adjust font size as needed
@@ -451,8 +493,19 @@ class _ChessBoardState extends State<ChessBoard> {
 
 
 
+
+
+
+
   @override
   Widget build(BuildContext context) {
+  
+  // Get the size of the screen
+  Size screenSize = MediaQuery.of(context).size;
+  // Set the size for the chessboard to be responsive
+  double boardSize = screenSize.width < 600 ? screenSize.width : 600; 
+
+
     return Scaffold(
       backgroundColor: Color(0xffacacaf),
       appBar: AppBar(
@@ -483,10 +536,19 @@ class _ChessBoardState extends State<ChessBoard> {
       ),
 
 
-      body: Center(
-        child:Column(
-          mainAxisSize: MainAxisSize.min,
-          //mainAxisAlignment: MainAxisAlignment.center, // Align items to the center
+
+
+      // body: Center(
+      //   child:Column(
+      //     mainAxisSize: MainAxisSize.min,
+      //     // mainAxisAlignment: MainAxisAlignment.center 
+
+
+
+      body: SingleChildScrollView(
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
 
             Container(
@@ -733,7 +795,7 @@ class _ChessBoardState extends State<ChessBoard> {
                   ),
                 ),
               ),
-              //),
+            
             ),
 
             SizedBox(height: 20),
@@ -745,7 +807,11 @@ class _ChessBoardState extends State<ChessBoard> {
           ],
         ),
       ),
+    )
     );
+
+
   }
 
 }
+

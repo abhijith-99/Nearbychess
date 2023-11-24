@@ -28,8 +28,6 @@ class UserHomePageState extends State<UserHomePage>
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-  
-
 
   @override
   void initState() {
@@ -227,7 +225,6 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
-          // Using StatefulBuilder here
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding:
@@ -251,8 +248,12 @@ class UserHomePageState extends State<UserHomePage>
                         backgroundColor: Colors.transparent,
                       ),
                       SizedBox(width: 5), // Space between avatar and name
-                      Text(opponentData['name'],
-                          style: TextStyle(fontSize: 20)),
+                      Text(
+                        opponentData['name'],
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold), // Added bold weight
+                      ),
                       Spacer(), // Spacer to push the button to the end of the row
                       ElevatedButton(
                         onPressed: () {
@@ -260,7 +261,6 @@ class UserHomePageState extends State<UserHomePage>
                           if (userId != null) {
                             navigateToUserDetails(context, userId);
                           } else {
-                            // Handle the null case, maybe show an error message
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(content: Text("Error: User ID is null")),
                             );
@@ -274,7 +274,11 @@ class UserHomePageState extends State<UserHomePage>
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Bet Amount:"),
+                      Text(
+                        "Bet Amount:",
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold), // Added bold weight
+                      ),
                       DropdownButton<String>(
                         value: localBetAmount,
                         items: ['5\$', '10\$', '15\$'].map((String value) {
@@ -286,7 +290,6 @@ class UserHomePageState extends State<UserHomePage>
                         onChanged: (newValue) {
                           if (newValue != null) {
                             setModalState(() {
-                              // Update localBetAmount using the modal's local setState
                               localBetAmount = newValue;
                             });
                           }
@@ -295,6 +298,12 @@ class UserHomePageState extends State<UserHomePage>
                     ],
                   ),
                   ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      backgroundColor: Colors.green,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 30, vertical: 20),
+                    ),
                     onPressed: isChallengeable && isButtonEnabled
                         ? () async {
                             setModalState(() =>
@@ -311,7 +320,6 @@ class UserHomePageState extends State<UserHomePage>
                           }
                         : (currentGameId != null
                             ? () {
-                                // Logic to watch the game
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -381,12 +389,6 @@ class UserHomePageState extends State<UserHomePage>
       print('User is not logged in.');
     }
   }
-
-
-
-
-
-
 
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
