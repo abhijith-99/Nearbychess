@@ -1,10 +1,10 @@
 import 'dart:async';
+
 import 'package:chess/chess.dart' as chess;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mychessapp/pages/userhome.dart';
 
@@ -26,7 +26,6 @@ class _ChessBoardState extends State<ChessBoard> {
   Timer? _timer;
   int _whiteTimeRemaining = 600; // 10 minutes in seconds
   int _blackTimeRemaining = 600; // 10 minutes in seconds
-  //final bool _isWhiteTurn = true; // Track turns. White goes first.
   List<String> whiteCapturedPieces = [];
   List<String> blackCapturedPieces = [];
   String? lastMoveFrom;
@@ -44,9 +43,6 @@ class _ChessBoardState extends State<ChessBoard> {
   String player2Name = ''; // Add this
   bool _blackTimerActive = false;
   bool _whiteTimerActive = false;
-  String currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-  String previousFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-  String pgn= '';
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -562,6 +558,56 @@ class _ChessBoardState extends State<ChessBoard> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  Future<bool> _onBackPressed() async {
+    bool shouldPop = await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm'),
+        content: Text('Do you want to resign and quit the game?'),
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop(false); // User chooses to continue the game.
+            },
+            child: Text('Continue to Game'),
+          ),
+          TextButton(
+            onPressed: () {
+              // Update game status to reflect user resignation.
+              _handleUserResignation();
+            },
+            child: Text('Resign'),
+          ),
+        ],
+      ),
+    );
+
+    return shouldPop;
+  }
+
+
+  void _handleUserResignation() {
+    String statusMessage;
+    String result;
+
+    // Determine who is the winner based on who is resigning
+    if (currentUserUID == player1UID) {
+      // If Player 1 resigns, Player 2 wins
+      statusMessage = "$player2Name wins by resignation!";
+      result = 'win';
+      updateMatchHistory(userId1: player2UID, userId2: player1UID, result: result, bet: 0.0);
+      updateGameStatus(statusMessage);
+    } else {
+      // If Player 2 resigns, Player 1 wins
+      statusMessage = "$player1Name wins by resignation!";
+      result = 'win';
+      updateMatchHistory(userId1: player1UID, userId2: player2UID, result: result, bet: 0.0);
+      updateGameStatus(statusMessage);
+    }
+  }
+
+
+
 
 
 
@@ -570,19 +616,21 @@ class _ChessBoardState extends State<ChessBoard> {
 
   @override
   Widget build(BuildContext context) {
-  
+
   // Get the size of the screen
   Size screenSize = MediaQuery.of(context).size;
   // Set the size for the chessboard to be responsive
   double boardSize = screenSize.width < 600 ? screenSize.width : 600; 
 
-
-    return Scaffold(
+return WillPopScope(
+        onWillPop: _onBackPressed,
+        child: Scaffold(
       backgroundColor: Color(0xffacacaf),
       appBar: AppBar(
         title: const Text('NearbyChess'),
         centerTitle: true,
         backgroundColor: Color(0xFF3c3d3e),
+        automaticallyImplyLeading: false,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30.0), // Set the height as required
           child: Container(
@@ -605,16 +653,6 @@ class _ChessBoardState extends State<ChessBoard> {
           ),
         ),
       ),
-
-
-
-
-      // body: Center(
-      //   child:Column(
-      //     mainAxisSize: MainAxisSize.min,
-      //     // mainAxisAlignment: MainAxisAlignment.center 
-
-
 
       body: SingleChildScrollView(
       child: Center(
@@ -881,11 +919,12 @@ class _ChessBoardState extends State<ChessBoard> {
           ],
         ),
       ),
-    )
-    );
 
+    ),
 
+    ),
+
+);
   }
-
 }
 
