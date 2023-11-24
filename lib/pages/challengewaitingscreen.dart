@@ -187,7 +187,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
       },
       child: Scaffold(
         appBar: PreferredSize(
-          preferredSize: Size.fromHeight(60.0),
+          preferredSize: const Size.fromHeight(60.0),
           child: AppBar(
             backgroundColor: Colors.transparent,
             elevation: 0,
@@ -225,7 +225,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
                       radius: 40,
                       backgroundImage: AssetImage(currentUserAvatar),
                     ),
-                    SizedBox(height: 10),
+                    const SizedBox(height: 10),
                     Text(
                       currentUserName,
                       style: const TextStyle(
@@ -237,7 +237,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
                   ],
                 );
               } else {
-                return CircularProgressIndicator();
+                return const CircularProgressIndicator();
               }
             },
           ),
@@ -273,21 +273,21 @@ class ChallengeWaitingScreen extends StatelessWidget {
                   ],
                 );
               } else {
-                return CircularProgressIndicator();
+                return const CircularProgressIndicator();
               }
             },
           ),
 
             Padding(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.red,
+                  backgroundColor: Colors.red,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(15.0),
                   ),
                 ),
-                child: Text('Cancel Challenge'),
+                child: const Text('Cancel Challenge'),
                 onPressed: () => _cancelChallenge(context),
               ),
             ),

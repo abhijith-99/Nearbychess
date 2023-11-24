@@ -1,12 +1,14 @@
 import 'dart:async';
-
 import 'package:chess/chess.dart' as chess;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:mychessapp/pages/userhome.dart';
+
+import '../utils.dart';
 
 class ChessBoard extends StatefulWidget {
   final String gameId;
@@ -20,7 +22,7 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard> {
   bool isBoardFlipped = false;
   late chess.Chess game;
-  late final StreamSubscription<DocumentSnapshot> gameSubscription;
+  late final StreamSubscription<DatabaseEvent> gameSubscription;
   Timer? _timer;
   int _whiteTimeRemaining = 600; // 10 minutes in seconds
   int _blackTimeRemaining = 600; // 10 minutes in seconds
@@ -42,8 +44,9 @@ class _ChessBoardState extends State<ChessBoard> {
   String player2Name = ''; // Add this
   bool _blackTimerActive = false;
   bool _whiteTimerActive = false;
-
-
+  String currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  String previousFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  String pgn= '';
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -70,8 +73,42 @@ class _ChessBoardState extends State<ChessBoard> {
       default:
         assetPath = ''; // Return an empty string for any other cases (shouldn't occur)
     }
-    return assetPath;
+    return assetPath.isNotEmpty ? assetPath : 'assets/default.png';
   }
+
+  Future<void> updateMatchHistory({
+    required String userId1,
+    required String userId2,
+    required String result, // 'win', 'lose', or 'draw'
+    required double bet,
+  }) async {
+    // Reference to the Firestore collection
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
+
+    // Create a match record for user1
+    Map<String, dynamic> matchForUser1 = {
+      'opponentUid': userId2,
+      'result': result,
+      'time': Timestamp.fromDate(DateTime.now()), // Current time as timestamp
+      'bet': bet,
+    };
+
+    // For user1, if they won, result is 'win', if they lost, result is 'lose', otherwise 'draw'
+    await users.doc(userId1).collection('matches').doc(matchId).set(matchForUser1);
+
+    // Create a match record for user2, which will be the inverse of user1's result
+    Map<String, dynamic> matchForUser2 = {
+      'opponentUid': userId1,
+      'result': result == 'win' ? 'lose' : (result == 'lose' ? 'win' : 'draw'), // Inverse the result for the opponent
+      'time': matchForUser1['time'],
+      'bet': bet,
+    };
+
+    // For user2, if user1 won, result is 'lose', if user1 lost, result is 'win', otherwise 'draw'
+    await users.doc(userId2).collection('matches').doc(matchId).set(matchForUser2);
+  }
+
 
   // Widget to display a chess piece
   Widget displayPiece(chess.Piece? piece) {
@@ -90,25 +127,28 @@ class _ChessBoardState extends State<ChessBoard> {
     return String.fromCharCode(97 + index); // ASCII 'a' starts at 97
   }
 
-  void updateCapturedPiecesInFirestore() {
-    FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+  void updateCapturedPiecesInRealTimeDatabase() {
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
       'whiteCapturedPieces': whiteCapturedPieces,
       'blackCapturedPieces': blackCapturedPieces,
     });
   }
 
-  void updateLastMoveInFirestore(String fromSquare, String toSquare) {
-    FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+
+  void updateLastMoveInRealTimeDatabase(String fromSquare, String toSquare) {
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
       'lastMoveFrom': fromSquare,
       'lastMoveTo': toSquare,
     });
   }
 
-  void updatePGNNotationInFirestore(String pgnNotation) {
-    FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+
+  void updatePGNNotationInRealTimeDatabase(String pgnNotation) {
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
       'pgnNotation': pgnNotation,
     });
   }
+
 
 
   void updatePGNNotation(chess.PieceType pieceType, String from, String to, bool isCapture) {
@@ -165,11 +205,9 @@ class _ChessBoardState extends State<ChessBoard> {
 
     pgnNotation += '$move ';
 
-    updatePGNNotationInFirestore(pgnNotation);
+    updatePGNNotationInRealTimeDatabase(pgnNotation);
     setState(() {});
   }
-
-
 
   @override
   void initState() {
@@ -177,52 +215,41 @@ class _ChessBoardState extends State<ChessBoard> {
     _startTimer();
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
+    var gameData;
 
-    gameSubscription = FirebaseFirestore.instance.collection('games').doc(widget.gameId).snapshots().listen((snapshot) async {
-      if (snapshot.exists) {
-        var gameData = snapshot.data() as Map<String, dynamic>;
-        var newFen = gameData['currentBoardState'];
-        currentTurnUID = gameData['currentTurn'];
-        player1UID = gameData['player1UID'];
-        player2UID = gameData['player2UID'];
-        bool isCurrentUserBlack = currentUserUID == player1UID;
-        var newPgnNotation = gameData['pgnNotation'] ?? "";
+    gameSubscription = FirebaseDatabase.instance
+        .ref('games/${widget.gameId}')
+        .onValue
+        .listen((event) async {
+      final data = event.snapshot.value;
+      if (data is Map) {
+        // Convert to Map<String, dynamic> with more flexibility
+        gameData = data.map((key, value) => MapEntry(key.toString(), value));
 
-        // Fetch player1's name
-        var player1Doc = await FirebaseFirestore.instance.collection('users').doc(player1UID).get();
-        var player1Data = player1Doc.data();
-        player1Name = player1Data?['name'] ?? ''; // Set player1Name here
-        player1AvatarUrl = player1Data?['avatar'] ?? ''; // Existing code
-
-        // Fetch player2's name
-        var player2Doc = await FirebaseFirestore.instance.collection('users').doc(player2UID).get();
-        var player2Data = player2Doc.data();
-        player2Name = player2Data?['name'] ?? ''; // Set player2Name here
-        player2AvatarUrl = player2Data?['avatar'] ?? ''; // Existing code
-
-        if (gameData['gameStatus'] != null && gameData['gameStatus'] != 'ongoin') {
-          _showGameOverDialog(gameData['gameStatus']);
-        }
-
-        // Update the board state based on new FEN
-        setState(() {
-          print('game state before loading: $newFen ');
-
-          game.load(newFen); // Assuming 'game' is your chess library instance
-          print('game state after loading: $newFen ');
-          isBoardFlipped = isCurrentUserBlack;
-          whiteCapturedPieces = List<String>.from(gameData['whiteCapturedPieces'] ?? []);
-          blackCapturedPieces = List<String>.from(gameData['blackCapturedPieces'] ?? []);
-          this.player1AvatarUrl = player1AvatarUrl;
-          this.player2AvatarUrl = player2AvatarUrl;
-          lastMoveFrom = gameData['lastMoveFrom'];
-          lastMoveTo = gameData['lastMoveTo'];
-          pgnNotation = newPgnNotation;
-        });
       }
+
+      var newFen = gameData['currentBoardState'];
+      currentTurnUID = gameData['currentTurn'];
+      player1UID = gameData['player1UID'] ?? '';
+      player2UID = gameData['player2UID'] ?? '';
+      bool isCurrentUserBlack = currentUserUID == player1UID;
+      var newPgnNotation = gameData['pgnNotation'] ?? "";
+
+      if (gameData['gameStatus'] != null && gameData['gameStatus'] != 'ongoing') {
+        _showGameOverDialog(gameData['gameStatus']);
+      }
+
+      setState(() {
+        game.load(newFen);
+        isBoardFlipped = isCurrentUserBlack;
+        whiteCapturedPieces = List<String>.from(gameData['whiteCapturedPieces'] ?? []);
+        blackCapturedPieces = List<String>.from(gameData['blackCapturedPieces'] ?? []);
+        pgnNotation = newPgnNotation;
+      });
     });
 
   }
+
 
   void _showGameOverDialog(String statusMessage) {
     showDialog(
@@ -264,6 +291,9 @@ class _ChessBoardState extends State<ChessBoard> {
                 primary: Colors.white,
               ),
               onPressed: () {
+
+                updateInGameState(false);
+
                 Navigator.of(context).pop();
                 Navigator.of(context).pushReplacement(
                   MaterialPageRoute(
@@ -291,7 +321,8 @@ class _ChessBoardState extends State<ChessBoard> {
 
 
   void updateGameStatus(String statusMessage) {
-    FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
+
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
       'gameStatus': statusMessage,
     });
   }
@@ -329,6 +360,18 @@ class _ChessBoardState extends State<ChessBoard> {
   void _handleTimeout(chess.Color color) {
     // Logic for handling timer timeout
     String winner = color == chess.Color.WHITE ? "Black" : "White";
+
+    String winnerUID = color == chess.Color.WHITE ? player2UID : player1UID;
+    String loserUID = color == chess.Color.WHITE ? player1UID : player2UID;
+
+    updateMatchHistory(
+      userId1: winnerUID,
+      userId2: loserUID,
+      result: 'win', // The winner's perspective
+      bet: 0.0, // Replace with actual bet amount if applicable
+    );
+
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -337,6 +380,7 @@ class _ChessBoardState extends State<ChessBoard> {
         actions: [
           TextButton(
             onPressed: () {
+              updateInGameState(false);
               Navigator.of(context).pop();
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(
@@ -349,6 +393,8 @@ class _ChessBoardState extends State<ChessBoard> {
         ],
       ),
     );
+
+
   }
 
   void _switchTimer() {
@@ -364,8 +410,33 @@ class _ChessBoardState extends State<ChessBoard> {
     gameSubscription.cancel();
   }
 
+  Future<void> fetchPlayerDetails() async {
+
+    var player1Doc = await FirebaseFirestore.instance.collection('users').doc(player1UID).get();
+    if (player1Doc.exists) {
+      var player1Data = player1Doc.data();
+      setState(() {
+        player1Name = player1Data?['name'] ?? 'Unknown';
+        player1AvatarUrl = player1Data?['avatar'] ?? 'assets/default_avatar.png';
+      });
+    }
+
+    // Fetch details for player2
+    var player2Doc = await FirebaseFirestore.instance.collection('users').doc(player2UID).get();
+    if (player2Doc.exists) {
+      var player2Data = player2Doc.data();
+      setState(() {
+        player2Name = player2Data?['name'] ?? 'Unknown';
+        player2AvatarUrl = player2Data?['avatar'] ?? 'assets/default_avatar.png';
+      });
+    }
+  }
+
+
+
 
   Widget _buildPlayerArea(List<String> capturedPieces, bool isTop, String playerName) {
+    fetchPlayerDetails();
     String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -463,7 +534,7 @@ class _ChessBoardState extends State<ChessBoard> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             if (isActive)
-              Icon(
+              const Icon(
                 Icons.play_arrow,
                 size: 20,
                 color: Colors.black,
@@ -523,7 +594,7 @@ class _ChessBoardState extends State<ChessBoard> {
                 padding: const EdgeInsets.all(4.0),
                 child: Text(
                   pgnNotation,
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontSize: 14,
                       color: Color(0xFFc4c4c5),
                       fontWeight:FontWeight.bold
@@ -609,7 +680,6 @@ class _ChessBoardState extends State<ChessBoard> {
 
                       return GestureDetector(
                         onTap: () {
-                          print('Game fen before touch: ${game.fen}');
 
                           if (currentUserUID != currentTurnUID) {
                             print("Not your turn");
@@ -653,6 +723,11 @@ class _ChessBoardState extends State<ChessBoard> {
                                 });
                                 // Call updatePGNNotation with the piece type
                                 updatePGNNotation(piece.type, fromSquare, toSquare, isCapture);
+                                FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
+                                  'currentBoardState': game.fen,
+                                  'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
+                                });
+                                print('Inside: ${game.fen}');
                               }
 
                               lastMoveFrom = selectedSquare;
@@ -670,68 +745,80 @@ class _ChessBoardState extends State<ChessBoard> {
                                     pieceBeforeMove.color);
                                 if (game.turn == chess.Color.BLACK) {
                                   whiteCapturedPieces.add(capturedPiece);
-                                  updateCapturedPiecesInFirestore();
+                                  updateCapturedPiecesInRealTimeDatabase();
                                 } else {
                                   blackCapturedPieces.add(capturedPiece);
-                                  updateCapturedPiecesInFirestore();
+                                  updateCapturedPiecesInRealTimeDatabase();
                                 }
                               }
-
-
                               // Check for check or checkmate
                               if (game.in_checkmate ||
                                   game.in_stalemate ||
                                   game.in_threefold_repetition ||
                                   game.insufficient_material) {
+
                                 String status;
+                                String result;
+
                                 if (game.in_checkmate) {
+
+                                  result = game.turn == chess.Color.WHITE ? 'lose' : 'win';
+
                                   status = game.turn == chess.Color.WHITE
                                       ? 'Black wins by checkmate!'
                                       : 'White wins by checkmate!';
                                   updateGameStatus(status);
                                 } else if (game.in_stalemate) {
                                   status = 'Draw by stalemate!';
+                                  result = 'draw'; // For draw conditions
                                   updateGameStatus(status);
                                 } else if (game.in_threefold_repetition) {
                                   status = 'Draw by threefold repetition!';
+                                  result = 'draw'; // For draw conditions
                                   updateGameStatus(status);
                                 } else if (game.insufficient_material) {
                                   status =
                                   'Draw due to insufficient material!';
+                                  result = 'draw'; // For draw conditions
                                   updateGameStatus(status);
                                 } else {
                                   status = 'Unexpected game status';
+                                  result = 'draw'; // For draw conditions
                                   updateGameStatus(status);
                                 }
 
-                              }
+                                String winnerUID = result == 'win' ? currentUserUID : (result == 'lose' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
+                                String loserUID = result == 'lose' ? currentUserUID : (result == 'win' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
 
-                              else {
-                                _switchTimer(); // Switch the timer for the next player
-                              }
+                                if (result != 'draw') {
+                                  updateMatchHistory(
+                                    userId1: winnerUID,
+                                    userId2: loserUID,
+                                    result: result,
+                                    bet: 0.0, // Replace with actual bet amount if applicable
+                                  );
+                                }
 
-                              selectedSquare = null;
-                              legalMovesForSelected = [];
-                            } else
-                            if (selectedSquare == null && piece != null) {
-                              selectedSquare = squareName;
-                              var moves = game.generate_moves();
-                              legalMovesForSelected = moves
-                                  .where((move) =>
-                              move.fromAlgebraic == selectedSquare)
-                                  .map((move) => move.toAlgebraic)
-                                  .toList();
+                                else {
+                                  _switchTimer(); // Switch the timer for the next player
+                                }
+
+                                selectedSquare = null;
+                                legalMovesForSelected = [];
+                              } else
+                              if (selectedSquare == null && piece != null) {
+                                selectedSquare = squareName;
+                                var moves = game.generate_moves();
+                                legalMovesForSelected = moves
+                                    .where((move) =>
+                                move.fromAlgebraic == selectedSquare)
+                                    .map((move) => move.toAlgebraic)
+                                    .toList();
+                              }
                             }
-                            //}
                           });
-                          print('Updated game state after move: ${game.fen}');
-                          // Update the game state in Firebase
-                          FirebaseFirestore.instance.collection('games').doc(widget.gameId).update({
-                            'currentBoardState': game.fen,
-                            'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,  // Assuming player1UID and player2UID are available
-                          });
-                          print('DB game state after move: ${game.fen}');
-                          updateLastMoveInFirestore(lastMoveFrom!, lastMoveTo!);
+                          print('Outside:${game.fen}');
+                          updateLastMoveInRealTimeDatabase(lastMoveFrom!, lastMoveTo!);
                         },
                         child: Container(
                           decoration: BoxDecoration(
@@ -745,19 +832,6 @@ class _ChessBoardState extends State<ChessBoard> {
                                 child: displayPiece(piece),
                               ),
 
-                              // Add a circle for legal moves
-                              if (isLegalMove)
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: Container(
-                                    width: 10, // Adjust the size of the circle
-                                    height: 10, // Adjust the size of the circle
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.5), // Adjust the color and opacity as needed
-                                      shape: BoxShape.circle,
-                                    ),
-                                  ),
-                                ),
 
                               // Add row labels
                               if (file == 0)

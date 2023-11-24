@@ -15,7 +15,6 @@ dependencies:
   location: ^5.0.3
   geolocator: ^10.1.0
   permission_handler: ^11.0.1
-  firebase_core: ^2.21.0
   firebase_auth: ^4.12.1
   cloud_firestore: ^4.12.2
   firebase_storage: ^11.4.1
@@ -24,6 +23,8 @@ dependencies:
   intl: ^0.18.1
   google_sign_in: ^6.1.6
   google_sign_in_web: ^0.12.1
+  firebase_database: ^10.3.5
+  firebase_core: ^2.23.0
 
   firebase_database: ^10.3.5
 

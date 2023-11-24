@@ -1,7 +1,6 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:mychessapp/pages/challengewaitingscreen.dart';
 import 'package:mychessapp/pages/login_register_page.dart';
 import 'dart:async';
 import 'package:mychessapp/splash_screen.dart';

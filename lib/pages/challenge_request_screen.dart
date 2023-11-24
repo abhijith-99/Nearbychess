@@ -59,7 +59,7 @@ class ChallengeRequestScreen extends StatelessWidget {
                 onPressed: () async {
                   // Accept the challenge
                   String newGameId = await FirebaseGameService.createNewGame(
-                      challengerUID, opponentUID, challengeId);
+                      challengerUID, opponentUID, challengeId,betAmount);
 
                   // Update the challenge request in Firestore
                   await FirebaseFirestore.instance.collection('challengeRequests').doc(challengeId).update({
@@ -83,7 +83,7 @@ class ChallengeRequestScreen extends StatelessWidget {
                   });
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.green, // Background color
+                  backgroundColor: Colors.green, // Background color
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18), // Rounded corners for the button
                   ),
@@ -100,7 +100,7 @@ class ChallengeRequestScreen extends StatelessWidget {
                   Navigator.pop(context, false); // Pass false to indicate the challenge is rejected
                 },
                 style: ElevatedButton.styleFrom(
-                  primary: Colors.red, // Background color
+                  backgroundColor: Colors.red, // Background color
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(18), // Rounded corners for the button
                   ),
