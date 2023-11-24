@@ -40,7 +40,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           'inGame': false,
         });
         Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => UserHomePage()),
+          MaterialPageRoute(builder: (context) => const UserHomePage()),
         );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -187,14 +187,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: createUserProfile,
-                    child: const Text('Save Profile'),
                     style: ElevatedButton.styleFrom(
-                      primary: const Color(0xFF3F6669),
+                      backgroundColor: const Color(0xFF3F6669),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(18.0),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 15),
                     ),
+                    child: const Text('Save Profile'),
                   ),
                 ],
               ),
