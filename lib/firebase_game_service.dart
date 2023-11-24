@@ -1,32 +1,30 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:firebase_database/firebase_database.dart';
 
 class FirebaseGameService {
-  // Define the initial board state correctly
-  // Example: Using FEN notation for the initial position, or you can use your format
-  static final String initialBoardState = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+  static const String initialBoardState = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-  static Future<String> createNewGame(String player1UID, String player2UID, String challengeId,String betAmount) async {
-    DocumentReference gameRef = await FirebaseFirestore.instance.collection('games').add({
+  static Future<String> createNewGame(String player1UID, String player2UID, String challengeId, String betAmount) async {
+    DatabaseReference gameRef = FirebaseDatabase.instance.ref().child('games').push();
+
+    await gameRef.set({
       'player1UID': player1UID,
       'player2UID': player2UID,
-      'currentBoardState': initialBoardState, // Use the initial board state
-      'currentTurn': player2UID, // Initially, player 1 starts
+      'currentBoardState': initialBoardState,
+      'currentTurn': player2UID, // or player2UID depending on your game logic
       'gameStatus': 'ongoing',
-      'challengeId': challengeId, // Associate the game with the challenge
+      'challengeId': challengeId,
       'betAmount': betAmount,
     });
 
-    // Update the challenge request with the new game ID
+    // If you still need to update Firestore with the Realtime Database key
     await FirebaseFirestore.instance.collection('challengeRequests').doc(challengeId).update({
-      'gameId': gameRef.id,
+      'gameId': gameRef.key, // Use the Realtime Database key
     });
 
-    return gameRef.id; // Returns the game ID
+    return gameRef.key ?? ''; // Return the key of the new game entry
   }
+  
 
-
-
-
-// Other Firebase related functions can be added here
+// Other Firebase related functions...
 }

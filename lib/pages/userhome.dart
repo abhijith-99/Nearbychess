@@ -34,7 +34,7 @@ class UserHomePageState extends State<UserHomePage>
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
     listenToChallengeRequests();
-    onlineUsersStream = Stream<List<DocumentSnapshot>>.empty();
+    onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
   }
 
   // This function remains unchanged
@@ -106,7 +106,7 @@ class UserHomePageState extends State<UserHomePage>
           // Challenge accepted, navigate to the ChessBoard
           String gameId = challengeData[
           'gameId']; // Assuming the game ID is stored in the challenge data
-          print("challenger" + gameId);
+          print("challenger$gameId");
           Navigator.push(
             context,
             MaterialPageRoute(
@@ -228,7 +228,7 @@ class UserHomePageState extends State<UserHomePage>
                   Align(
                     alignment: Alignment.topRight,
                     child: IconButton(
-                      icon: Icon(Icons.close),
+                      icon: const Icon(Icons.close),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ),
@@ -240,9 +240,9 @@ class UserHomePageState extends State<UserHomePage>
                         backgroundImage: AssetImage(opponentData['avatar']),
                         backgroundColor: Colors.transparent,
                       ),
-                      SizedBox(width: 5), // Space between avatar and name
-                      Text(opponentData['name'], style: TextStyle(fontSize: 20)),
-                      Spacer(), // Spacer to push the button to the end of the row
+                      const SizedBox(width: 5), // Space between avatar and name
+                      Text(opponentData['name'], style: const TextStyle(fontSize: 20)),
+                      const Spacer(), // Spacer to push the button to the end of the row
                       ElevatedButton(
                         onPressed: () {
                           String? userId = opponentData['uid'];
@@ -250,19 +250,19 @@ class UserHomePageState extends State<UserHomePage>
                             navigateToUserDetails(context, userId);
                           } else {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Error: User ID is null")),
+                              const SnackBar(content: Text("Error: User ID is null")),
                             );
                           }
                         },
-                        child: Text('Visit'),
+                        child: const Text('Visit'),
                       ),
                     ],
                   ),
-                  SizedBox(height: 20),
+                  const SizedBox(height: 20),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text("Bet Amount:"),
+                      const Text("Bet Amount:"),
                       DropdownButton<String>(
                         value: localBetAmount,
                         items: ['5\$', '10\$', '15\$'].map((String value) {
@@ -288,7 +288,7 @@ class UserHomePageState extends State<UserHomePage>
                         setModalState(() => challengeButtonCooldown[opponentId] = false);
                         await _sendChallenge(opponentData['uid'], localBetAmount);
                         Navigator.pop(context);
-                        Timer(Duration(seconds: 30), () {
+                        Timer(const Duration(seconds: 30), () {
                           setState(() => challengeButtonCooldown[opponentId] = true);
                         });
                       } else if (currentGameId != null) {
@@ -407,19 +407,19 @@ class UserHomePageState extends State<UserHomePage>
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
             child: Container(
-              constraints: BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
+              constraints: const BoxConstraints(maxWidth: 600), // Set a maximum width for the search bar
               child: TextField(
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
                   labelText: 'Search Players in $userLocation',
                   hintText: 'Enter player name...',
-                  prefixIcon: Icon(Icons.search), // Add search icon
+                  prefixIcon: const Icon(Icons.search), // Add search icon
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10), // Rounded corners for the border
                     borderSide: BorderSide(color: Colors.blueGrey.shade800), // Custom border color
 
                   ),
-                  contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
+                  contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20), // Padding inside the text field
                   hintStyle: TextStyle(color: Colors.grey.shade500), // Lighter hint text color
                 ),
               ),
@@ -494,7 +494,7 @@ class UserHomePageState extends State<UserHomePage>
                                   fit: BoxFit.cover,
                                   colorFilter: isOnline
                                       ? null
-                                      : ColorFilter.mode(
+                                      : const ColorFilter.mode(
                                       Colors.grey,
                                       BlendMode
                                           .saturation), // Dim the avatar if offline
@@ -534,7 +534,7 @@ class UserHomePageState extends State<UserHomePage>
 class UserProfileHeader extends StatelessWidget {
   final String userId;
 
-  UserProfileHeader({Key? key, required this.userId}) : super(key: key);
+  const UserProfileHeader({Key? key, required this.userId}) : super(key: key);
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -557,7 +557,7 @@ class UserProfileHeader extends StatelessWidget {
                 GestureDetector(
                   onTap: () => Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => UserProfileDetailsPage(),
+                      builder: (context) => const UserProfileDetailsPage(),
                     ),
                   ),
                   child: CircleAvatar(
