@@ -132,7 +132,11 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
-      child: Text(text),
+      child: Text(
+        text,
+        style: const TextStyle(color: Colors.white), // Added white text color
+      ),
+
     );
   }
 
@@ -164,7 +168,10 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Widget googleSignInButton() {
     return ElevatedButton.icon(
       icon: SvgPicture.asset('assets/google_logo.svg', height: 24, width: 24),
-      label: const Text('Sign in with Google'),
+      label: const Text(
+        'Sign in with Google',
+        style: TextStyle(color: Colors.white), // Added white text color
+      ),
       onPressed: signInWithGoogle,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromARGB(255, 63, 102, 105),
@@ -275,7 +282,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                       isEmailLogin = false;
                     });
                   }),
-// Place the Google Sign-In button here
+                // Place the Google Sign-In button here
                 if (!isLoginMode) // No need to check for !isEmailLogin because it's implied
                   googleSignInButton(),
 

@@ -43,6 +43,7 @@ class _ChessBoardState extends State<ChessBoard> {
   String player2Name = ''; // Add this
   bool _blackTimerActive = false;
   bool _whiteTimerActive = false;
+  double betAmount = 0.0; // Variable to store the bet amount
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -72,12 +73,36 @@ class _ChessBoardState extends State<ChessBoard> {
     return assetPath.isNotEmpty ? assetPath : 'assets/default.png';
   }
 
+  Future<double> fetchBetAmount(String gameId) async {
+    try {
+      // Fetch the game document from Firebase Realtime Database
+      DatabaseReference ref = FirebaseDatabase.instance.ref('games/$gameId');
+      var snapshot = await ref.get();
+
+      if (snapshot.exists) {
+        var gameData = snapshot.value as Map<dynamic, dynamic>;
+        String betAmountString = gameData['betAmount']?.toString() ?? '0';
+
+        // Extract the numeric part of the betAmountString
+        var betAmount = double.tryParse(betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+        return betAmount;
+      }
+    } catch (e) {
+      print('Error fetching bet amount: $e');
+      return 0.0; // Return default value in case of error
+    }
+    return 0.0; // Return default value if the data does not exist
+  }
+
+
   Future<void> updateMatchHistory({
     required String userId1,
     required String userId2,
     required String result, // 'win', 'lose', or 'draw'
     required double bet,
   }) async {
+
+    bet = betAmount;
     // Reference to the Firestore collection
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
@@ -212,6 +237,7 @@ class _ChessBoardState extends State<ChessBoard> {
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
+
 
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
@@ -365,7 +391,7 @@ class _ChessBoardState extends State<ChessBoard> {
       userId1: winnerUID,
       userId2: loserUID,
       result: 'win', // The winner's perspective
-      bet: 0.0, // Replace with actual bet amount if applicable
+      bet: betAmount, // Replace with actual bet amount if applicable
     );
 
     // Update the game status in Firebase
@@ -415,6 +441,11 @@ class _ChessBoardState extends State<ChessBoard> {
 
   Widget _buildPlayerArea(List<String> capturedPieces, bool isTop, String playerName) {
     fetchPlayerDetails();
+    fetchBetAmount(widget.gameId).then((value) {
+      setState(() {
+        betAmount = value;
+      });
+    });
     String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -491,6 +522,7 @@ class _ChessBoardState extends State<ChessBoard> {
         ),
       ),
     );
+
   }
 
   Widget _buildTimer(bool isActive, String time) {
@@ -530,8 +562,6 @@ class _ChessBoardState extends State<ChessBoard> {
       ),
     );
   }
-
-
 
 
   String _formatTime(int totalSeconds) {
@@ -577,13 +607,15 @@ class _ChessBoardState extends State<ChessBoard> {
       // If Player 1 resigns, Player 2 wins
       statusMessage = "$player2Name wins by resignation!";
       result = 'win';
-      updateMatchHistory(userId1: player2UID, userId2: player1UID, result: result, bet: 0.0);
+      print('THE BET AMOUNT PLAYEED FOR IS : $betAmount');
+      updateMatchHistory(userId1: player2UID, userId2: player1UID, result: result, bet: betAmount,);
       updateGameStatus(statusMessage);
     } else {
       // If Player 2 resigns, Player 1 wins
       statusMessage = "$player1Name wins by resignation!";
       result = 'win';
-      updateMatchHistory(userId1: player1UID, userId2: player2UID, result: result, bet: 0.0);
+      print('THE BET AMOUNT PLAYEED FOR IS : $betAmount');
+      updateMatchHistory(userId1: player1UID, userId2: player2UID, result: result, bet: betAmount,);
       updateGameStatus(statusMessage);
     }
   }
@@ -740,6 +772,7 @@ return WillPopScope(
                                       'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
                                     });
                                     print('Inside: ${game.fen}');
+                                    print('BET AMOUNT PLAYED FOR IS : $betAmount');
                                   }
 
                                   lastMoveFrom = selectedSquare;
@@ -807,7 +840,7 @@ return WillPopScope(
                                         userId1: winnerUID,
                                         userId2: loserUID,
                                         result: result,
-                                        bet: 0.0, // Replace with actual bet amount if applicable
+                                        bet: betAmount, // Replace with actual bet amount if applicable
                                       );
                                     }
 

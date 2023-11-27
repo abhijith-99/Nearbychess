@@ -88,7 +88,10 @@ class ChallengeRequestScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18), // Rounded corners for the button
                   ),
                 ),
-                child: const Text('Accept Bet'),
+                child: const Text(
+                  'Accept Bet',
+                  style: TextStyle(color: Colors.white), // Text color set to white
+                ),
               ),
             ),
             const SizedBox(height: 10), // Space between buttons
@@ -105,7 +108,10 @@ class ChallengeRequestScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(18), // Rounded corners for the button
                   ),
                 ),
-                child: const Text('Decline'),
+                child: const Text(
+                  'Decline',
+                  style: TextStyle(color: Colors.white), // Text color set to white
+                ),
               ),
             ),
           ],
