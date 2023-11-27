@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+
 // Define the MatchRecord class
 class MatchRecord {
   final String opponentUid;
@@ -99,7 +100,7 @@ class WinDrawLossText extends StatelessWidget {
   final int count;
   final Color color;
 
-  WinDrawLossText({
+  const WinDrawLossText({super.key, 
     required this.icon,
     required this.percent,
     required this.count,
@@ -111,7 +112,7 @@ class WinDrawLossText extends StatelessWidget {
     return Row(
       children: [
         Icon(icon, color: color, size: 16),
-        SizedBox(width: 4),
+        const SizedBox(width: 4),
         Text(
           '${percent.toStringAsFixed(1)}% ${count.toString()}',
           style: TextStyle(
@@ -148,7 +149,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
     var doc = await FirebaseFirestore.instance.collection('users').doc(widget.userId).get();
     if (doc.exists) {
       setState(() {
-        userDetails = doc.data() as Map<String, dynamic>?;
+        userDetails = doc.data();
       });
     }
   }
@@ -214,12 +215,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('User Details',style: TextStyle(fontSize: 18),)),
+      appBar: AppBar(title: const Text('User Details',style: TextStyle(fontSize: 16),)),
       backgroundColor: Colors.grey[200],
       body: userDetails == null
-          ? Center(child: CircularProgressIndicator())
+          ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
-        padding: EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // Align to the start (left)
           children: [
@@ -234,12 +235,12 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     image: DecorationImage(
                       image: userDetails != null && userDetails!['avatar'] != null
                           ? AssetImage(userDetails!['avatar']) // Use AssetImage for local assets
-                          : AssetImage('assets/avatars/default.png'), // A default asset if the avatar URL is not found
+                          : const AssetImage('assets/avatars/default.png'), // A default asset if the avatar URL is not found
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
-                SizedBox(width: 10), // Spacing between avatar and name/location
+                const SizedBox(width: 10), // Spacing between avatar and name/location
                 // User name, location, and statistics
                 Expanded( // Using Expanded to fill the remaining space
                   child: Column(
@@ -248,16 +249,16 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                       // User name and location
                       Text(
                         userDetails!['name'],
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                       ),
                       Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.location_on, color: Colors.grey, size: 12),
-                          SizedBox(width: 2),
+                          const Icon(Icons.location_on, color: Colors.grey, size: 12),
+                          const SizedBox(width: 2),
                           Text(
                             userDetails!['location'],
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
                           ),
                         ],
                       ),
@@ -266,44 +267,58 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 ),
               ],
             ),
-            SizedBox(height: 20), // Spacing between user details and match history
-            Text(
-              'Games Played',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[800]),
-            ),
+            const SizedBox(height: 10), // Spacing between user details and match history
+
             FutureBuilder<Map<String, dynamic>>(
               future: fetchMatchStatistics(widget.userId),
               builder: (context, snapshot) {
                 if (!snapshot.hasData) {
-                  return CircularProgressIndicator();
+                  return const CircularProgressIndicator();
                 }
                 var stats = snapshot.data!;
                 return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${stats['totalMatches']}',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Games Played :',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          '${stats['totalMatches']}',
+                          style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
+
+                    const SizedBox(height: 20),
 
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         StatisticText(
-                          label: stats['wins'].toString() + ' Won',
+                          label: '${stats['wins']} Won',
                           value: stats['winPercentage'].toStringAsFixed(1) + '%',
                           color: Colors.green,
                         ),
                         StatisticText(
-                          label: stats['draws'].toString() + ' Drawn',
+                          label: '${stats['draws']} Drawn',
                           value: stats['drawPercentage'].toStringAsFixed(1) + '%',
                           color: Colors.grey,
                         ),
                         StatisticText(
-                          label: stats['losses'].toString() + ' Lost',
+                          label: '${stats['losses']} Lost',
                           value: stats['lossPercentage'].toStringAsFixed(1) + '%',
                           color: Colors.red,
                         ),
@@ -311,16 +326,16 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     ),
 
 
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
 
                     // Container to create the horizontal bar
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0), // Adds horizontal padding to the container
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Adds horizontal padding to the container
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(10.0), // Applies rounded corners to the outer container
                         child: Container(
                           height: 10.0, // Height of the bar
-                          decoration: BoxDecoration(
+                          decoration: const BoxDecoration(
                             color: Colors.black26, // Background color for the entire bar
                           ),
                           child: Row(
@@ -351,7 +366,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
               },
             ),
 
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             Divider(
               color: Colors.grey[300], // Choose a darker shade for the divider
               thickness: 1.0, // Set the thickness of the divider
@@ -367,16 +382,16 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
               future: fetchUserMatches(widget.userId),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
+                  return const CircularProgressIndicator();
                 }
                 if (snapshot.hasError) {
                   return Text("Error: ${snapshot.error}");
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Text('No match history available');
+                  return const Text('No match history available');
                 }
                 return ListView.builder(
-                  physics: NeverScrollableScrollPhysics(),
+                  physics: const NeverScrollableScrollPhysics(),
                   shrinkWrap: true,
                   itemCount: snapshot.data!.length,
                   itemBuilder: (context, index) {
@@ -385,10 +400,10 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                       future: getOpponentDetails(match.opponentUid),
                       builder: (context, opponentSnapshot) {
                         if (opponentSnapshot.connectionState == ConnectionState.waiting) {
-                          return Card(child: ListTile(title: Text('Loading...')));
+                          return const Card(child: ListTile(title: Text('Loading...')));
                         }
                         if (!opponentSnapshot.hasData) {
-                          return Card(child: ListTile(title: Text('Opponent not found')));
+                          return const Card(child: ListTile(title: Text('Opponent not found')));
                         }
                         var opponentData = opponentSnapshot.data!;
                         String betDisplay;
@@ -409,13 +424,13 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                             break;
                         }
                         return Card(
-                          margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
                           elevation: 4.0, // Adds a subtle shadow
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15.0), // Rounded corners
                           ),
                           child: ListTile(
-                            contentPadding: EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                            contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                             leading: CircleAvatar(
                               backgroundImage: AssetImage(opponentData['avatar']),
                               radius: 20, // Adjust the size of the avatar
@@ -424,11 +439,11 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisAlignment: MainAxisAlignment.center, // Vertically center the column contents
                               children: [
-                                Text(opponentData['name'], style: TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                                SizedBox(height: 4.0),
-                                Text(opponentData['location'], style: TextStyle(fontSize: 10.0, color: Colors.grey)),
-                                SizedBox(height: 4.0),
-                                Text(DateFormat('dd/MM/yyyy HH:mm').format(match.time), style: TextStyle(fontSize: 8.0, color: Colors.grey)),
+                                Text(opponentData['name'], style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 4.0),
+                                Text(opponentData['location'], style: const TextStyle(fontSize: 10.0, color: Colors.grey)),
+                                const SizedBox(height: 4.0),
+                                Text(DateFormat('dd/MM/yyyy HH:mm').format(match.time), style: const TextStyle(fontSize: 8.0, color: Colors.grey)),
                               ],
                             ),
                             trailing: FittedBox(
@@ -437,14 +452,14 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Container(
-                                    padding: EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                     decoration: BoxDecoration(
                                       color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
                                       borderRadius: BorderRadius.circular(20.0),
                                     ),
-                                    child: Text(match.result.toUpperCase(), style: TextStyle(color: Colors.white)),
+                                    child: Text(match.result.toUpperCase(), style: const TextStyle(color: Colors.white)),
                                   ),
-                                  SizedBox(width: 8.0),
+                                  const SizedBox(width: 8.0),
                                   Text(
                                     match.result == 'win' ? '+ ₹${match.bet.toStringAsFixed(2)}' : match.result == 'lose' ? '- ₹${match.bet.toStringAsFixed(2)}' : '₹0.00',
                                     style: TextStyle(

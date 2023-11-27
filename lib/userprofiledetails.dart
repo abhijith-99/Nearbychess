@@ -364,7 +364,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                           }
                         },
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.lightGreen,
+                          backgroundColor: Colors.lightGreen,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -382,9 +382,8 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                       width: MediaQuery.of(context).size.width * 0.3,
                       child: ElevatedButton(
                         onPressed: signOut,
-                        child: const Text('Sign Out'),
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.red,
+                          backgroundColor: Colors.red,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(18.0),
                           ),
@@ -392,6 +391,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                             fontFamily: 'Poppins', // Applying Poppins font
                           ),
                         ),
+                        child: const Text('Sign Out'),
                       ),
                     ),
                   ],

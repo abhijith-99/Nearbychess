@@ -115,7 +115,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         obscureText: isPassword,
         decoration: InputDecoration(
           labelText: title,
-          border: OutlineInputBorder(),
+          border: const OutlineInputBorder(),
         ),
       ),
     );
@@ -124,15 +124,15 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Widget submitButton(String text, VoidCallback onPressed) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text(text),
       style: ElevatedButton.styleFrom(
-        primary: Color.fromARGB(255, 63, 102, 105),
+        backgroundColor: const Color.fromARGB(255, 63, 102, 105),
         minimumSize: const Size(double.infinity, 50),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       ),
+      child: Text(text),
     );
   }
 
@@ -167,7 +167,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       label: const Text('Sign in with Google'),
       onPressed: signInWithGoogle,
       style: ElevatedButton.styleFrom(
-        primary: Color.fromARGB(255, 63, 102, 105),
+        backgroundColor: const Color.fromARGB(255, 63, 102, 105),
         minimumSize: const Size(double.infinity, 50),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
