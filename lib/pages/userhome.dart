@@ -220,8 +220,11 @@ class UserHomePageState extends State<UserHomePage>
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
+
+  
             return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: <Widget>[
