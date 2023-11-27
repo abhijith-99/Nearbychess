@@ -187,7 +187,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       ),
       home: Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.red,
           elevation: 0,
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.black),
@@ -220,7 +220,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
               children: [
                 const SizedBox(height: 32),
                 const Text(
-                  'Create Auki Chess Account', // Heading text added back
+                  'Create Nearby Chess Account', // Heading text added back
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
@@ -264,18 +264,12 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                   ),
                 const SizedBox(height: 16),
                 if (!isLoginMode && isEmailLogin)
-                  submitButton('Continue with Email', () {
-                    setState(() {
-                      isEmailLogin = true;
-                    });
-                  }),
-                if (!isLoginMode && isEmailLogin)
                   submitButton('Continue with Phone', () {
                     setState(() {
                       isEmailLogin = false;
                     });
                   }),
-// Place the Google Sign-In button here
+                // Place the Google Sign-In button here
                 if (!isLoginMode) // No need to check for !isEmailLogin because it's implied
                   googleSignInButton(),
 

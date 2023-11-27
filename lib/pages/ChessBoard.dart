@@ -47,6 +47,7 @@ class _ChessBoardState extends State<ChessBoard> {
   String currentFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
   String previousFen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
   String pgn= '';
+  double betAmount = 0.0; // Variable to store the bet amount
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -76,12 +77,36 @@ class _ChessBoardState extends State<ChessBoard> {
     return assetPath.isNotEmpty ? assetPath : 'assets/default.png';
   }
 
+  Future<double> fetchBetAmount(String gameId) async {
+    try {
+      // Fetch the game document from Firebase
+      var gameDoc = await FirebaseFirestore.instance.collection('games').doc(gameId).get();
+
+      if (gameDoc.exists) {
+        var gameData = gameDoc.data();
+        String betAmountString = gameData?['betAmount'] ?? '0\$';
+
+        // Extract the numeric part of the betAmountString
+        var betAmount = double.tryParse(betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+        return betAmount;
+      }
+    } catch (e) {
+      print('Error fetching bet amount: $e');
+      return 0.0; // Return default value in case of error
+    }
+    return 0.0; // Return default value if document does not exist
+  }
+
+
   Future<void> updateMatchHistory({
     required String userId1,
     required String userId2,
     required String result, // 'win', 'lose', or 'draw'
     required double bet,
   }) async {
+
+     bet = betAmount;
+
     // Reference to the Firestore collection
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
@@ -216,6 +241,12 @@ class _ChessBoardState extends State<ChessBoard> {
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
+
+    fetchBetAmount(widget.gameId).then((value) {
+      setState(() {
+        betAmount = value;
+      });
+    });
 
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
@@ -356,7 +387,7 @@ class _ChessBoardState extends State<ChessBoard> {
       userId1: winnerUID,
       userId2: loserUID,
       result: 'win', // The winner's perspective
-      bet: 0.0, // Replace with actual bet amount if applicable
+      bet: betAmount, // Replace with actual bet amount if applicable
     );
 
 
@@ -763,7 +794,7 @@ class _ChessBoardState extends State<ChessBoard> {
                                     userId1: winnerUID,
                                     userId2: loserUID,
                                     result: result,
-                                    bet: 0.0, // Replace with actual bet amount if applicable
+                                    bet: betAmount, // Replace with actual bet amount if applicable
                                   );
                                 }
 
