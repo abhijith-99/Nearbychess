@@ -27,7 +27,6 @@ dependencies:
   firebase_core: ^2.23.0
 
 
-
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -47,6 +46,8 @@ flutter:
     - assets/phone_logo.svg
     - assets/Animation.gif
     - assets/challenge.webp
+    - assets/timer.svg
+    - assets/timer1.svg
 
   fonts:
     - family: Poppins
