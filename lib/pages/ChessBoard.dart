@@ -44,6 +44,7 @@ class _ChessBoardState extends State<ChessBoard> {
   bool _blackTimerActive = false;
   bool _whiteTimerActive = false;
   double betAmount = 0.0; // Variable to store the bet amount
+  bool isGameEnded = false;
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -234,6 +235,7 @@ class _ChessBoardState extends State<ChessBoard> {
   void initState() {
     super.initState();
     _startTimer();
+    isGameEnded = false;
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
@@ -272,8 +274,27 @@ class _ChessBoardState extends State<ChessBoard> {
 
   }
 
+  void updateMatchHistoryIfNeeded({
+    required String userId1,
+    required String userId2,
+    required String result,
+    required double bet,
+  }) {
+    if (!isGameEnded) {
+      isGameEnded = true; // Set the flag to indicate the game has ended
+      updateMatchHistory(
+        userId1: userId1,
+        userId2: userId2,
+        result: result,
+        bet: bet,
+      );
+    }
+  }
+
+
 
   void _showGameOverDialog(String statusMessage) {
+    _timer?.cancel();
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -387,7 +408,7 @@ class _ChessBoardState extends State<ChessBoard> {
       statusMessage = "$player2Name wins by timeout!";
     }
 
-    updateMatchHistory(
+    updateMatchHistoryIfNeeded(
       userId1: winnerUID,
       userId2: loserUID,
       result: 'win', // The winner's perspective
@@ -607,15 +628,13 @@ class _ChessBoardState extends State<ChessBoard> {
       // If Player 1 resigns, Player 2 wins
       statusMessage = "$player2Name wins by resignation!";
       result = 'win';
-      print('THE BET AMOUNT PLAYEED FOR IS : $betAmount');
-      updateMatchHistory(userId1: player2UID, userId2: player1UID, result: result, bet: betAmount,);
+      updateMatchHistoryIfNeeded(userId1: player2UID, userId2: player1UID, result: result, bet: betAmount,);
       updateGameStatus(statusMessage);
     } else {
       // If Player 2 resigns, Player 1 wins
       statusMessage = "$player1Name wins by resignation!";
       result = 'win';
-      print('THE BET AMOUNT PLAYEED FOR IS : $betAmount');
-      updateMatchHistory(userId1: player1UID, userId2: player2UID, result: result, bet: betAmount,);
+      updateMatchHistoryIfNeeded(userId1: player1UID, userId2: player2UID, result: result, bet: betAmount,);
       updateGameStatus(statusMessage);
     }
   }
@@ -836,7 +855,7 @@ return WillPopScope(
                                     String loserUID = result == 'lose' ? currentUserUID : (result == 'win' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
 
                                     if (result != 'draw') {
-                                      updateMatchHistory(
+                                      updateMatchHistoryIfNeeded(
                                         userId1: winnerUID,
                                         userId2: loserUID,
                                         result: result,

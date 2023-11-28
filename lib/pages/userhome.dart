@@ -297,41 +297,36 @@ class UserHomePageState extends State<UserHomePage>
                       ),
                     ],
                   ),
-                  ElevatedButton(
 
+                  ElevatedButton(
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.white,
                       backgroundColor: Colors.green,
                       padding: const EdgeInsets.symmetric(
                           horizontal: 30, vertical: 20),
                     ),
-                    onPressed: isChallengeable && isButtonEnabled
+                    onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
                         ? () async {
-                            setModalState(() =>
-                                challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount);
-                            Navigator.pop(context);
-
-                            // Start a timer to re-enable the button after 30 seconds
-                            Timer(Duration(seconds: 30), () {
-                              setState(() =>
-                                  challengeButtonCooldown[opponentId] = true);
-                            });
-                          }
-                        : (currentGameId != null
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ChessBoard(gameId: currentGameId),
-                                  ),
-                                );
-                              }
-                            : null), // Disable the button if no game ID is available
-                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
-
+                      if (isChallengeable) {
+                        setModalState(() => challengeButtonCooldown[opponentId] = false);
+                        await _sendChallenge(opponentData['uid'], localBetAmount);
+                        Navigator.pop(context);
+                        Timer(Duration(seconds: 30), () {
+                          setState(() => challengeButtonCooldown[opponentId] = true);
+                        });
+                      } else if (currentGameId != null) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChessBoard(gameId: currentGameId),
+                          ),
+                        );
+                      }
+                    }
+                        : null,
+                    child: Text(isOnline
+                        ? (isChallengeable ? 'Challenge' : 'Watch Game')
+                        : 'Player Offline'),
                   ),
                 ],
               ),
