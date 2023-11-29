@@ -8,18 +8,18 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:820296910788:android:7cbc072348d7cecacd8691",
+        "mobilesdk_app_id": "1:820296910788:android:b8ba73b3fed090d0cd8691",
         "android_client_info": {
           "package_name": "com.example.mychessapp"
         }
       },
       "oauth_client": [
         {
-          "client_id": "820296910788-jm0siftrqn4d8pvp4ca38ormambfvrvi.apps.googleusercontent.com",
+          "client_id": "820296910788-94u30uaefsbuqcvb8714iv5hubm35k10.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.mychessapp",
-            "certificate_hash": "7b2b909504d48f22cd4f5e33d70e0032bad91c81"
+            "certificate_hash": "c8ef863549fe6660a9c0aaea165d97022aba9164"
           }
         },
         {
