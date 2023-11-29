@@ -47,7 +47,6 @@ flutter:
     - assets/Animation.gif
     - assets/challenge.webp
     - assets/timer.svg
-    - assets/timer1.svg
 
   fonts:
     - family: Poppins
