@@ -11,7 +11,7 @@ class ChallengeRequestScreen extends StatelessWidget {
   final String betAmount; // The bet amount for the game
   final String challengeId; // The challenge request ID
   final String challengerImageUrl; // Add this line
-  final int localTimerValue;
+  final String localTimerValue;
 
   const ChallengeRequestScreen({
     super.key,
@@ -24,8 +24,10 @@ class ChallengeRequestScreen extends StatelessWidget {
     required this.challengerImageUrl, // Add this line
   });
 
+
   @override
   Widget build(BuildContext context) {
+    print('Received Timer Value: $localTimerValue');
     return Dialog(
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0)), // Makes dialog rounded

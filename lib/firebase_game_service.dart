@@ -6,10 +6,10 @@ class FirebaseGameService {
       "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   static Future<String> createNewGame(String player1UID, String player2UID,
-      String challengeId, String betAmount, int localTimerValue) async {
+      String challengeId, String betAmount, String localTimerValue) async {
     DatabaseReference gameRef =
         FirebaseDatabase.instance.ref().child('games').push();
-
+    String localTimerValueStr = localTimerValue.toString();
     await gameRef.set({
       'player1UID': player1UID,
       'player2UID': player2UID,
@@ -18,7 +18,8 @@ class FirebaseGameService {
       'gameStatus': 'ongoing',
       'challengeId': challengeId,
       'betAmount': betAmount,
-      localTimerValue: localTimerValue,
+      'localTimerValue': localTimerValueStr, // Store as a string
+
     });
 
     // If you still need to update Firestore with the Realtime Database key

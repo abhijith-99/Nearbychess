@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:mychessapp/main.dart';
 import 'package:mychessapp/pages/challengewaitingscreen.dart';
 import '../userprofiledetails.dart';
@@ -28,8 +27,7 @@ class UserHomePageState extends State<UserHomePage>
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-
-  int? localTimerValue;
+  String localTimerValue = '15';
 
 
 
@@ -82,8 +80,6 @@ class UserHomePageState extends State<UserHomePage>
               ? (userDoc.data()!['avatar'] ?? '')
               : ''; // Assuming the field name is 'avatarUrl'
 
-          // Show the challenge request dialog for the latest request
-          // ignore: use_build_context_synchronously
           showDialog<bool>(
             context: context,
             builder: (BuildContext context) {
@@ -92,8 +88,8 @@ class UserHomePageState extends State<UserHomePage>
                 challengerUID: challengerId,
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
-                localTimerValue: localTimerValue ?? 0,
-                challengeId: latestRequestDoc.id,
+                localTimerValue: challengeData['localTimerValue'],
+              challengeId: latestRequestDoc.id,
                 challengerImageUrl: challengerImageUrl, // Pass the image URL here
               );
             },
@@ -214,9 +210,166 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
+  // void _showChallengeModal(
+  //     BuildContext context, Map<String, dynamic> opponentData) {
+  //   String localBetAmount = betAmount; // Local variable for bet amount
+  //   bool isChallengeable = !(opponentData['inGame'] ?? false);
+  //   String? currentGameId = opponentData['currentGameId'];
+  //   String opponentId = opponentData['uid'];
+  //   bool isOnline = opponentData['isOnline'] ?? false;
+  //
+  //   // Initialize the button state for this user if not already set
+  //   challengeButtonCooldown[opponentId] ??= true;
+  //   bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
+  //
+  //
+  //   showModalBottomSheet(
+  //     context: context,
+  //     builder: (BuildContext context) {
+  //       return StatefulBuilder(
+  //         builder: (BuildContext context, StateSetter setModalState) {
+  //           return Padding(
+  //             padding:
+  //                 const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+  //             child: SingleChildScrollView(
+  //               // Added to handle overflow issues
+  //               child: Column(
+  //                 mainAxisSize: MainAxisSize.min,
+  //                 children: <Widget>[
+  //                   const Text(
+  //                     "Set your Stake",
+  //                     style: TextStyle(
+  //                       fontSize: 24,
+  //                       fontWeight: FontWeight.bold,
+  //                       fontFamily: 'Poppins',
+  //                     ),
+  //                   ),
+  //                   SizedBox(height: 20),
+  //                   Row(
+  //                     children: [
+  //                       CircleAvatar(
+  //                         radius: 30,
+  //                         backgroundImage: AssetImage(opponentData['avatar']),
+  //                       ),
+  //                       SizedBox(width: 10),
+  //                       Expanded(
+  //                         child: Text(
+  //                           opponentData['name'],
+  //                           style: const TextStyle(
+  //                             fontSize: 20,
+  //                             fontWeight: FontWeight.bold,
+  //                             fontFamily: 'Poppins',
+  //                           ),
+  //                         ),
+  //                       ),
+  //                       ElevatedButton(
+  //                         onPressed: () {
+  //                           String? userId = opponentData['uid'];
+  //                           if (userId != null) {
+  //                             navigateToUserDetails(context, userId);
+  //                           } else {
+  //                             ScaffoldMessenger.of(context).showSnackBar(
+  //                               const SnackBar(
+  //                                   content: Text("Error: User ID is null")),
+  //                             );
+  //                           }
+  //                         },
+  //                         child: const Text('Visit'),
+  //                       ),
+  //                     ],
+  //                   ),
+  //                   SizedBox(height: 20),
+  //                   Container(
+  //                     padding: EdgeInsets.all(16),
+  //                     decoration: BoxDecoration(
+  //                       color: Colors.grey[200],
+  //                       borderRadius: BorderRadius.circular(12),
+  //                     ),
+  //                     child: Column(
+  //                       crossAxisAlignment: CrossAxisAlignment.stretch,
+  //                       children: [
+  //                         DropdownButtonFormField<String>(
+  //                           value: localTimerValue, // Convert int to String for displaying
+  //                           items: ['5', '10', '15'].map((String value) {
+  //                             return DropdownMenuItem<String>(
+  //                               value: value,
+  //                               child: Text('$value min'),
+  //                             );
+  //                           }).toList(),
+  //                           onChanged: (newValue) {
+  //                             if (newValue != null) {
+  //                               setModalState(() {
+  //                                 localTimerValue =  // Parse back to int
+  //                               });
+  //                             }
+  //                           },
+  //                           decoration: InputDecoration(
+  //                             labelText: 'Timer',
+  //                             border: OutlineInputBorder(
+  //                               borderRadius: BorderRadius.circular(12),
+  //                             ),
+  //                           ),
+  //                         ),
+  //
+  //
+  //
+  //                       ],
+  //                     ),
+  //                   ),
+  //                   SizedBox(height: 20),
+  //
+  //
+  //                       ElevatedButton(
+  //
+  //                   style: ElevatedButton.styleFrom(
+  //                     foregroundColor: Colors.white,
+  //                     backgroundColor: Colors.green,
+  //                     padding: const EdgeInsets.symmetric(
+  //                         horizontal: 30, vertical: 20),
+  //                   ),
+  //                   onPressed:  isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
+  //                       ? () async {
+  //                           setModalState(() =>
+  //                               challengeButtonCooldown[opponentId] = false);
+  //                           await _sendChallenge(
+  //                               opponentData['uid'], localBetAmount, localTimerValue!);
+  //                           Navigator.pop(context);
+  //
+  //                           // Start a timer to re-enable the button after 30 seconds
+  //                           Timer(Duration(seconds: 30), () {
+  //                             setState(() =>
+  //                                 challengeButtonCooldown[opponentId] = true);
+  //                           });
+  //                         }
+  //                       : (currentGameId != null
+  //                           ? () {
+  //                               Navigator.push(
+  //                                 context,
+  //                                 MaterialPageRoute(
+  //                                   builder: (context) =>
+  //                                       ChessBoard(gameId: currentGameId),
+  //                                 ),
+  //                               );
+  //                             }
+  //                           : null), // Disable the button if no game ID is available
+  //                   child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
+  //
+  //                 ),
+  //                 ],
+  //               ),
+  //             ),
+  //           );
+  //         },
+  //       );
+  //     },
+  //   );
+  //
+  // }
+
   void _showChallengeModal(
       BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
+    String localTimerValue = this.localTimerValue; // Initialize with the local value
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
     String opponentId = opponentData['uid'];
@@ -234,7 +387,7 @@ class UserHomePageState extends State<UserHomePage>
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: SingleChildScrollView(
                 // Added to handle overflow issues
                 child: Column(
@@ -315,71 +468,71 @@ class UserHomePageState extends State<UserHomePage>
                             ),
                           ),
                           SizedBox(height: 20),
-                        DropdownButtonFormField<String>(
-                          value: localTimerValue?.toString(),
-                          items: ['5', '10', '15'].map((String value) {
-                            return DropdownMenuItem<String>(
-                              value: value,
-                              child: Text('$value min'),
-                            );
-                          }).toList(),
-                          onChanged: (newValue) {
-                            if (newValue != null) {
-                              setModalState(() {
-                                localTimerValue = int.tryParse(newValue);
-                              });
-                            }
-                          },
-                          decoration: InputDecoration(
-                            labelText: 'Timer',
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
+                          DropdownButtonFormField<String>(
+                            value: localTimerValue,
+                            items: ['5', '10', '15'].map((String value) {
+                              return DropdownMenuItem<String>(
+                                value: value,
+                                child: Text('$value min'),
+                              );
+                            }).toList(),
+                            onChanged: (newValue) {
+                              if (newValue != null) {
+                                setModalState(() {
+                                  localTimerValue = newValue;
+                                });
+                              }
+                            },
+                            decoration: InputDecoration(
+                              labelText: 'Timer',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
                             ),
                           ),
-                        ),
 
                         ],
                       ),
                     ),
                     SizedBox(height: 20),
-                    
 
-                        ElevatedButton(
 
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 20),
+                    ElevatedButton(
+
+                      style: ElevatedButton.styleFrom(
+                        foregroundColor: Colors.white,
+                        backgroundColor: Colors.green,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 30, vertical: 20),
+                      ),
+                      onPressed: isChallengeable && isButtonEnabled
+                          ? () async {
+                        setModalState(() =>
+                        challengeButtonCooldown[opponentId] = false);
+                        await _sendChallenge(
+                            opponentData['uid'], localBetAmount, localTimerValue);
+                        Navigator.pop(context);
+
+                        // Start a timer to re-enable the button after 30 seconds
+                        Timer(Duration(seconds: 30), () {
+                          setState(() =>
+                          challengeButtonCooldown[opponentId] = true);
+                        });
+                      }
+                          : (currentGameId != null
+                          ? () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                ChessBoard(gameId: currentGameId),
+                          ),
+                        );
+                      }
+                          : null), // Disable the button if no game ID is available
+                      child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
+
                     ),
-                    onPressed: isChallengeable && isButtonEnabled
-                        ? () async {
-                            setModalState(() =>
-                                challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount, localTimerValue!);
-                            Navigator.pop(context);
-
-                            // Start a timer to re-enable the button after 30 seconds
-                            Timer(Duration(seconds: 30), () {
-                              setState(() =>
-                                  challengeButtonCooldown[opponentId] = true);
-                            });
-                          }
-                        : (currentGameId != null
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        ChessBoard(gameId: currentGameId),
-                                  ),
-                                );
-                              }
-                            : null), // Disable the button if no game ID is available
-                    child: Text(isChallengeable ? 'Challenge' : 'Watch Game'),
-
-                  ),
                   ],
                 ),
               ),
@@ -390,8 +543,7 @@ class UserHomePageState extends State<UserHomePage>
     );
 
   }
-
-  Future<String?> _sendChallenge(String opponentId, String betAmount, int localTimerValue) async {
+  Future<String?> _sendChallenge(String opponentId, String betAmount, String localTimerValue) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
       try {
