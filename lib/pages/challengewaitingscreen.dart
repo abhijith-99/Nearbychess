@@ -140,6 +140,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
           Navigator.pop(context);
           print("Challenge request canceled");
         })
+        // ignore: invalid_return_type_for_catch_error
         .catchError((error) => print('Error deleting challenge request: $error'));
   }
 }
