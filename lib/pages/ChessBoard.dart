@@ -653,63 +653,6 @@ class _ChessBoardState extends State<ChessBoard> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  // Future<bool> _onBackPressed() async {
-  //   bool shouldPop = await showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Confirm'),
-  //       content: Text('Do you want to resign and quit the game?'),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop(false); // User chooses to continue the game.
-  //           },
-  //           child: Text('Continue to Game'),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             // Update game status to reflect user resignation.
-  //             _handleUserResignation();
-  //           },
-  //           child: Text('Resign'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  //
-  //   return shouldPop;
-  // }
-  // Future<bool> _onBackPressed() async {
-  //   bool shouldPop = await showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Game Options'),
-  //       content: Text('Choose an option for the game.'),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop(false); // User chooses to continue the game.
-  //           },
-  //           child: Text('Continue Game'),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             _handleUserResignation(); // User chooses to resign.
-  //           },
-  //           child: Text('Resign'),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             _handleOfferDraw(); // User chooses to offer a draw.
-  //           },
-  //           child: Text('Offer Draw'),
-  //         ),
-  //       ],
-  //     )
-  //   );
-  //
-  //   return shouldPop;
-  // }
   Future<bool> _onBackPressed() async {
     return await showDialog(
       context: context,
