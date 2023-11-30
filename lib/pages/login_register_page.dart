@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import 'package:google_sign_in/google_sign_in.dart';
+import 'dart:math';
+
 
 void main() {
   runApp(const LoginRegisterPage());
@@ -16,52 +17,59 @@ class LoginRegisterPage extends StatefulWidget {
 }
 
 class _LoginRegisterPageState extends State<LoginRegisterPage> {
-  final TextEditingController emailController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController otpController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  final double buttonHeight = 50.0; // Standard height for buttons
+
+
+  final RoundedRectangleBorder buttonShape = RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(30), // Example border radius
+  );
+
+
+  final InputDecoration sharedInputDecoration = InputDecoration(
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(30), // Consistent border radius
+      borderSide: BorderSide(color: Colors.white), // Adjust border color if needed
+    ),
+    filled: true,
+    fillColor: Colors.white,
+    contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 20), // Adjust padding to match button height
+  );
+
+
+  // Using a getter to access the instance member buttonHeight
+  ButtonStyle get sharedButtonStyle => ElevatedButton.styleFrom(
+    primary: Colors.transparent, // Transparent background for the button
+    onPrimary: Colors.white, // Text color
+    side: BorderSide(color: Colors.white), // Border color for the button
+    elevation: 0,
+    minimumSize: Size(double.infinity, buttonHeight), // Full width and consistent height
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(30), // Consistent border radius
+    ),
+  );
+
+
+
   String errorMessage = '';
   String _verificationId = '';
-  bool isEmailLogin = true;
-  bool isLoginMode = false;
+  bool isEmailLogin = false;
+  bool showPhoneNumberField = false;
+  bool showPhoneNumberInput = false;
+  bool showOtpInput = false;
+  bool isSignUp = false; // Default to sign up mode
+
+
+
 
   @override
   void dispose() {
-    emailController.dispose();
-    passwordController.dispose();
     phoneController.dispose();
     otpController.dispose();
     super.dispose();
-  }
-
-  Future<void> signInWithEmailAndPassword() async {
-    try {
-      await _auth.signInWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
-      );
-      // Navigate to your home page if sign-in is successful
-    } catch (error) {
-      setState(() {
-        errorMessage = error.toString();
-      });
-    }
-  }
-
-  Future<void> createUserWithEmailAndPassword() async {
-    try {
-      await _auth.createUserWithEmailAndPassword(
-        email: emailController.text,
-        password: passwordController.text,
-      );
-      // Navigate to your home page if registration is successful
-    } catch (error) {
-      setState(() {
-        errorMessage = error.toString();
-      });
-    }
   }
 
   void verifyPhoneNumber() async {
@@ -105,28 +113,67 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     }
   }
 
-  Widget entryField(
-      String title, TextEditingController controller, bool isPassword,
-      {double bottomPadding = 10}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: TextFormField(
-        controller: controller,
-        obscureText: isPassword,
-        decoration: InputDecoration(
-          labelText: title,
-          border: const OutlineInputBorder(),
-        ),
-      ),
+  Widget mobileNumberButton() {
+    return ElevatedButton(
+      onPressed: () {
+        setState(() {
+          showPhoneNumberInput = true;
+        });
+      },
+      style: sharedButtonStyle,
+      child: Text(isSignUp ? "Sign up with OTP" : "Sign in with OTP"),
     );
   }
+
+  Widget entryField(String hintText, TextEditingController controller, {bool isObscure = false}) {
+    return TextFormField(
+      controller: controller,
+      obscureText: isObscure,
+      decoration: sharedInputDecoration.copyWith(hintText: hintText),
+    );
+  }
+
+
+  Widget customDividerWithText() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
+            child: Divider(
+              color: Colors.grey, // Set the color of the divider
+              thickness: 1, // Set the thickness of the divider
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 0.0),
+          child: Text(
+            "Or",
+            style: TextStyle(color: Colors.white), // Set the text color
+          ),
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
+            child: Divider(
+              color: Colors.grey, // Set the color of the divider
+              thickness: 1, // Set the thickness of the divider
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
 
   Widget submitButton(String text, VoidCallback onPressed) {
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color.fromARGB(255, 63, 102, 105),
-        minimumSize: const Size(double.infinity, 50),
+        minimumSize: Size(double.infinity, buttonHeight), // Standard height
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(30),
         ),
@@ -134,13 +181,30 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       ),
       child: Text(
         text,
-        style: const TextStyle(color: Colors.white), // Added white text color
+        style: const TextStyle(color: Colors.white),
       ),
-
     );
   }
 
-  // Google Sign-In function
+  Widget toggleSignUpSignInText() {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          isSignUp = !isSignUp; // Toggle the boolean state
+        });
+      },
+      child: Text(
+        isSignUp ? "Sign In ?" : "Sign Up ?",
+        style: TextStyle(
+          color: Colors.white, // Change as per your design
+          fontWeight: FontWeight.w500, // Medium weight
+          fontSize: 12, // Font size set to 16px
+        ),
+        textAlign: TextAlign.center,
+      ),
+    );
+  }
+
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -149,7 +213,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       }
 
       final GoogleSignInAuthentication googleAuth =
-          await googleUser.authentication;
+      await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
@@ -164,27 +228,70 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     }
   }
 
-  // Google Sign-In button
   Widget googleSignInButton() {
-    return ElevatedButton.icon(
-      icon: SvgPicture.asset('assets/google_logo.svg', height: 24, width: 24),
-      label: const Text(
-        'Sign in with Google',
-        style: TextStyle(color: Colors.white), // Added white text color
-      ),
+    return ElevatedButton(
       onPressed: signInWithGoogle,
       style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 63, 102, 105),
-        minimumSize: const Size(double.infinity, 50),
+        primary: Colors.white, // Fill color: white
+        onPrimary: Colors.black, // Text color (will be overridden by TextStyle below)
+        minimumSize: Size(400, 50), // Width and height
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(50), // Rounded corners
+          side: BorderSide(color: Color(0xFF747775), width: 0), // Stroke
+        ),
+        elevation: 5, // No shadow
+        padding: EdgeInsets.zero, // No default padding
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset('assets/google_logo.svg', height: 24, width: 24,color: null,),
+            const SizedBox(width: 10), // Spacing between the icon and the text
+            Text(
+              isSignUp ? "Sign up with Google" : "Sign in with Google",
+              style: TextStyle(
+                color: Color(0xFF1F1F1F), // Font color
+                fontSize: 14, // Font size
+                fontWeight: FontWeight.w500, // Roboto Medium
+                letterSpacing: 0.25, // Optional: Adjust letter spacing
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
+  Widget buildTextField({
+    required TextEditingController controller,
+    required String hintText,
+    required EdgeInsets padding,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        hintText: hintText,
+        border: const OutlineInputBorder(),
+        contentPadding: padding, // Apply consistent padding
+      ),
+    );
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
+    // Define a uniform text field decoration
+    final textFieldDecoration = InputDecoration(
+      border: const OutlineInputBorder(),
+      contentPadding: const EdgeInsets.symmetric(vertical: 15), // Apply consistent padding
+      filled: true, // Enable the fill color for the input field
+      fillColor: Colors.white, // Set the fill color to white
+    );
+
     return MaterialApp(
       title: 'Account Creation',
       debugShowCheckedModeBanner: false,
@@ -193,116 +300,114 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         fontFamily: 'Poppins',
       ),
       home: Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.black),
-            onPressed: () {
-              if (Navigator.canPop(context)) {
-                Navigator.pop(context);
-              }
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  isLoginMode = !isLoginMode;
-                });
-              },
-              child: Text(
-                isLoginMode ? 'Sign Up' : 'Log In',
-                style: const TextStyle(color: Colors.black),
+        body:Stack(
+          children: [
+            Positioned.fill(
+              child: Image.asset(
+                "assets/background_knight.jpg", // Replace with your image path
+                fit: BoxFit.cover,
               ),
             ),
-          ],
-        ),
-        body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.7), // Semi-transparent black overlay
+              ),
+            ),
+            Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                const SizedBox(height: 32),
-                const Text(
-                  'Create Auki Chess Account', // Heading text added back
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                 AppBar(
+                  backgroundColor: Colors.transparent,
                 ),
+                Expanded(
+                  child: SafeArea(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Image.asset(
+                            'assets/logo1.png', // Update the path to your PNG file in your assets
+                            height: 370,
+                          ),
+                          const SizedBox(height: 60),
+                          if (!showPhoneNumberInput && !showOtpInput)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: mobileNumberButton(),
+                            ),
+                          if (showPhoneNumberInput)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    // Expanded widget for the text field
+                                    child: entryField('Enter phone number', phoneController),
+                                  ),
+                                  const SizedBox(width: 1), // Spacing between the input field and the button
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      verifyPhoneNumber();
+                                      setState(() {
+                                        showPhoneNumberInput = false;
+                                        showOtpInput = true;
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Colors.transparent, // Transparent background for the button
+                                      onPrimary: Colors.white, // Icon color
+                                      shape: CircleBorder(
+                                        side: BorderSide(color: Colors.white), // White border for the circular button
+                                      ),
+                                      padding: EdgeInsets.all(12), // Padding to make the button a circle
+                                      elevation: 2, // Remove shadow
+                                    ),
+                                    child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20), // SVG icon
+                                  ),
+                                ],
+                              ),
+                            ),
 
-                const SizedBox(height: 32),
-                SvgPicture.asset(
-                  'assets/chess_logo.svg',
-                  height: 100,
-                ),
-                const SizedBox(height: 32),
-                if (isLoginMode) ...[
-                  entryField('Email', emailController, false),
-                  entryField('Password', passwordController, true),
-                  const SizedBox(height: 20),
-                  submitButton('Log In', signInWithEmailAndPassword),
-                ] else ...[
-                  if (isEmailLogin) ...[
-                    entryField('Email', emailController, false),
-                    entryField('Password', passwordController, true),
-                    const SizedBox(height: 20),
-                    submitButton(
-                        'Sign Up with Email', createUserWithEmailAndPassword),
-                  ] else ...[
-                    entryField('Phone Number', phoneController, false),
-                    if (_verificationId.isNotEmpty)
-                      entryField('OTP', otpController, false),
-                    const SizedBox(height: 20),
-                    if (_verificationId.isEmpty)
-                      submitButton('Send OTP', verifyPhoneNumber),
-                    if (_verificationId.isNotEmpty)
-                      submitButton('Verify OTP', signInWithOTP),
-                  ],
-                ],
-                const SizedBox(height: 16),                
+                          if (showOtpInput)
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: entryField('Enter OTP', otpController),
+                            ),
 
-                if (!isLoginMode)
-                  const Text(
-                    'OR',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                const SizedBox(height: 16),
-                if (!isLoginMode && isEmailLogin)
-                  submitButton('Continue with Email', () {
-                    setState(() {
-                      isEmailLogin = true;
-                    });
-                  }),
-                if (!isLoginMode && isEmailLogin)
-                  submitButton('Continue with Phone', () {
-                    setState(() {
-                      isEmailLogin = false;
-                    });
-                  }),
-                // Place the Google Sign-In button here
-                if (!isLoginMode) // No need to check for !isEmailLogin because it's implied
-                  googleSignInButton(),
-
-
-
-
-                if (errorMessage.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Text(
-                      errorMessage,
-                      style: const TextStyle(color: Colors.red),
-                      textAlign: TextAlign.center,
+                          if (_verificationId.isNotEmpty)
+                            submitButton('Verify OTP', signInWithOTP),
+                          const SizedBox(height: 10),
+                          customDividerWithText(), // Add the custom divider here
+                          const SizedBox(height: 10),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                            child: googleSignInButton(),
+                          ),
+                          const SizedBox(height: 10),
+                          toggleSignUpSignInText(),
+                          if (errorMessage.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 20),
+                              child: Text(
+                                errorMessage,
+                                style: const TextStyle(color: Colors.red),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
+                ),
               ],
             ),
-          ),
+          ],
         ),
-      ),
+    ),
     );
   }
 }
+

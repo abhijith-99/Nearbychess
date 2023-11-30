@@ -47,14 +47,23 @@ flutter:
     - assets/Animation.gif
     - assets/challenge.webp
     - assets/timer.svg
-    - assets/timer1.svg
+    - assets/background_knight.jpg
+    - assets/logo1.png
+    - assets/paper-plane-solid.svg
+    - assets/android_light_rd_SI.svg
 
   fonts:
+    -  family: Roboto
+       fonts:
+         - asset: assets/fonts/Roboto-Medium.ttf
+
     - family: Poppins
       fonts:
         - asset: assets/fonts/Poppins-Regular.ttf
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
+
+
 
 flutter_icons:
   android: true
