@@ -280,34 +280,48 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 
 
-        void _showDrawOfferDialog() {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Text('Draw Offered'),
-          content: Text('Your opponent has offered a draw. Do you agree to a draw?'),
-          actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                // The opponent has agreed to a draw
-                _updateGameStatus('draw');
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Accept Draw'),
-            ),
-            TextButton(
-              onPressed: () {
-                // The opponent has declined the draw
-                DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
-                gameRef.update({'drawOffer': null}); // Clear the draw offer
-                Navigator.of(context).pop(); // Close the dialog
-              },
-              child: Text('Decline Draw'),
-            ),
-          ],
+  void _showDrawOfferDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: Colors.brown.shade300, // A color reminiscent of a chessboard
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
         ),
-      );
-    }
+        title: Text('Draw Offered', style: TextStyle(color: Colors.white)),
+        content: Text('Your opponent has offered a draw. Do you agree to a draw?', style: TextStyle(color: Colors.white)),
+        actions: <Widget>[
+          TextButton(
+            style: TextButton.styleFrom(
+              primary: Colors.black,
+              backgroundColor: Colors.white,
+            ),
+            onPressed: () {
+              // The opponent has agreed to a draw
+              _updateGameStatus('draw');
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: Text('Accept Draw'),
+          ),
+          TextButton(
+            style: TextButton.styleFrom(
+              primary: Colors.white,
+              backgroundColor: Colors.black,
+            ),
+            onPressed: () {
+              // The opponent has declined the draw
+              DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
+              gameRef.update({'drawOffer': null}); // Clear the draw offer
+              Navigator.of(context).pop(); // Close the dialog
+            },
+            child: Text('Decline Draw'),
+          ),
+        ],
+      ),
+    );
+  }
+
 
   void updateMatchHistoryIfNeeded({
     required String userId1,
@@ -654,78 +668,61 @@ class _ChessBoardState extends State<ChessBoard> {
   }
 
   // Future<bool> _onBackPressed() async {
-  //   bool shouldPop = await showDialog(
+  //   return await showDialog(
   //     context: context,
   //     builder: (context) => AlertDialog(
   //       title: Text('Confirm'),
-  //       content: Text('Do you want to resign and quit the game?'),
+  //       content: Text('Choose an option:'),
   //       actions: <Widget>[
   //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop(false); // User chooses to continue the game.
-  //           },
-  //           child: Text('Continue to Game'),
-  //         ),
-  //         TextButton(
-  //           onPressed: () {
-  //             // Update game status to reflect user resignation.
-  //             _handleUserResignation();
-  //           },
-  //           child: Text('Resign'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  //
-  //   return shouldPop;
-  // }
-  // Future<bool> _onBackPressed() async {
-  //   bool shouldPop = await showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Game Options'),
-  //       content: Text('Choose an option for the game.'),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           onPressed: () {
-  //             Navigator.of(context).pop(false); // User chooses to continue the game.
-  //           },
+  //           onPressed: () => Navigator.of(context).pop(false), // Continue the game
   //           child: Text('Continue Game'),
   //         ),
   //         TextButton(
-  //           onPressed: () {
-  //             _handleUserResignation(); // User chooses to resign.
-  //           },
+  //           onPressed: _handleUserResignation, // Resign the game
   //           child: Text('Resign'),
   //         ),
   //         TextButton(
-  //           onPressed: () {
-  //             _handleOfferDraw(); // User chooses to offer a draw.
-  //           },
+  //           onPressed: _handleOfferDraw, // Offer a draw
   //           child: Text('Offer Draw'),
   //         ),
   //       ],
-  //     )
-  //   );
-  //
-  //   return shouldPop;
+  //     ),
+  //   ) ?? false; // If dialog is dismissed, return false
   // }
   Future<bool> _onBackPressed() async {
     return await showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Confirm'),
-        content: Text('Choose an option:'),
+        backgroundColor: Colors.brown.shade300, // A color reminiscent of a chessboard
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(15),
+          side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
+        ),
+        title: Text('Confirm', style: TextStyle(color: Colors.white)),
+        content: Text('Choose an option:', style: TextStyle(color: Colors.white)),
         actions: <Widget>[
           TextButton(
+            style: TextButton.styleFrom(
+              primary: Colors.black,
+              backgroundColor: Colors.white,
+            ),
             onPressed: () => Navigator.of(context).pop(false), // Continue the game
             child: Text('Continue Game'),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              primary: Colors.white,
+              backgroundColor: Colors.black,
+            ),
             onPressed: _handleUserResignation, // Resign the game
             child: Text('Resign'),
           ),
           TextButton(
+            style: TextButton.styleFrom(
+              primary: Colors.black,
+              backgroundColor: Colors.white,
+            ),
             onPressed: _handleOfferDraw, // Offer a draw
             child: Text('Offer Draw'),
           ),
@@ -733,6 +730,8 @@ class _ChessBoardState extends State<ChessBoard> {
       ),
     ) ?? false; // If dialog is dismissed, return false
   }
+
+
   void _handleOfferDraw() {
     DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
     gameRef.update({

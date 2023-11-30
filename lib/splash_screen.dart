@@ -1,7 +1,10 @@
 //splash
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mychessapp/pages/login_register_page.dart';
+import 'package:mychessapp/pages/userhome.dart';
 import 'dart:async';
-import 'widget_tree.dart'; // Replace with your actual main screen
+
 
 class ChessSplashScreen extends StatefulWidget {
   const ChessSplashScreen({super.key});
@@ -15,10 +18,21 @@ class _ChessSplashScreenState extends State<ChessSplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 4), () {
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const WidgetTree()),
-      );
+    _navigateToNextPage();
+  }
+
+  void _navigateToNextPage() async {
+    // Wait for a minimum duration (e.g., 3 seconds) for the splash screen
+
+    // Then check the authentication state
+    FirebaseAuth.instance.authStateChanges().first.then((User? user) async {
+      if (user == null) {
+        await Future.delayed(Duration(seconds: 3));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const LoginRegisterPage()));
+      } else {
+        await Future.delayed(Duration(seconds: 3));
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (context) => const UserHomePage()));
+      }
     });
   }
 
