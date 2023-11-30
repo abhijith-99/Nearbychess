@@ -330,9 +330,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                         children: [
                           Image.asset(
                             'assets/logo1.png', // Update the path to your PNG file in your assets
-                            height: 370,
+                            height: 330,
                           ),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 40),
                           if (!showPhoneNumberInput && !showOtpInput)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -371,14 +371,42 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                               ),
                             ),
 
-                          if (showOtpInput)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                              child: entryField('Enter OTP', otpController),
-                            ),
+                          // if (showOtpInput)
+                          //   Padding(
+                          //     padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                          //     child: entryField('Enter OTP', otpController),
+                          //   ),
+
+                          // if (_verificationId.isNotEmpty)
+                          //   submitButton('Verify OTP', signInWithOTP),
 
                           if (_verificationId.isNotEmpty)
-                            submitButton('Verify OTP', signInWithOTP),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    // Expanded widget for the OTP text field
+                                    child: entryField('Enter OTP', otpController),
+                                  ),
+                                  const SizedBox(width: 1), // Spacing between the input field and the button
+                                  ElevatedButton(
+                                    onPressed: signInWithOTP,
+                                    style: ElevatedButton.styleFrom(
+                                      primary: Colors.transparent, // Transparent background for the button
+                                      onPrimary: Colors.white, // Icon color
+                                      shape: CircleBorder(
+                                        side: BorderSide(color: Colors.white), // White border for the circular button
+                                      ),
+                                      padding: EdgeInsets.all(12), // Padding to make the button a circle
+                                      elevation: 2, // Remove shadow
+                                    ),
+                                    child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20), // SVG icon for verifying OTP
+                                  ),
+                                ],
+                              ),
+                            ),
+
                           const SizedBox(height: 10),
                           customDividerWithText(), // Add the custom divider here
                           const SizedBox(height: 10),
