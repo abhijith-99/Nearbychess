@@ -27,7 +27,7 @@ class UserHomePageState extends State<UserHomePage>
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-  String localTimerValue = '15';
+  String localTimerValue = '20';
 
 
 
@@ -89,7 +89,7 @@ class UserHomePageState extends State<UserHomePage>
                 opponentUID: currentUserId,
                 betAmount: challengeData['betAmount'],
                 localTimerValue: challengeData['localTimerValue'],
-              challengeId: latestRequestDoc.id,
+                challengeId: latestRequestDoc.id,
                 challengerImageUrl: challengerImageUrl, // Pass the image URL here
               );
             },
@@ -112,7 +112,7 @@ class UserHomePageState extends State<UserHomePage>
         if (challengeData['status'] == 'accepted') {
           // Challenge accepted, navigate to the ChessBoard
           String gameId = challengeData[
-              'gameId']; // Assuming the game ID is stored in the challenge data
+          'gameId']; // Assuming the game ID is stored in the challenge data
           print("challenger$gameId");
           Navigator.push(
             context,
@@ -175,7 +175,7 @@ class UserHomePageState extends State<UserHomePage>
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
       CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline});
     } catch (e) {
       print('Error updating online status: $e');
@@ -211,8 +211,7 @@ class UserHomePageState extends State<UserHomePage>
   }
 
 
-  void _showChallengeModal(
-      BuildContext context, Map<String, dynamic> opponentData) {
+  void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
     String localBetAmount = betAmount; // Local variable for bet amount
     String localTimerValue = this.localTimerValue; // Initialize with the local value
     bool isChallengeable = !(opponentData['inGame'] ?? false);
@@ -224,16 +223,14 @@ class UserHomePageState extends State<UserHomePage>
     challengeButtonCooldown[opponentId] ??= true;
     bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
 
-
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
         return StatefulBuilder(
+          builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
-              padding:
-              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: SingleChildScrollView(
-                // Added to handle overflow issues
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
@@ -314,7 +311,7 @@ class UserHomePageState extends State<UserHomePage>
                           SizedBox(height: 20),
                           DropdownButtonFormField<String>(
                             value: localTimerValue,
-                            items: ['5', '10', '15'].map((String value) {
+                            items: ['5', '10', '15', '20'].map((String value) {
                               return DropdownMenuItem<String>(
                                 value: value,
                                 child: Text('$value min'),
@@ -334,55 +331,42 @@ class UserHomePageState extends State<UserHomePage>
                               ),
                             ),
                           ),
-
                         ],
                       ),
                     ),
                     SizedBox(height: 20),
-
-
                     ElevatedButton(
-
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
                         backgroundColor: Colors.green,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 30, vertical: 20),
-
-                    ],
-                  ),
-
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: Colors.green,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 30, vertical: 20),
-                    ),
-                    onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
-                        ? () async {
-                      if (isChallengeable) {
-                        setModalState(() => challengeButtonCooldown[opponentId] = false);
-                        await _sendChallenge(opponentData['uid'], localBetAmount);
-                        Navigator.pop(context);
-                        Timer(Duration(seconds: 30), () {
-                          setState(() => challengeButtonCooldown[opponentId] = true);
-                        });
-                      } else if (currentGameId != null) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChessBoard(gameId: currentGameId),
-                          ),
-                        );
+                      ),
+                      onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
+                          ? () async {
+                        if (isChallengeable) {
+                          setModalState(() => challengeButtonCooldown[opponentId] = false);
+                          await _sendChallenge(opponentData['uid'], localBetAmount,localTimerValue);
+                          Navigator.pop(context);
+                          Timer(Duration(seconds: 30), () {
+                            setState(() => challengeButtonCooldown[opponentId] = true);
+                          });
+                        } else if (currentGameId != null) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChessBoard(gameId: currentGameId),
+                            ),
+                          );
+                        }
                       }
-                    }
-                        : null,
-                    child: Text(isOnline
-                        ? (isChallengeable ? 'Challenge' : 'Watch Game')
-                        : 'Player Offline'),
-                  ),
-                ],
+                          : null,
+                      child: Text(isOnline
+                          ? (isChallengeable ? 'Challenge' : 'Watch Game')
+                          : 'Player Offline'),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -394,7 +378,8 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  Future<void> _sendChallenge(String opponentId, String betAmount) async {
+
+  Future<void> _sendChallenge(String opponentId, String betAmount, String localTimerValue) async {
 
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
@@ -445,7 +430,7 @@ class UserHomePageState extends State<UserHomePage>
   // Function to retrieve the user's name from Firestore
   Future<String> getUserName(String userId) async {
     DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists) {
       return userDoc['name'] ??
           'Unknown User'; // Replace 'Unknown User' with a default name of your choice
@@ -559,15 +544,15 @@ class UserHomePageState extends State<UserHomePage>
                                   colorFilter: isOnline
                                       ? null
                                       : const ColorFilter.mode(
-                                          Colors.grey,
-                                          BlendMode
-                                              .saturation), // Dim the avatar if offline
+                                      Colors.grey,
+                                      BlendMode
+                                          .saturation), // Dim the avatar if offline
                                 ),
                                 border: Border.all(
                                   color: isOnline
                                       ? Colors.green
                                       : Colors.grey
-                                          .shade500, // Red border for offline users
+                                      .shade500, // Red border for offline users
                                   width: 3,
                                 ),
                               ),
@@ -603,7 +588,7 @@ class UserProfileHeader extends StatelessWidget {
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -651,7 +636,7 @@ class UserProfileHeader extends StatelessWidget {
         return const Padding(
           padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
           child:
-              CircularProgressIndicator(), // Show loading indicator while fetching data
+          CircularProgressIndicator(), // Show loading indicator while fetching data
         );
       },
     );

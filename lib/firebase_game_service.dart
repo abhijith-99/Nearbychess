@@ -8,7 +8,7 @@ class FirebaseGameService {
   static Future<String> createNewGame(String player1UID, String player2UID,
       String challengeId, String betAmount, String localTimerValue) async {
     DatabaseReference gameRef =
-        FirebaseDatabase.instance.ref().child('games').push();
+    FirebaseDatabase.instance.ref().child('games').push();
     String localTimerValueStr = localTimerValue.toString();
     await gameRef.set({
       'player1UID': player1UID,

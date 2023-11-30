@@ -46,7 +46,7 @@ class ChallengeRequestScreen extends StatelessWidget {
             const SizedBox(height: 20),
             CircleAvatar(
               backgroundImage:
-                  AssetImage(challengerImageUrl), // Use NetworkImage
+              AssetImage(challengerImageUrl), // Use NetworkImage
               radius: 40,
             ),
             const SizedBox(height: 10),
@@ -80,7 +80,7 @@ class ChallengeRequestScreen extends StatelessWidget {
 
                   // Update 'inGame' status and 'gameId' for both users
                   CollectionReference users =
-                      FirebaseFirestore.instance.collection('users');
+                  FirebaseFirestore.instance.collection('users');
                   await users
                       .doc(challengerUID)
                       .update({'inGame': true, 'currentGameId': newGameId});

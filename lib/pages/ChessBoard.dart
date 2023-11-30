@@ -46,7 +46,6 @@ class _ChessBoardState extends State<ChessBoard> {
   double betAmount = 0.0; // Variable to store the bet amount
   bool isGameEnded = false;
 
-
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
     String pieceColor = color == chess.Color.WHITE ? 'white' : 'black';
@@ -243,7 +242,6 @@ class _ChessBoardState extends State<ChessBoard> {
     fetchInitialTimerValue();
 
 
-
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
         .onValue
@@ -277,25 +275,6 @@ class _ChessBoardState extends State<ChessBoard> {
 
   }
 
-  void fetchInitialTimerValue() async {
-    DatabaseReference timerRef = FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue'); // Updated path
-    DatabaseEvent timerEvent = await timerRef.once();
-    if (timerEvent.snapshot.exists) {
-      String timerValue = timerEvent.snapshot.value.toString();
-      try {
-        int initialTimer = int.parse(timerValue);
-        setState(() {
-          _whiteTimeRemaining = initialTimer * 60; // Convert to seconds
-          _blackTimeRemaining = initialTimer * 60; // Convert to seconds
-        });
-      } catch (e) {
-        print('Error parsing timer value: $e');
-      }
-    }
-  }
-
-
-
   void updateMatchHistoryIfNeeded({
     required String userId1,
     required String userId2,
@@ -313,6 +292,22 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
+  void fetchInitialTimerValue() async {
+    DatabaseReference timerRef = FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue'); // Updated path
+    DatabaseEvent timerEvent = await timerRef.once();
+    if (timerEvent.snapshot.exists) {
+      String timerValue = timerEvent.snapshot.value.toString();
+      try {
+        int initialTimer = int.parse(timerValue);
+        setState(() {
+          _whiteTimeRemaining = initialTimer * 60; // Convert to seconds
+          _blackTimeRemaining = initialTimer * 60; // Convert to seconds
+        });
+      } catch (e) {
+        print('Error parsing timer value: $e');
+      }
+    }
+  }
 
 
   void _showGameOverDialog(String statusMessage) {
@@ -664,43 +659,42 @@ class _ChessBoardState extends State<ChessBoard> {
   @override
   Widget build(BuildContext context) {
 
-    // Get the size of the screen
-    Size screenSize = MediaQuery.of(context).size;
-    // Set the size for the chessboard to be responsive
-    double boardSize = screenSize.width < 600 ? screenSize.width : 600;
+  // Get the size of the screen
+  Size screenSize = MediaQuery.of(context).size;
+  // Set the size for the chessboard to be responsive
+  double boardSize = screenSize.width < 600 ? screenSize.width : 600;
 
-    return WillPopScope(
-      onWillPop: _onBackPressed,
-      child: Scaffold(
-        backgroundColor: Color(0xffacacaf),
-        appBar: AppBar(
-          title: const Text('NearbyChess'),
-          centerTitle: true,
-          backgroundColor: Color(0xFF3c3d3e),
-          automaticallyImplyLeading: false,
-          bottom: PreferredSize(
-            preferredSize: const Size.fromHeight(30.0), // Set the height as required
-            child: Container(
-              color: Color(0xFF595a5c), // Background color for the strip
-              width: double.infinity, // Ensures the container takes full width
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Padding(
-                  padding: const EdgeInsets.all(4.0),
-                  child: Text(
-                    pgnNotation,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFc4c4c5),
-                        fontWeight:FontWeight.bold
-                    ),
+return WillPopScope(
+        onWillPop: _onBackPressed,
+        child: Scaffold(
+      backgroundColor: Color(0xffacacaf),
+      appBar: AppBar(
+        title: const Text('NearbyChess'),
+        centerTitle: true,
+        backgroundColor: Color(0xFF3c3d3e),
+        automaticallyImplyLeading: false,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(30.0), // Set the height as required
+          child: Container(
+            color: Color(0xFF595a5c), // Background color for the strip
+            width: double.infinity, // Ensures the container takes full width
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Padding(
+                padding: const EdgeInsets.all(4.0),
+                child: Text(
+                  pgnNotation,
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFc4c4c5),
+                      fontWeight:FontWeight.bold
                   ),
                 ),
               ),
             ),
           ),
         ),
-
+      ),
 
           body: Center(
             child:Column(
@@ -919,177 +913,20 @@ class _ChessBoardState extends State<ChessBoard> {
                                     child: displayPiece(piece),
                                   ),
 
-                                // If no legal moves, deselect the piece
-                                if (legalMovesForSelected.isEmpty) {
-                                  selectedSquare = null;
-                                }
-                              }
-                              // If no square is selected and there is a piece on the current square
-                              else if (selectedSquare != null &&
-                                  legalMovesForSelected.contains(squareName)) {
-                                final String fromSquare = selectedSquare!;  // 'from' square is the currently selected square
-                                final String toSquare = squareName;         // 'to' square is the square being moved to
-                                final chess.Piece? pieceBeforeMove = game.get(toSquare);
 
-                                // Check if the move is a capture
-                                bool isCapture = pieceBeforeMove != null && pieceBeforeMove.color != game.turn;
-                                // Execute the move
-
-                                final chess.Piece? piece = game.get(fromSquare);
-
-                                if (piece != null) { // Execute the move
-                                  game.move({
-                                    "from": selectedSquare!,
-                                    "to": squareName
-                                  });
-                                  // Call updatePGNNotation with the piece type
-                                  updatePGNNotation(piece.type, fromSquare, toSquare, isCapture);
-                                  FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
-                                    'currentBoardState': game.fen,
-                                    'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
-                                  });
-                                  print('Inside: ${game.fen}');
-                                  print('BET AMOUNT PLAYED FOR IS : $betAmount');
-                                }
-
-
-                                lastMoveFrom = selectedSquare;
-                                lastMoveTo = squareName;
-
-
-
-                                // After move, check if the move was a capture
-                                if (pieceBeforeMove != null &&
-                                    pieceBeforeMove.color != game
-                                        .get(selectedSquare!)
-                                        ?.color) {
-                                  final capturedPiece = getPieceAsset(
-                                      pieceBeforeMove.type,
-                                      pieceBeforeMove.color);
-                                  if (game.turn == chess.Color.BLACK) {
-                                    whiteCapturedPieces.add(capturedPiece);
-                                    updateCapturedPiecesInRealTimeDatabase();
-                                  } else {
-                                    blackCapturedPieces.add(capturedPiece);
-                                    updateCapturedPiecesInRealTimeDatabase();
-                                  }
-                                }
-                                // Check for check or checkmate
-                                if (game.in_checkmate ||
-                                    game.in_stalemate ||
-                                    game.in_threefold_repetition ||
-                                    game.insufficient_material) {
-
-                                  String status;
-                                  String result;
-
-                                  if (game.in_checkmate) {
-
-                                    result = game.turn == chess.Color.WHITE ? 'lose' : 'win';
-
-                                    status = game.turn == chess.Color.WHITE
-                                        ? 'Black wins by checkmate!'
-                                        : 'White wins by checkmate!';
-                                    updateGameStatus(status);
-                                  } else if (game.in_stalemate) {
-                                    status = 'Draw by stalemate!';
-                                    result = 'draw'; // For draw conditions
-                                    updateGameStatus(status);
-                                  } else if (game.in_threefold_repetition) {
-                                    status = 'Draw by threefold repetition!';
-                                    result = 'draw'; // For draw conditions
-                                    updateGameStatus(status);
-                                  } else if (game.insufficient_material) {
-                                    status =
-                                    'Draw due to insufficient material!';
-                                    result = 'draw'; // For draw conditions
-                                    updateGameStatus(status);
-                                  } else {
-                                    status = 'Unexpected game status';
-                                    result = 'draw'; // For draw conditions
-                                    updateGameStatus(status);
-                                  }
-
-                                  String winnerUID = result == 'win' ? currentUserUID : (result == 'lose' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
-                                  String loserUID = result == 'lose' ? currentUserUID : (result == 'win' ? (currentUserUID == player1UID ? player2UID : player1UID) : "");
-
-                                  if (result != 'draw') {
-                                    updateMatchHistoryIfNeeded(
-                                      userId1: winnerUID,
-                                      userId2: loserUID,
-                                      result: result,
-                                      bet: betAmount, // Replace with actual bet amount if applicable
-                                    );
-                                  }
-
-                                  else {
-                                    _switchTimer(); // Switch the timer for the next player
-                                  }
-
-                                  selectedSquare = null;
-                                  legalMovesForSelected = [];
-                                } else
-                                if (selectedSquare == null && piece != null) {
-                                  selectedSquare = squareName;
-                                  var moves = game.generate_moves();
-                                  legalMovesForSelected = moves
-                                      .where((move) =>
-                                  move.fromAlgebraic == selectedSquare)
-                                      .map((move) => move.toAlgebraic)
-                                      .toList();
-                                }
-                              }
-                            });
-                            print('Outside:${game.fen}');
-                            updateLastMoveInRealTimeDatabase(lastMoveFrom!, lastMoveTo!);
-                          },
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: squareColor,
-                              border: border,
-                            ),
-                            child: Stack(
-                              children: [
-                                Align(
-                                  alignment: Alignment.center,
-                                  child: displayPiece(piece),
-                                ),
-
-
-                                // Add row labels
-                                if (file == 0)
-                                  Align(
-                                    alignment: Alignment.topLeft,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2.0),
-                                      child: Text(_getRowLabel(rank),
-                                        style: TextStyle(color: labelColor,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                  // Add row labels
+                                  if (file == 0)
+                                    Align(
+                                      alignment: Alignment.topLeft,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(2.0),
+                                        child: Text(_getRowLabel(rank),
+                                          style: TextStyle(color: labelColor,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ),
-
-                                // Add column labels
-                                if (rank == 0)
-                                  Align(
-                                    alignment: Alignment.bottomRight,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(2.0),
-                                      child: Text(_getColumnLabel(file), style: TextStyle(color: labelColor,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                      ),
                                     ),
 
                                   // Add column labels
@@ -1102,12 +939,19 @@ class _ChessBoardState extends State<ChessBoard> {
                                           fontSize: 12,
                                           fontWeight: FontWeight.bold,
                                         ),
-                 
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                   //),
                 ),
-
 
                 SizedBox(height: 20),
 
@@ -1124,5 +968,4 @@ class _ChessBoardState extends State<ChessBoard> {
     );
   }
 }
-
 
