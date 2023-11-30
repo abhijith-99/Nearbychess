@@ -239,6 +239,7 @@ class _ChessBoardState extends State<ChessBoard> {
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
+    fetchInitialTimerValue();
 
 
     gameSubscription = FirebaseDatabase.instance
@@ -291,6 +292,22 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
+  void fetchInitialTimerValue() async {
+    DatabaseReference timerRef = FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue'); // Updated path
+    DatabaseEvent timerEvent = await timerRef.once();
+    if (timerEvent.snapshot.exists) {
+      String timerValue = timerEvent.snapshot.value.toString();
+      try {
+        int initialTimer = int.parse(timerValue);
+        setState(() {
+          _whiteTimeRemaining = initialTimer * 60; // Convert to seconds
+          _blackTimeRemaining = initialTimer * 60; // Convert to seconds
+        });
+      } catch (e) {
+        print('Error parsing timer value: $e');
+      }
+    }
+  }
 
 
   void _showGameOverDialog(String statusMessage) {
@@ -645,7 +662,7 @@ class _ChessBoardState extends State<ChessBoard> {
   // Get the size of the screen
   Size screenSize = MediaQuery.of(context).size;
   // Set the size for the chessboard to be responsive
-  double boardSize = screenSize.width < 600 ? screenSize.width : 600; 
+  double boardSize = screenSize.width < 600 ? screenSize.width : 600;
 
 return WillPopScope(
         onWillPop: _onBackPressed,
