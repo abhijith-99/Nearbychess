@@ -241,7 +241,6 @@ class _ChessBoardState extends State<ChessBoard> {
     var gameData;
     fetchInitialTimerValue();
 
-
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
         .onValue
@@ -264,6 +263,11 @@ class _ChessBoardState extends State<ChessBoard> {
         _showGameOverDialog(gameData['gameStatus']);
       }
 
+      if (data is Map && data['drawOffer'] != null && data['drawOffer'] != currentUserUID) {
+        // A draw has been offered by the opponent
+        _showDrawOfferDialog();
+      }
+
       setState(() {
         game.load(newFen);
         isBoardFlipped = isCurrentUserBlack;
@@ -274,6 +278,36 @@ class _ChessBoardState extends State<ChessBoard> {
     });
 
   }
+
+
+        void _showDrawOfferDialog() {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Draw Offered'),
+          content: Text('Your opponent has offered a draw. Do you agree to a draw?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // The opponent has agreed to a draw
+                _updateGameStatus('draw');
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Accept Draw'),
+            ),
+            TextButton(
+              onPressed: () {
+                // The opponent has declined the draw
+                DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
+                gameRef.update({'drawOffer': null}); // Clear the draw offer
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: Text('Decline Draw'),
+            ),
+          ],
+        ),
+      );
+    }
 
   void updateMatchHistoryIfNeeded({
     required String userId1,
@@ -291,6 +325,17 @@ class _ChessBoardState extends State<ChessBoard> {
       );
     }
   }
+
+    void _updateGameStatus(String newStatus) {
+      DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
+      gameRef.update({
+        'gameStatus': newStatus,
+        'drawOffer': null, // Clear any existing draw offers
+      });
+      if (newStatus == 'draw') {
+        updateMatchHistoryIfNeeded(userId1: player1UID, userId2: player2UID, result: newStatus, bet: 0.0,);
+      }
+    }
 
   void fetchInitialTimerValue() async {
     DatabaseReference timerRef = FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue'); // Updated path
@@ -608,31 +653,94 @@ class _ChessBoardState extends State<ChessBoard> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  // Future<bool> _onBackPressed() async {
+  //   bool shouldPop = await showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Confirm'),
+  //       content: Text('Do you want to resign and quit the game?'),
+  //       actions: <Widget>[
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.of(context).pop(false); // User chooses to continue the game.
+  //           },
+  //           child: Text('Continue to Game'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             // Update game status to reflect user resignation.
+  //             _handleUserResignation();
+  //           },
+  //           child: Text('Resign'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  //
+  //   return shouldPop;
+  // }
+  // Future<bool> _onBackPressed() async {
+  //   bool shouldPop = await showDialog(
+  //     context: context,
+  //     builder: (context) => AlertDialog(
+  //       title: Text('Game Options'),
+  //       content: Text('Choose an option for the game.'),
+  //       actions: <Widget>[
+  //         TextButton(
+  //           onPressed: () {
+  //             Navigator.of(context).pop(false); // User chooses to continue the game.
+  //           },
+  //           child: Text('Continue Game'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             _handleUserResignation(); // User chooses to resign.
+  //           },
+  //           child: Text('Resign'),
+  //         ),
+  //         TextButton(
+  //           onPressed: () {
+  //             _handleOfferDraw(); // User chooses to offer a draw.
+  //           },
+  //           child: Text('Offer Draw'),
+  //         ),
+  //       ],
+  //     )
+  //   );
+  //
+  //   return shouldPop;
+  // }
   Future<bool> _onBackPressed() async {
-    bool shouldPop = await showDialog(
+    return await showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text('Confirm'),
-        content: Text('Do you want to resign and quit the game?'),
+        content: Text('Choose an option:'),
         actions: <Widget>[
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop(false); // User chooses to continue the game.
-            },
-            child: Text('Continue to Game'),
+            onPressed: () => Navigator.of(context).pop(false), // Continue the game
+            child: Text('Continue Game'),
           ),
           TextButton(
-            onPressed: () {
-              // Update game status to reflect user resignation.
-              _handleUserResignation();
-            },
+            onPressed: _handleUserResignation, // Resign the game
             child: Text('Resign'),
+          ),
+          TextButton(
+            onPressed: _handleOfferDraw, // Offer a draw
+            child: Text('Offer Draw'),
           ),
         ],
       ),
-    );
+    ) ?? false; // If dialog is dismissed, return false
+  }
+  void _handleOfferDraw() {
+    DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
+    gameRef.update({
+      'drawOffer': currentUserUID,
+    });
 
-    return shouldPop;
+    // Close the dialog
+    Navigator.of(context).pop(false);
   }
 
 

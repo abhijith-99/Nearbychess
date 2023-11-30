@@ -161,9 +161,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         .collection('matches')
         .get();
 
-    return matchesQuerySnapshot.docs
+    var matches = matchesQuerySnapshot.docs
         .map((doc) => MatchRecord.fromFirestore(doc))
         .toList();
+
+    // Sort the matches by time in descending order (newest first)
+    matches.sort((a, b) => b.time.compareTo(a.time));
+
+    return matches;
+
   }
 
   Future<Map<String, dynamic>> getOpponentDetails(String opponentUid) async {
@@ -210,279 +216,290 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       'drawPercentage': drawPercentage,
     };
   }
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('User Details',style: TextStyle(fontSize: 16),)),
+      appBar: AppBar(title: const Text('User Details', style: TextStyle(fontSize: 16),)),
       backgroundColor: Colors.grey[200],
       body: userDetails == null
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start, // Align to the start (left)
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+          : Column(
+        children: [
+          // The part above match history (not scrollable)
+          Container(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // User avatar
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: userDetails != null && userDetails!['avatar'] != null
-                          ? AssetImage(userDetails!['avatar']) // Use AssetImage for local assets
-                          : const AssetImage('assets/avatars/default.png'), // A default asset if the avatar URL is not found
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10), // Spacing between avatar and name/location
-                // User name, location, and statistics
-                Expanded( // Using Expanded to fill the remaining space
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // User name and location
-                      Text(
-                        userDetails!['name'],
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                      ),
-                      Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.location_on, color: Colors.grey, size: 12),
-                          const SizedBox(width: 2),
-                          Text(
-                            userDetails!['location'],
-                            style: const TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10), // Spacing between user details and match history
-
-            FutureBuilder<Map<String, dynamic>>(
-              future: fetchMatchStatistics(widget.userId),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const CircularProgressIndicator();
-                }
-                var stats = snapshot.data!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Games Played :',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: Colors.grey[800],
-                          ),
+                    // User avatar
+                    Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image: userDetails != null && userDetails!['avatar'] != null
+                              ? AssetImage(userDetails!['avatar']) // Use AssetImage for local assets
+                              : const AssetImage('assets/avatars/default.png'), // A default asset if the avatar URL is not found
+                          fit: BoxFit.cover,
                         ),
-                        const SizedBox(width: 10),
-                        Text(
-                          '${stats['totalMatches']}',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-
-                    const SizedBox(height: 20),
-
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        StatisticText(
-                          label: '${stats['wins']} Won',
-                          value: stats['winPercentage'].toStringAsFixed(1) + '%',
-                          color: Colors.green,
-                        ),
-                        StatisticText(
-                          label: '${stats['draws']} Drawn',
-                          value: stats['drawPercentage'].toStringAsFixed(1) + '%',
-                          color: Colors.grey,
-                        ),
-                        StatisticText(
-                          label: '${stats['losses']} Lost',
-                          value: stats['lossPercentage'].toStringAsFixed(1) + '%',
-                          color: Colors.red,
-                        ),
-                      ],
-                    ),
-
-
-                    const SizedBox(height: 5),
-
-                    // Container to create the horizontal bar
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16.0), // Adds horizontal padding to the container
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(10.0), // Applies rounded corners to the outer container
-                        child: Container(
-                          height: 10.0, // Height of the bar
-                          decoration: const BoxDecoration(
-                            color: Colors.black26, // Background color for the entire bar
+                    const SizedBox(width: 10), // Spacing between avatar and name/location
+                    // User name, location, and statistics
+                    Expanded( // Using Expanded to fill the remaining space
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // User name and location
+                          Text(
+                            userDetails!['name'],
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
                           ),
-                          child: Row(
-                            children: <Widget>[
-                              Expanded(
-                                flex: stats['wins'], // Proportion of wins
-                                child: Container(color: Colors.green),
-                              ),
-                              Expanded(
-                                flex: stats['draws'], // Proportion of draws
-                                child: Container(color: Colors.grey),
-                              ),
-                              Expanded(
-                                flex: stats['losses'], // Proportion of losses
-                                child: Container(color: Colors.red),
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.location_on, color: Colors.grey, size: 12),
+                              const SizedBox(width: 2),
+                              Text(
+                                userDetails!['location'],
+                                style: const TextStyle(fontSize: 12, color: Colors.grey),
                               ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
                     ),
-
-
-
-
                   ],
-                );
-              },
-            ),
-
-            const SizedBox(height: 10),
-            Divider(
-              color: Colors.grey[300], // Choose a darker shade for the divider
-              thickness: 1.0, // Set the thickness of the divider
-              endIndent: 0, // Optional: Adjust this for indentation from the end side
-              indent: 0, // Optional: Adjust this for indentation from the start side
-            ),
-            // Separator line
-            Text(
-              'Match History',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[800]), // Dark grey color
-            ),
-            FutureBuilder<List<MatchRecord>>(
-              future: fetchUserMatches(widget.userId),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return Text("Error: ${snapshot.error}");
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Text('No match history available');
-                }
-                return ListView.builder(
-                  physics: const NeverScrollableScrollPhysics(),
-                  shrinkWrap: true,
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    final match = snapshot.data![index];
-                    return FutureBuilder<Map<String, dynamic>>(
-                      future: getOpponentDetails(match.opponentUid),
-                      builder: (context, opponentSnapshot) {
-                        if (opponentSnapshot.connectionState == ConnectionState.waiting) {
-                          return const Card(child: ListTile(title: Text('Loading...')));
-                        }
-                        if (!opponentSnapshot.hasData) {
-                          return const Card(child: ListTile(title: Text('Opponent not found')));
-                        }
-                        var opponentData = opponentSnapshot.data!;
-                        String betDisplay;
-                        Color betColor;
-
-                        switch (match.result) {
-                          case 'win':
-                            betDisplay = '+ ₹${match.bet.toStringAsFixed(2)}';
-                            betColor = Colors.green;
-                            break;
-                          case 'lose':
-                            betDisplay = '- ₹${match.bet.toStringAsFixed(2)}';
-                            betColor = Colors.red;
-                            break;
-                          default: // For 'draw' or any other result
-                            betDisplay = '₹0.00';
-                            betColor = Colors.grey;
-                            break;
-                        }
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
-                          elevation: 4.0, // Adds a subtle shadow
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15.0), // Rounded corners
-                          ),
-                          child: ListTile(
-                            contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
-                            leading: CircleAvatar(
-                              backgroundImage: AssetImage(opponentData['avatar']),
-                              radius: 20, // Adjust the size of the avatar
+                ),
+                const SizedBox(height: 10),
+                FutureBuilder<Map<String, dynamic>>(
+                  future: fetchMatchStatistics(widget.userId),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData) {
+                      return const CircularProgressIndicator();
+                    }
+                    var stats = snapshot.data!;
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Games Played :',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.grey[800],
+                              ),
                             ),
-                            title: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisAlignment: MainAxisAlignment.center, // Vertically center the column contents
-                              children: [
-                                Text(opponentData['name'], style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
-                                const SizedBox(height: 4.0),
-                                Text(opponentData['location'], style: const TextStyle(fontSize: 10.0, color: Colors.grey)),
-                                const SizedBox(height: 4.0),
-                                Text(DateFormat('dd/MM/yyyy HH:mm').format(match.time), style: const TextStyle(fontSize: 8.0, color: Colors.grey)),
-                              ],
+                            const SizedBox(width: 10),
+                            Text(
+                              '${stats['totalMatches']}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black,
+                              ),
                             ),
-                            trailing: FittedBox(
-                              fit: BoxFit.fill,
+                          ],
+                        ),
+
+                        const SizedBox(height: 20),
+
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            StatisticText(
+                              label: '${stats['wins']} Won',
+                              value: stats['winPercentage'].toStringAsFixed(1) + '%',
+                              color: Colors.green,
+                            ),
+                            StatisticText(
+                              label: '${stats['draws']} Drawn',
+                              value: stats['drawPercentage'].toStringAsFixed(1) + '%',
+                              color: Colors.grey,
+                            ),
+                            StatisticText(
+                              label: '${stats['losses']} Lost',
+                              value: stats['lossPercentage'].toStringAsFixed(1) + '%',
+                              color: Colors.red,
+                            ),
+                          ],
+                        ),
+
+
+                        const SizedBox(height: 5),
+
+                        // Container to create the horizontal bar
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16.0), // Adds horizontal padding to the container
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10.0), // Applies rounded corners to the outer container
+                            child: Container(
+                              height: 10.0, // Height of the bar
+                              decoration: const BoxDecoration(
+                                color: Colors.black26, // Background color for the entire bar
+                              ),
                               child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
-                                    decoration: BoxDecoration(
-                                      color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
-                                      borderRadius: BorderRadius.circular(20.0),
-                                    ),
-                                    child: Text(match.result.toUpperCase(), style: const TextStyle(color: Colors.white)),
+                                children: <Widget>[
+                                  Expanded(
+                                    flex: stats['wins'], // Proportion of wins
+                                    child: Container(color: Colors.green),
                                   ),
-                                  const SizedBox(width: 8.0),
-                                  Text(
-                                    match.result == 'win' ? '+ ₹${match.bet.toStringAsFixed(2)}' : match.result == 'lose' ? '- ₹${match.bet.toStringAsFixed(2)}' : '₹0.00',
-                                    style: TextStyle(
-                                        color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
-                                        fontWeight: FontWeight.bold
-                                    ),
+                                  Expanded(
+                                    flex: stats['draws'], // Proportion of draws
+                                    child: Container(color: Colors.grey),
+                                  ),
+                                  Expanded(
+                                    flex: stats['losses'], // Proportion of losses
+                                    child: Container(color: Colors.red),
                                   ),
                                 ],
                               ),
                             ),
                           ),
-                        );
+                        ),
 
-                      },
+
+
+
+                      ],
                     );
                   },
-                );
-              },
+                ),
+                // ... (Your existing code for match statistics)
+              ],
             ),
+          ),
+          Divider(
+            color: Colors.grey[300],
+            thickness: 1.0,
+            endIndent: 0,
+            indent: 0,
+          ),
+          Text(
+            'Match History',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.grey[800]),
+          ),
+          const SizedBox(height: 10),
+          // The match history (scrollable)
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 10),
+                  FutureBuilder<List<MatchRecord>>(
+                    future: fetchUserMatches(widget.userId),
+                    builder: (context, snapshot) {
 
-          ],
-        ),
+                      if (snapshot.hasError) {
+                        return Text("Error: ${snapshot.error}");
+                      }
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Text('No match history available');
+                      }
+                      return ListView.builder(
+                        physics: const NeverScrollableScrollPhysics(),
+                        shrinkWrap: true,
+                        itemCount: snapshot.data!.length,
+                        itemBuilder: (context, index) {
+                          final match = snapshot.data![index];
+                          return FutureBuilder<Map<String, dynamic>>(
+                            future: getOpponentDetails(match.opponentUid),
+                            builder: (context, opponentSnapshot) {
+                              if (opponentSnapshot.connectionState == ConnectionState.waiting) {
+                                return const Card(child: ListTile(title: Text('Loading...')));
+                              }
+                              if (!opponentSnapshot.hasData) {
+                                return const Card(child: ListTile(title: Text('Opponent not found')));
+                              }
+                              var opponentData = opponentSnapshot.data!;
+                              String betDisplay;
+                              Color betColor;
+
+                              switch (match.result) {
+                                case 'win':
+                                  betDisplay = '+ ₹${match.bet.toStringAsFixed(2)}';
+                                  betColor = Colors.green;
+                                  break;
+                                case 'lose':
+                                  betDisplay = '- ₹${match.bet.toStringAsFixed(2)}';
+                                  betColor = Colors.red;
+                                  break;
+                                default: // For 'draw' or any other result
+                                  betDisplay = '₹0.00';
+                                  betColor = Colors.grey;
+                                  break;
+                              }
+                              return Card(
+                                margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
+                                elevation: 4.0, // Adds a subtle shadow
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15.0), // Rounded corners
+                                ),
+                                child: ListTile(
+                                  contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
+                                  leading: CircleAvatar(
+                                    backgroundImage: AssetImage(opponentData['avatar']),
+                                    radius: 20, // Adjust the size of the avatar
+                                  ),
+                                  title: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center, // Vertically center the column contents
+                                    children: [
+                                      Text(opponentData['name'], style: const TextStyle(fontSize: 16.0, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 4.0),
+                                      Text(opponentData['location'], style: const TextStyle(fontSize: 10.0, color: Colors.grey)),
+                                      const SizedBox(height: 4.0),
+                                      Text(DateFormat('dd/MM/yyyy HH:mm').format(match.time), style: const TextStyle(fontSize: 8.0, color: Colors.grey)),
+                                    ],
+                                  ),
+                                  trailing: FittedBox(
+                                    fit: BoxFit.fill,
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                                          decoration: BoxDecoration(
+                                            color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
+                                            borderRadius: BorderRadius.circular(20.0),
+                                          ),
+                                          child: Text(match.result.toUpperCase(), style: const TextStyle(color: Colors.white)),
+                                        ),
+                                        const SizedBox(width: 8.0),
+                                        Text(
+                                          match.result == 'win' ? '+ ₹${match.bet.toStringAsFixed(2)}' : match.result == 'lose' ? '- ₹${match.bet.toStringAsFixed(2)}' : '₹0.00',
+                                          style: TextStyle(
+                                              color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+
+                            },
+                          );
+                        },
+                      );
+                    },
+                  ),
+                  // ... (Your existing code for match history)
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
+
+
 }
