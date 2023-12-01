@@ -91,7 +91,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   return Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No messages yet.'));
+                  return const Center(child: Text('No messages yet.'));
                 }
                 List<DocumentSnapshot> messages = snapshot.data!;
                 return ListView.builder(
