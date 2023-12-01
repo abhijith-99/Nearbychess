@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import 'message_scren.dart';
+
 
 // Define the MatchRecord class
 class MatchRecord {
@@ -224,67 +226,6 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start, // Align to the start (left)
           children: [
-            // Row(
-            //   crossAxisAlignment: CrossAxisAlignment.center,
-            //   children: [
-            //     // User avatar
-            //     Container(
-            //       width: 80,
-            //       height: 80,
-            //       decoration: BoxDecoration(
-            //         image: DecorationImage(
-            //           image: userDetails != null && userDetails!['avatar'] != null
-            //               ? AssetImage(userDetails!['avatar']) // Use AssetImage for local assets
-            //               : const AssetImage('assets/avatars/default.png'), // A default asset if the avatar URL is not found
-            //           fit: BoxFit.cover,
-            //         ),
-            //       ),
-            //     ),
-            //     const SizedBox(width: 10), // Spacing between avatar and name/location
-            //     // User name, location, and statistics
-            //     Expanded( // Using Expanded to fill the remaining space
-            //       child: Column(
-            //         crossAxisAlignment: CrossAxisAlignment.start,
-            //         children: [
-            //           // User name and location
-            //           Text(
-            //             userDetails!['name'],
-            //             style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-            //           ),
-            //           Row(
-            //             mainAxisSize: MainAxisSize.min,
-            //             children: [
-            //               const Icon(Icons.location_on, color: Colors.grey, size: 12),
-            //               const SizedBox(width: 2),
-            //               Text(
-            //                 userDetails!['location'],
-            //                 style: const TextStyle(fontSize: 12, color: Colors.grey),
-            //               ),
-            //             ],
-            //           ),
-            //
-            //
-            //       Positioned(
-            //         top: 8.0,
-            //         right: 8.0,
-            //         child: IconButton(
-            //           icon: Icon(Icons.chat_bubble_outline),
-            //           color: Colors.green,
-            //           onPressed: () {
-            //             // Handle chat icon press action
-            //           },
-            //         ),
-            //       ),
-            //
-            //
-            //         ],
-            //       ),
-            //     ),
-            //   ],
-            // ),
-
-
-
             Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -331,6 +272,13 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   color: Colors.blue,
                   onPressed: () {
                     // Handle chat icon press action
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        // builder: (context) => MessageScreen( opponentUId: ''),
+                        builder: (context) => MessageScreen(opponentUId: widget.userId),
+                      ),
+                    );
                   },
                 ),
               ],

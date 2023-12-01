@@ -25,6 +25,8 @@ dependencies:
   google_sign_in_web: ^0.12.1
   firebase_database: ^10.3.5
   firebase_core: ^2.23.0
+  rxdart: ^0.27.7
+
 
 
 dev_dependencies:
