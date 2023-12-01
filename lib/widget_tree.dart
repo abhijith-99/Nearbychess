@@ -37,7 +37,7 @@ class WidgetTree extends StatelessWidget {
             );
           } else {
             // No user is logged in, show login page
-            return const LoginRegisterPage();
+            return const UserProfilePage();
           }
         }
         // Waiting for authentication state
