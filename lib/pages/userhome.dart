@@ -260,20 +260,20 @@ class UserHomePageState extends State<UserHomePage>
                             ),
                           ),
                         ),
-                        ElevatedButton(
-                          onPressed: () {
-                            String? userId = opponentData['uid'];
-                            if (userId != null) {
-                              navigateToUserDetails(context, userId);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Error: User ID is null")),
-                              );
-                            }
-                          },
-                          child: const Text('Visit'),
-                        ),
+                          ElevatedButton(
+                            onPressed: () {
+                              String? userId = opponentData['uid'];
+                              if (userId != null) {
+                                navigateToUserDetails(context, userId);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                      content: Text("Error: User ID is null")),
+                                );
+                              }
+                            },
+                            child: const Text('Visit'),
+                          ),
                       ],
                     ),
                     SizedBox(height: 20),
