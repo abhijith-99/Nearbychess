@@ -25,13 +25,37 @@ class _UserProfilePageState extends State<UserProfilePage> {
     super.dispose();
   }
 
+
   // Future<void> createUserProfile() async {
+  //   Location location = new Location();
+  //   bool _serviceEnabled;
+  //   PermissionStatus _permissionGranted;
+  //   LocationData _locationData;
+
+  //   _serviceEnabled = await location.serviceEnabled();
+  //   if (!_serviceEnabled) {
+  //     _serviceEnabled = await location.requestService();
+  //     if (!_serviceEnabled) {
+  //       return;
+  //     }
+  //   }
+
+  //   _permissionGranted = await location.hasPermission();
+  //   if (_permissionGranted == PermissionStatus.denied) {
+  //     _permissionGranted = await location.requestPermission();
+  //     if (_permissionGranted != PermissionStatus.granted) {
+  //       return;
+  //     }
+  //   }
+
+  //   _locationData = await location.getLocation();
+
   //   if (_nameController.text.isNotEmpty &&
   //       _selectedLocation != null &&
   //       _selectedAvatar != null) {
   //     try {
   //       CollectionReference users =
-  //       FirebaseFirestore.instance.collection('users');
+  //           FirebaseFirestore.instance.collection('users');
   //       String userId = FirebaseAuth.instance.currentUser!.uid;
   //       await users.doc(userId).set({
   //         'uid': userId,
@@ -40,10 +64,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
   //         'avatar': _selectedAvatar,
   //         'isOnline': true,
   //         'inGame': false,
+  //         'latitude': _locationData.latitude, // Add latitude
+  //         'longitude': _locationData.longitude, // Add longitude
   //       });
   //       Navigator.of(context).pushReplacement(
   //         MaterialPageRoute(builder: (context) => const UserHomePage()),
   //       );
+  //       print("jdi");
   //     } catch (e) {
   //       ScaffoldMessenger.of(context).showSnackBar(
   //         SnackBar(content: Text('Error creating profile: $e')),
@@ -56,62 +83,74 @@ class _UserProfilePageState extends State<UserProfilePage> {
   //   }
   // }
 
+
+
+
+
+
+
+
+
   Future<void> createUserProfile() async {
-    Location location = new Location();
-    bool _serviceEnabled;
-    PermissionStatus _permissionGranted;
-    LocationData _locationData;
+  Location location = new Location();
+  bool _serviceEnabled;
+  PermissionStatus _permissionGranted;
+  LocationData _locationData;
 
-    _serviceEnabled = await location.serviceEnabled();
+  // Check and request location service and permission
+  _serviceEnabled = await location.serviceEnabled();
+  if (!_serviceEnabled) {
+    _serviceEnabled = await location.requestService();
     if (!_serviceEnabled) {
-      _serviceEnabled = await location.requestService();
-      if (!_serviceEnabled) {
-        return;
-      }
-    }
-
-    _permissionGranted = await location.hasPermission();
-    if (_permissionGranted == PermissionStatus.denied) {
-      _permissionGranted = await location.requestPermission();
-      if (_permissionGranted != PermissionStatus.granted) {
-        return;
-      }
-    }
-
-    _locationData = await location.getLocation();
-
-    if (_nameController.text.isNotEmpty &&
-        _selectedLocation != null &&
-        _selectedAvatar != null) {
-      try {
-        CollectionReference users =
-            FirebaseFirestore.instance.collection('users');
-        String userId = FirebaseAuth.instance.currentUser!.uid;
-        await users.doc(userId).set({
-          'uid': userId,
-          'name': _nameController.text,
-          'location': _selectedLocation,
-          'avatar': _selectedAvatar,
-          'isOnline': true,
-          'inGame': false,
-          'latitude': _locationData.latitude, // Add latitude
-          'longitude': _locationData.longitude, // Add longitude
-        });
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const UserHomePage()),
-        );
-        print("jdi");
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating profile: $e')),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
+      return;
     }
   }
+
+  _permissionGranted = await location.hasPermission();
+  if (_permissionGranted == PermissionStatus.denied) {
+    _permissionGranted = await location.requestPermission();
+    if (_permissionGranted != PermissionStatus.granted) {
+      return;
+    }
+  }
+
+  _locationData = await location.getLocation();
+
+  // Check if name and avatar are selected
+  if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
+    try {
+      CollectionReference users = FirebaseFirestore.instance.collection('users');
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      await users.doc(userId).set({
+        'uid': userId,
+        'name': _nameController.text,
+        'avatar': _selectedAvatar,
+        'isOnline': true,
+        'inGame': false,
+        'latitude': _locationData.latitude, // Store latitude
+        'longitude': _locationData.longitude, // Store longitude
+      });
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const UserHomePage()),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error creating profile: $e')),
+      );
+    }
+  } else {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Please fill in all fields')),
+    );
+  }
+}
+
+
+
+
+
+
+
 
   Widget buildAvatarSelector() {
     return Column(
@@ -217,25 +256,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                   const SizedBox(height: 20),
 
-                  DropdownButtonFormField<String>(
-                    value: _selectedLocation,
-                    hint: const Text('Select Location'),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedLocation = newValue;
-                      });
-                    },
-                    items: _locations.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                    ),
-                  ),
+             
 
                   const SizedBox(height: 20),
                   buildAvatarSelector(),

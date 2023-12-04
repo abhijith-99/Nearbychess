@@ -250,6 +250,7 @@ class UserHomePageState extends State<UserHomePage>
 
           setState(() {
             userLocation = majorPoint.name ?? 'Unknown';
+            onlineUsersStream = fetchOnlineUsers(userLat, userLon);
             // Update your stream if needed, or any other state updates
           });
         }
