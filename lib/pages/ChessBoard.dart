@@ -745,8 +745,11 @@ class _ChessBoardState extends State<ChessBoard> {
 
   // Get the size of the screen
   Size screenSize = MediaQuery.of(context).size;
-  // Set the size for the chessboard to be responsive
-  double boardSize = screenSize.width < 600 ? screenSize.width : 600;
+  double boardSize = screenSize.width < screenSize.height ? screenSize.width : screenSize.height;
+  boardSize = boardSize < 600 ? boardSize : 600; // Limit the size to 600 if it's larger
+  if (screenSize.height < screenSize.width) {
+    boardSize = screenSize.height * 0.6; // or some other factor that fits
+  }
 
 return WillPopScope(
         onWillPop: _onBackPressed,
@@ -796,8 +799,7 @@ return WillPopScope(
                 SizedBox(height: 20),
 
                 Container(
-                  height: MediaQuery.of(context).size.width,
-                  //child: Center(
+                  height: boardSize, // Use boardSize instead of MediaQuery.of(context).size.width
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Container(
