@@ -23,6 +23,7 @@ Future<void> main() async {
           messagingSenderId: "820296910788",
           projectId: "chessapp-68652",
           databaseURL: "https://chessapp-68652-default-rtdb.firebaseio.com/" // Add this line
+
       ));
   runApp(const ChessApp());
 }
