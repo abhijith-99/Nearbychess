@@ -26,6 +26,8 @@ dependencies:
   firebase_database: ^10.3.5
   firebase_core: ^2.23.0
   rxdart: ^0.27.7
+  google_maps_flutter: ^2.5.0
+  geocoding: ^2.1.1
 
 
 

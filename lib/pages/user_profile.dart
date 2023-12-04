@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mychessapp/pages/userhome.dart';
 
+import 'package:location/location.dart';
+
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({Key? key}) : super(key: key);
 
@@ -23,13 +25,67 @@ class _UserProfilePageState extends State<UserProfilePage> {
     super.dispose();
   }
 
+  // Future<void> createUserProfile() async {
+  //   if (_nameController.text.isNotEmpty &&
+  //       _selectedLocation != null &&
+  //       _selectedAvatar != null) {
+  //     try {
+  //       CollectionReference users =
+  //       FirebaseFirestore.instance.collection('users');
+  //       String userId = FirebaseAuth.instance.currentUser!.uid;
+  //       await users.doc(userId).set({
+  //         'uid': userId,
+  //         'name': _nameController.text,
+  //         'location': _selectedLocation,
+  //         'avatar': _selectedAvatar,
+  //         'isOnline': true,
+  //         'inGame': false,
+  //       });
+  //       Navigator.of(context).pushReplacement(
+  //         MaterialPageRoute(builder: (context) => const UserHomePage()),
+  //       );
+  //     } catch (e) {
+  //       ScaffoldMessenger.of(context).showSnackBar(
+  //         SnackBar(content: Text('Error creating profile: $e')),
+  //       );
+  //     }
+  //   } else {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('Please fill in all fields')),
+  //     );
+  //   }
+  // }
+
   Future<void> createUserProfile() async {
+    Location location = new Location();
+    bool _serviceEnabled;
+    PermissionStatus _permissionGranted;
+    LocationData _locationData;
+
+    _serviceEnabled = await location.serviceEnabled();
+    if (!_serviceEnabled) {
+      _serviceEnabled = await location.requestService();
+      if (!_serviceEnabled) {
+        return;
+      }
+    }
+
+    _permissionGranted = await location.hasPermission();
+    if (_permissionGranted == PermissionStatus.denied) {
+      _permissionGranted = await location.requestPermission();
+      if (_permissionGranted != PermissionStatus.granted) {
+        return;
+      }
+    }
+
+    _locationData = await location.getLocation();
+
     if (_nameController.text.isNotEmpty &&
         _selectedLocation != null &&
         _selectedAvatar != null) {
       try {
         CollectionReference users =
-        FirebaseFirestore.instance.collection('users');
+            FirebaseFirestore.instance.collection('users');
         String userId = FirebaseAuth.instance.currentUser!.uid;
         await users.doc(userId).set({
           'uid': userId,
@@ -38,10 +94,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
           'avatar': _selectedAvatar,
           'isOnline': true,
           'inGame': false,
+          'latitude': _locationData.latitude, // Add latitude
+          'longitude': _locationData.longitude, // Add longitude
         });
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const UserHomePage()),
         );
+        print("jdi");
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Error creating profile: $e')),
@@ -53,8 +112,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       );
     }
   }
-
-
 
   Widget buildAvatarSelector() {
     return Column(
@@ -81,9 +138,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ],
     );
   }
-
-
-
 
   Widget buildAvatarGrid() {
     List<String> avatarImages = [
@@ -117,7 +171,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
               border:
-              isSelected ? Border.all(color: Colors.blue, width: 3) : null,
+                  isSelected ? Border.all(color: Colors.blue, width: 3) : null,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Opacity(
@@ -129,7 +183,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       },
     );
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +216,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 20),
+
                   DropdownButtonFormField<String>(
                     value: _selectedLocation,
                     hint: const Text('Select Location'),
@@ -182,6 +236,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
                     ),
                   ),
+
                   const SizedBox(height: 20),
                   buildAvatarSelector(),
                   const SizedBox(height: 20),

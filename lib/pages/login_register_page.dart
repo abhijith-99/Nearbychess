@@ -135,12 +135,12 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
 
   Widget customDividerWithText() {
-    return Row(
+    return const Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
+            padding: EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
             child: Divider(
               color: Colors.grey, // Set the color of the divider
               thickness: 1, // Set the thickness of the divider
@@ -148,7 +148,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 0.0),
+          padding: EdgeInsets.symmetric(horizontal: 0.0),
           child: Text(
             "Or",
             style: TextStyle(color: Colors.white), // Set the text color
@@ -156,7 +156,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
+            padding: EdgeInsets.symmetric(horizontal: 12), // Reduce width of divider
             child: Divider(
               color: Colors.grey, // Set the color of the divider
               thickness: 1, // Set the thickness of the divider
