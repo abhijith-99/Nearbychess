@@ -667,29 +667,6 @@ class _ChessBoardState extends State<ChessBoard> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  // Future<bool> _onBackPressed() async {
-  //   return await showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Confirm'),
-  //       content: Text('Choose an option:'),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           onPressed: () => Navigator.of(context).pop(false), // Continue the game
-  //           child: Text('Continue Game'),
-  //         ),
-  //         TextButton(
-  //           onPressed: _handleUserResignation, // Resign the game
-  //           child: Text('Resign'),
-  //         ),
-  //         TextButton(
-  //           onPressed: _handleOfferDraw, // Offer a draw
-  //           child: Text('Offer Draw'),
-  //         ),
-  //       ],
-  //     ),
-  //   ) ?? false; // If dialog is dismissed, return false
-  // }
   Future<bool> _onBackPressed() async {
     return await showDialog(
       context: context,

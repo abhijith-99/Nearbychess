@@ -21,32 +21,6 @@ class _MessageScreenState extends State<MessageScreen> {
   void initState() {
     super.initState();
     myUserId = FirebaseAuth.instance.currentUser!.uid;
-
-    // // Combine both sent and received messages into one stream
-    // _messagesStream = Rx.combineLatest2(
-    //     FirebaseFirestore.instance.collection('messages')
-    //         .where('fromId', isEqualTo: myUserId)
-    //         .where('toId', isEqualTo: widget.opponentUId)
-    //         .snapshots(),
-    //     FirebaseFirestore.instance.collection('messages')
-    //         .where('fromId', isEqualTo: widget.opponentUId)
-    //         .where('toId', isEqualTo: myUserId)
-    //         .snapshots(),
-    //         (QuerySnapshot s1, QuerySnapshot s2) {
-    //       List<DocumentSnapshot> allMessages = [...s1.docs, ...s2.docs];
-    //       // Sort the combined messages by timestamp
-    //       allMessages.sort((a, b) {
-    //         Timestamp t1 = a.get('timestamp');
-    //         Timestamp t2 = b.get('timestamp');
-    //         return t1.compareTo(t2);
-    //       });
-    //       return allMessages;
-    //     }
-    // ).asBroadcastStream();
-
-
-
-
     _messagesStream = Rx.combineLatest2(
         FirebaseFirestore.instance.collection('messages')
             .where('fromId', isEqualTo: myUserId)
