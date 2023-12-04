@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:rxdart/rxdart.dart';
 
 class MessageScreen extends StatefulWidget {
   final String opponentUId;
@@ -16,35 +15,29 @@ class _MessageScreenState extends State<MessageScreen> {
   final TextEditingController _messageController = TextEditingController();
   late final Stream<List<DocumentSnapshot>> _messagesStream;
   String myUserId = '';
+  late String chatId;
 
   @override
   void initState() {
     super.initState();
     myUserId = FirebaseAuth.instance.currentUser!.uid;
-    _messagesStream = Rx.combineLatest2(
-        FirebaseFirestore.instance.collection('messages')
-            .where('fromId', isEqualTo: myUserId)
-            .where('toId', isEqualTo: widget.opponentUId)
-            .snapshots(),
-        FirebaseFirestore.instance.collection('messages')
-            .where('fromId', isEqualTo: widget.opponentUId)
-            .where('toId', isEqualTo: myUserId)
-            .snapshots(),
-            (QuerySnapshot s1, QuerySnapshot s2) {
-          List<DocumentSnapshot> allMessages = [...s1.docs, ...s2.docs];
-          // Sort the combined messages by timestamp in descending order
-          allMessages.sort((a, b) {
-            Timestamp t1 = a.get('timestamp');
-            Timestamp t2 = b.get('timestamp');
-            return t2.compareTo(t1);  // Sort in descending order
-          });
-          return allMessages;
-        }
-    ).asBroadcastStream();
+    chatId = getChatId(myUserId, widget.opponentUId) as String; // Implement this method to determine the chatId
 
-
-
+    _messagesStream = FirebaseFirestore.instance.collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .orderBy('timestamp', descending: true)
+        .snapshots()
+        .map((snapshot) =>
+    snapshot.docs); // This gives you a stream of message documents
   }
+
+  String getChatId(String user1, String user2) {
+    // Combine the two user IDs in a consistent order to generate a chatId
+    var sortedIds = [user1, user2]..sort();
+    return sortedIds.join('_'); // Join the sorted list into a single string
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -134,12 +127,31 @@ class _MessageScreenState extends State<MessageScreen> {
 
   void sendMessage(String message) {
     if (message.trim().isNotEmpty) {
-      FirebaseFirestore.instance.collection('messages').add({
+      FirebaseFirestore.instance.collection('chats')
+          .doc(chatId)
+          .collection('messages').add({
         'text': message,
         'fromId': myUserId,
         'toId': widget.opponentUId,
         'timestamp': FieldValue.serverTimestamp(),
       });
+
+      // Update the userChats collection
+      FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+        chatId: {
+          'lastMessage': message,
+          'timestamp': FieldValue.serverTimestamp(),
+          // 'unreadCount' should be managed via Cloud Functions or another mechanism
+        }
+      }, SetOptions(merge: true));
+
+      FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
+        chatId: {
+          'lastMessage': message,
+          'timestamp': FieldValue.serverTimestamp(),
+          // 'unreadCount' should be managed via Cloud Functions or another mechanism
+        }
+      }, SetOptions(merge: true));
 
       _messageController.clear();
     }
