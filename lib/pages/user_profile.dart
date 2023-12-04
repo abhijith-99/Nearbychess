@@ -38,6 +38,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           'avatar': _selectedAvatar,
           'isOnline': true,
           'inGame': false,
+          'chessCoins': 100,
         });
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const UserHomePage()),
