@@ -18,7 +18,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _nameController = TextEditingController();
   String? _selectedLocation;
   String? _selectedAvatar;
-  final List<String> _locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
   bool isAvatarListVisible = false;
 
   @override
@@ -26,70 +25,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _nameController.dispose();
     super.dispose();
   }
-
-
-  // Future<void> createUserProfile() async {
-  //   Location location = new Location();
-  //   bool _serviceEnabled;
-  //   PermissionStatus _permissionGranted;
-  //   LocationData _locationData;
-
-  //   _serviceEnabled = await location.serviceEnabled();
-  //   if (!_serviceEnabled) {
-  //     _serviceEnabled = await location.requestService();
-  //     if (!_serviceEnabled) {
-  //       return;
-  //     }
-  //   }
-
-  //   _permissionGranted = await location.hasPermission();
-  //   if (_permissionGranted == PermissionStatus.denied) {
-  //     _permissionGranted = await location.requestPermission();
-  //     if (_permissionGranted != PermissionStatus.granted) {
-  //       return;
-  //     }
-  //   }
-
-  //   _locationData = await location.getLocation();
-
-  //   if (_nameController.text.isNotEmpty &&
-  //       _selectedLocation != null &&
-  //       _selectedAvatar != null) {
-  //     try {
-  //       CollectionReference users =
-  //           FirebaseFirestore.instance.collection('users');
-  //       String userId = FirebaseAuth.instance.currentUser!.uid;
-  //       await users.doc(userId).set({
-  //         'uid': userId,
-  //         'name': _nameController.text,
-  //         'location': _selectedLocation,
-  //         'avatar': _selectedAvatar,
-  //         'isOnline': true,
-  //         'inGame': false,
-  //         'latitude': _locationData.latitude, // Add latitude
-  //         'longitude': _locationData.longitude, // Add longitude
-  //       });
-  //       Navigator.of(context).pushReplacement(
-  //         MaterialPageRoute(builder: (context) => const UserHomePage()),
-  //       );
-  //       print("jdi");
-  //     } catch (e) {
-  //       ScaffoldMessenger.of(context).showSnackBar(
-  //         SnackBar(content: Text('Error creating profile: $e')),
-  //       );
-  //     }
-  //   } else {
-  //     ScaffoldMessenger.of(context).showSnackBar(
-  //       const SnackBar(content: Text('Please fill in all fields')),
-  //     );
-  //   }
-  // }
-
-
-
-
-
-
 
 
 
