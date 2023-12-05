@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:geocoding/geocoding.dart' as geocoding;
+// import 'package:geocoding/geocoding.dart';
 import 'package:mychessapp/pages/userhome.dart';
 
 import 'package:location/location.dart';
@@ -92,6 +94,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
 
   Future<void> createUserProfile() async {
+  
   Location location = new Location();
   bool _serviceEnabled;
   PermissionStatus _permissionGranted;
@@ -143,6 +146,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
       const SnackBar(content: Text('Please fill in all fields')),
     );
   }
+
+
+   List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
+    _locationData.latitude!,
+    _locationData.longitude!,
+  );
+  geocoding.Placemark place = placemarks[0];
+  String city = place.locality ?? 'Unknown';
+  
 }
 
 
