@@ -48,6 +48,8 @@ class UserHomePageState extends State<UserHomePage>
   // Location location = Location();
   loc.Location location = loc.Location();
 
+  String? get placeName => null;
+
 
  Future<void> _determinePosition() async {
   bool serviceEnabled;
@@ -110,7 +112,10 @@ class UserHomePageState extends State<UserHomePage>
     listenToChallengeRequests();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
 
-    _determinePosition();
+    _determinePosition().then((_) {
+      // Assuming you have stored the user's current lat and lon in userLat and userLon variables
+      setupOpponentsListener(userLat!, userLon!); // Replace userLat and userLon with actual variables
+    });
   }
 
   // This function remains unchanged
@@ -203,24 +208,7 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  // void setupUserListener() {
-  //   var user = FirebaseAuth.instance.currentUser;
-  //   if (user != null) {
-  //     userSubscription = FirebaseFirestore.instance
-  //         .collection('users')
-  //         .doc(user.uid)
-  //         .snapshots()
-  //         .listen((snapshot) {
-  //       if (snapshot.exists) {
-  //         var userData = snapshot.data() as Map<String, dynamic>;
-  //         setState(() {
-  //           userLocation = userData['location'] ?? 'Unknown';
-  //           onlineUsersStream = fetchOnlineUsers(userLat, userLat);
-  //         });
-  //       }
-  //     });
-  //   }
-  // }
+
 
   void setupUserListener() {
     var user = FirebaseAuth.instance.currentUser;
@@ -248,10 +236,17 @@ class UserHomePageState extends State<UserHomePage>
               .doc(user.uid)
               .update({'location': majorPoint.name});
 
+          // setState(() {
+          //   userLocation = majorPoint.name ?? 'Unknown';
+          //   onlineUsersStream = fetchOnlineUsers(userLat, userLon);
+          //   userLocation = placeName!;
+          //   // Update your stream if needed, or any other state updates
+          // });
+
           setState(() {
-            userLocation = majorPoint.name ?? 'Unknown';
-            onlineUsersStream = fetchOnlineUsers(userLat, userLon);
-            // Update your stream if needed, or any other state updates
+            userLocation = userData['locationName'] ?? 'Unknown';
+            // Call fetchOnlineUsers with the user's location name
+            onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
           });
         }
       });
@@ -293,23 +288,7 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-  // Stream<List<DocumentSnapshot>> fetchOnlineUsers(String? location) {
-  //   Query query = FirebaseFirestore.instance.collection('users');
 
-  //   if (location != null && location.isNotEmpty) {
-  //     query = query.where('location', isEqualTo: location);
-  //   }
-
-  //   if (searchText.isNotEmpty) {
-  //     String searchEnd = searchText.substring(0, searchText.length - 1) +
-  //         String.fromCharCode(searchText.codeUnitAt(searchText.length - 1) + 1);
-  //     query = query
-  //         .where('name', isGreaterThanOrEqualTo: searchText)
-  //         .where('name', isLessThan: searchEnd);
-  //   }
-
-  //   return query.snapshots().map((snapshot) => snapshot.docs);
-  // }
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
     var p = 0.017453292519943295;
@@ -320,26 +299,95 @@ class UserHomePageState extends State<UserHomePage>
     return 12742 * asin(sqrt(a));
   }
 
-  Stream<List<DocumentSnapshot>> fetchOnlineUsers(
-      double? userLat, double? userLon) {
+
+  Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
     return FirebaseFirestore.instance
         .collection('users')
+        .where('isOnline', isEqualTo: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.where((doc) {
-              var userData = doc.data() as Map<String, dynamic>;
-              var lat = userData['latitude'];
-              var lon = userData['longitude'];
-              var distance = calculateDistance(userLat, userLon, lat, lon);
-              return distance <= 0.1; // 0.1 km is 100 meters
-            }).toList());
+      var userData = doc.data() as Map<String, dynamic>;
+      var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
+      return distance <= radiusInKm;
+    }).toList());
   }
+
+  void setupOpponentsListener(double userLat, double userLon) {
+    fetchNearbyOpponents(userLat, userLon, 10.0) // 10.0 km radius, adjust as needed
+        .listen((userDocs) {
+      updateMarkers(userDocs);
+    });
+  }
+
+
+
+  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String userLocationName) {
+    // Set the distance threshold for nearby users, for example, within 10 km
+    double distanceThreshold = 10.0;
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .where('locationName', isEqualTo: userLocationName) // Filter by location name
+        .snapshots()
+        .map((snapshot) => snapshot.docs.where((doc) {
+      var userData = doc.data() as Map<String, dynamic>;
+      // You could further filter by distance if needed
+      // var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
+      // return distance <= distanceThreshold;
+      return true; // If you just want to filter by location name, return true
+    }).toList());
+  }
+
+
+
+
+
+  void updateMarkers(List<DocumentSnapshot> userDocs) {
+    Set<Marker> newMarkers = {};
+
+    for (var doc in userDocs) {
+      var userData = doc.data() as Map<String, dynamic>;
+      var userMarker = Marker(
+        markerId: MarkerId(doc.id),
+        position: LatLng(userData['latitude'], userData['longitude']),
+        infoWindow: InfoWindow(title: userData['name']),
+        // Add custom icon if needed
+        // icon: BitmapDescriptor.fromAsset('path/to/asset'),
+      );
+
+      newMarkers.add(userMarker);
+    }
+
+    setState(() {
+      markers.clear();
+      markers = newMarkers;
+    });
+  }
+
+
+
+  void updateUserLocation(LocationData location) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId == null) return;
+
+    final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    await userRef.update({
+      'latitude': location.latitude,
+      'longitude': location.longitude,
+    });
+  }
+
+
+
+
+
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       setState(() {
         searchText = query;
-        onlineUsersStream = fetchOnlineUsers(userLat, userLon);
+        // onlineUsersStream = fetchOnlineUsers(userLat, userLon);
       });
     });
   }

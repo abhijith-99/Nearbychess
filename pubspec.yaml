@@ -16,7 +16,8 @@ dependencies:
   geolocator: ^10.1.0
   permission_handler: ^11.0.1
   firebase_auth: ^4.14.1
-  cloud_firestore: ^4.12.2
+  cloud_firestore: ^4.12.2 # Original version causing conflict
+  firebase_core: ^2.23.0 # Original version causing conflict
   firebase_storage: ^11.4.1
   flutter_launcher_icons: ^0.13.1
   flutter_svg: ^2.0.9
@@ -24,11 +25,9 @@ dependencies:
   google_sign_in: ^6.1.6
   google_sign_in_web: ^0.12.1
   firebase_database: ^10.3.5
-  firebase_core: ^2.23.0
   rxdart: ^0.27.7
   google_maps_flutter: ^2.5.0
   geocoding: ^2.1.1
-
 
 
 dev_dependencies:
@@ -57,9 +56,9 @@ flutter:
     - assets/android_light_rd_SI.svg
 
   fonts:
-    -  family: Roboto
-       fonts:
-         - asset: assets/fonts/Roboto-Medium.ttf
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Medium.ttf
 
     - family: Poppins
       fonts:
@@ -67,11 +66,13 @@ flutter:
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
 
-
-
 flutter_icons:
   android: true
   ios: true
   image_path: "assets/appicon.png" # Replace with your icon file's path
   adaptive_icon_background: "#FFFFFF" # Optional: Background color for Android adaptive icon
+
+
+
+
 

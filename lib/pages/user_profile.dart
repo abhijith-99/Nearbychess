@@ -54,6 +54,14 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   _locationData = await location.getLocation();
 
+  // Get the place name from geocoding
+  List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
+    _locationData.latitude!,
+    _locationData.longitude!,
+  );
+  geocoding.Placemark place = placemarks.first;
+  String placeName = place.subLocality ?? place.locality ?? place.administrativeArea ?? 'Unknown';
+
   // Check if name and avatar are selected
   if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
     try {
@@ -67,6 +75,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         'inGame': false,
         'latitude': _locationData.latitude, // Store latitude
         'longitude': _locationData.longitude, // Store longitude
+        'locationName': placeName,
       });
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const UserHomePage()),
@@ -83,14 +92,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
 
-   List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
-    _locationData.latitude!,
-    _locationData.longitude!,
-  );
-  geocoding.Placemark place = placemarks[0];
-  String city = place.locality ?? 'Unknown';
-  
-}
+
+  // Now update the userLocation state
+  setState(() {
+    var userLocation = placeName;
+  });
+
+  }
 
 
 
