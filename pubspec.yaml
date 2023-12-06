@@ -53,7 +53,7 @@ flutter:
     - assets/logo1.png
     - assets/paper-plane-solid.svg
     - assets/android_light_rd_SI.svg
-
+    - assets/NBC-token.png
   fonts:
     -  family: Roboto
        fonts:

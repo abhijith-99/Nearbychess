@@ -40,7 +40,136 @@ class UserHomePageState extends State<UserHomePage>
     listenToChallengeRequests();
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      await checkAndUpdateDailyLoginBonus(userId); // Ensure this completes
+      // Introduce a slight delay
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          showDailyBonusDialogIfNeeded(context, userId);
+        }
+      });
+
+    });
   }
+
+  Future<void> checkAndUpdateDailyLoginBonus(String userId) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+
+      if (!snapshot.exists) {
+        throw Exception("User does not exist!");
+      }
+
+      var userData = snapshot.data() as Map<String, dynamic>;
+      Timestamp? lastLoginDate = userData['lastLoginDate'];
+      int consecutiveLoginDays = userData['consecutiveLoginDays'] ?? 0;
+      bool bonusReadyToClaim = userData['bonusReadyToClaim'] ?? false;
+
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+      DateTime lastLogin = lastLoginDate?.toDate() ?? DateTime(1970);
+      DateTime lastLoginDay = DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
+
+      if (lastLoginDay.isBefore(today) && !bonusReadyToClaim) {
+        consecutiveLoginDays = lastLoginDay.add(Duration(days: 1)).isBefore(today) ? 1 : consecutiveLoginDays + 1;
+
+        transaction.update(userRef, {
+          'consecutiveLoginDays': consecutiveLoginDays,
+          'bonusReadyToClaim': true,
+          'lastLoginDate': Timestamp.fromDate(now)
+        });
+      }
+    }).catchError((error) {
+      print("Error updating daily bonus: $error");
+      // Handle the error appropriately
+    });
+  }
+
+  Future<void> showDailyBonusDialogIfNeeded(BuildContext context, String userId) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      var userData = userDoc.data() as Map<String, dynamic>;
+      bool bonusReadyToClaim = userData['bonusReadyToClaim'] ?? false;
+      int consecutiveLoginDays = userData['consecutiveLoginDays'] ?? 0;
+
+      if (bonusReadyToClaim) {
+        // Calculate bonus amount based on consecutiveLoginDays
+        int bonusAmount = calculateBonusAmount(consecutiveLoginDays);
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.symmetric(vertical: 10), // Adjust the vertical padding
+              title: Center(
+                child: Column(
+                  children: [
+                    Text(
+                      "Daily Login Bonus",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      "Login Bonus Day $consecutiveLoginDays",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min, // Set the mainAxisSize to MainAxisSize.min
+                children: [
+                  Container(
+                    child: CircleAvatar(
+                      radius: 80,
+                      backgroundImage: AssetImage('assets/NBC-token.png'),
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    "$bonusAmount NBC",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 5),
+                  ElevatedButton(
+                    child: const Text("Claim Bonus"),
+                    onPressed: () {
+                      claimDailyBonus(userId, bonusAmount);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      }
+    }
+  }
+
+  int calculateBonusAmount(int consecutiveLoginDays) {
+    return 20 + (consecutiveLoginDays - 1) * 5;
+  }
+
+  Future<void> claimDailyBonus(String userId, int bonusAmount) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+      if (snapshot.exists) {
+        var userData = snapshot.data() as Map<String, dynamic>;
+        int currentBalance = userData['chessCoins'] ?? 0;
+        transaction.update(userRef, {
+          'chessCoins': currentBalance + bonusAmount,
+          'bonusReadyToClaim': false
+        });
+      }
+    });
+  }
+
 
   void fetchCurrentUserChessCoins() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -706,3 +835,4 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
+
