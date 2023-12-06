@@ -331,16 +331,51 @@ class _ChessBoardState extends State<ChessBoard> {
   }) {
     if (!isGameEnded) {
       isGameEnded = true; // Set the flag to indicate the game has ended
+
+      // Determine the winner and loser based on the result
+      String winnerUID = (result == 'win') ? userId1 : userId2;
+      String loserUID = (winnerUID == userId1) ? userId2 : userId1;
+
       updateMatchHistory(
         userId1: userId1,
         userId2: userId2,
         result: result,
         bet: bet,
       );
+      if (result != 'draw') {
+        updateChessCoinsBalance(winnerUID, bet, true); // Winner
+        updateChessCoinsBalance(loserUID, bet, false); // Loser
+      }
     }
   }
 
-    void _updateGameStatus(String newStatus) {
+  Future<void> updateChessCoinsBalance(String userId, double betAmount, bool didWin) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+
+      if (!snapshot.exists) {
+        throw Exception("User does not exist!");
+      }
+
+      // Cast the data to Map<String, dynamic> before accessing its properties
+      var userData = snapshot.data() as Map<String, dynamic>;
+      int currentBalance = userData['chessCoins'] ?? 0;
+
+      // Compute the updated balance
+      int updatedBalance = didWin ? (currentBalance + betAmount).round() : (currentBalance - betAmount).round();
+
+      transaction.update(userRef, {'chessCoins': updatedBalance});
+    }).catchError((error) {
+      print("Error updating balance: $error");
+      // Handle the error appropriately
+    });
+  }
+
+
+
+  void _updateGameStatus(String newStatus) {
       DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
       gameRef.update({
         'gameStatus': newStatus,

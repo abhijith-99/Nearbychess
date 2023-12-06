@@ -27,7 +27,8 @@ class UserHomePageState extends State<UserHomePage>
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-  String localTimerValue = '20';
+  String localTimerValue = '10';
+  int currentUserChessCoins = 0;
 
 
 
@@ -37,7 +38,143 @@ class UserHomePageState extends State<UserHomePage>
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
     listenToChallengeRequests();
+    fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      await checkAndUpdateDailyLoginBonus(userId); // Ensure this completes
+      // Introduce a slight delay
+      Future.delayed(const Duration(seconds: 3), () {
+        if (mounted) {
+          showDailyBonusDialogIfNeeded(context, userId);
+        }
+      });
+
+    });
+  }
+
+  Future<void> checkAndUpdateDailyLoginBonus(String userId) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+
+      if (!snapshot.exists) {
+        throw Exception("User does not exist!");
+      }
+
+      var userData = snapshot.data() as Map<String, dynamic>;
+      Timestamp? lastLoginDate = userData['lastLoginDate'];
+      int consecutiveLoginDays = userData['consecutiveLoginDays'] ?? 0;
+      bool bonusReadyToClaim = userData['bonusReadyToClaim'] ?? false;
+
+      DateTime now = DateTime.now();
+      DateTime today = DateTime(now.year, now.month, now.day);
+      DateTime lastLogin = lastLoginDate?.toDate() ?? DateTime(1970);
+      DateTime lastLoginDay = DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
+
+      if (lastLoginDay.isBefore(today) && !bonusReadyToClaim) {
+        consecutiveLoginDays = lastLoginDay.add(Duration(days: 1)).isBefore(today) ? 1 : consecutiveLoginDays + 1;
+
+        transaction.update(userRef, {
+          'consecutiveLoginDays': consecutiveLoginDays,
+          'bonusReadyToClaim': true,
+          'lastLoginDate': Timestamp.fromDate(now)
+        });
+      }
+    }).catchError((error) {
+      print("Error updating daily bonus: $error");
+      // Handle the error appropriately
+    });
+  }
+
+  Future<void> showDailyBonusDialogIfNeeded(BuildContext context, String userId) async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      var userData = userDoc.data() as Map<String, dynamic>;
+      bool bonusReadyToClaim = userData['bonusReadyToClaim'] ?? false;
+      int consecutiveLoginDays = userData['consecutiveLoginDays'] ?? 0;
+
+      if (bonusReadyToClaim) {
+        // Calculate bonus amount based on consecutiveLoginDays
+        int bonusAmount = calculateBonusAmount(consecutiveLoginDays);
+
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              contentPadding: EdgeInsets.symmetric(vertical: 10), // Adjust the vertical padding
+              title: Center(
+                child: Column(
+                  children: [
+                    Text(
+                      "Daily Login Bonus",
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 5),
+                    Text(
+                      "Login Bonus Day $consecutiveLoginDays",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  ],
+                ),
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min, // Set the mainAxisSize to MainAxisSize.min
+                children: [
+                  Container(
+                    child: CircleAvatar(
+                      radius: 80,
+                      backgroundImage: AssetImage('assets/NBC-token.png'),
+                    ),
+                  ),
+                  SizedBox(height: 5),
+                  Text(
+                    "$bonusAmount NBC",
+                    style: TextStyle(fontSize: 16),
+                  ),
+                  SizedBox(height: 5),
+                  ElevatedButton(
+                    child: const Text("Claim Bonus"),
+                    onPressed: () {
+                      claimDailyBonus(userId, bonusAmount);
+                      Navigator.of(context).pop();
+                    },
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      }
+    }
+  }
+
+  int calculateBonusAmount(int consecutiveLoginDays) {
+    return 20 + (consecutiveLoginDays - 1) * 5;
+  }
+
+  Future<void> claimDailyBonus(String userId, int bonusAmount) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+      if (snapshot.exists) {
+        var userData = snapshot.data() as Map<String, dynamic>;
+        int currentBalance = userData['chessCoins'] ?? 0;
+        transaction.update(userRef, {
+          'chessCoins': currentBalance + bonusAmount,
+          'bonusReadyToClaim': false
+        });
+      }
+    });
+  }
+
+
+  void fetchCurrentUserChessCoins() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    currentUserChessCoins = await getUserChessCoins(userId);
+    setState(() {}); // Trigger a rebuild to update the UI
   }
 
   // This function remains unchanged
@@ -210,8 +347,26 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
+  Future<int> getUserChessCoins(String userId) async {
+    DocumentSnapshot userDoc =
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+    if (userDoc.exists) {
+      // Cast the data to Map<String, dynamic> before accessing its properties
+      var userData = userDoc.data() as Map<String, dynamic>;
+      return userData['chessCoins'] ?? 0;
+    } else {
+      return 0; // Handle this case appropriately
+    }
+  }
+
+
+
 
   void _showChallengeModal(BuildContext context, Map<String, dynamic> opponentData) {
+    String currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    int currentUserChessCoins = 0;
+    int opponentChessCoins = 0;
     String localBetAmount = betAmount; // Local variable for bet amount
     String localTimerValue = this.localTimerValue; // Initialize with the local value
     bool isChallengeable = !(opponentData['inGame'] ?? false);
@@ -222,6 +377,13 @@ class UserHomePageState extends State<UserHomePage>
     // Initialize the button state for this user if not already set
     challengeButtonCooldown[opponentId] ??= true;
     bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
+
+    // Function to fetch the current user's Chess Coins and update the state
+    // Fetch and update the current user's and opponent's Chess Coins
+    Future<void> fetchAndUpdateChessCoins() async {
+      currentUserChessCoins = await getUserChessCoins(currentUserId);
+      opponentChessCoins = await getUserChessCoins(opponentId);
+    }
 
     showModalBottomSheet(
       context: context,
@@ -234,6 +396,7 @@ class UserHomePageState extends State<UserHomePage>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
+                    // ... existing code for modal layout ...
                     const Text(
                       "Set your Stake",
                       style: TextStyle(
@@ -260,20 +423,20 @@ class UserHomePageState extends State<UserHomePage>
                             ),
                           ),
                         ),
-                          ElevatedButton(
-                            onPressed: () {
-                              String? userId = opponentData['uid'];
-                              if (userId != null) {
-                                navigateToUserDetails(context, userId);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                      content: Text("Error: User ID is null")),
-                                );
-                              }
-                            },
-                            child: const Text('Visit'),
-                          ),
+                        ElevatedButton(
+                          onPressed: () {
+                            String? userId = opponentData['uid'];
+                            if (userId != null) {
+                              navigateToUserDetails(context, userId);
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text("Error: User ID is null")),
+                              );
+                            }
+                          },
+                          child: const Text('Visit'),
+                        ),
                       ],
                     ),
                     SizedBox(height: 20),
@@ -344,23 +507,37 @@ class UserHomePageState extends State<UserHomePage>
                       ),
                       onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
                           ? () async {
-                        if (isChallengeable) {
-                          setModalState(() => challengeButtonCooldown[opponentId] = false);
-                          await _sendChallenge(opponentData['uid'], localBetAmount,localTimerValue);
-                          Navigator.pop(context);
-                          Timer(Duration(seconds: 30), () {
-                            setState(() => challengeButtonCooldown[opponentId] = true);
-                          });
-                        } else if (currentGameId != null) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => ChessBoard(gameId: currentGameId),
-                            ),
-                          );
+                        int betAmountInt = int.parse(localBetAmount.replaceAll('\$', ''));
+                        await fetchAndUpdateChessCoins();
+                        if (currentUserChessCoins < betAmountInt) {
+                          showInsufficientFundsDialog("You do not have enough Chess Coins to place this bet.");
+                        } else if (opponentChessCoins < betAmountInt) {
+                          showInsufficientFundsDialog("Opponent does not have enough Chess Coins for this bet.");
+                        }
+                        else {
+                          if (isChallengeable) {
+                            setModalState(() =>
+                            challengeButtonCooldown[opponentId] = false);
+                            await _sendChallenge(
+                                opponentData['uid'], localBetAmount,
+                                localTimerValue);
+                            Navigator.pop(context);
+                            Timer(Duration(seconds: 30), () {
+                              setState(() =>
+                              challengeButtonCooldown[opponentId] = true);
+                            });
+                          } else if (currentGameId != null) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    ChessBoard(gameId: currentGameId),
+                              ),
+                            );
+                          }
                         }
                       }
-                          : null,
+                          : null, // Disable the button if conditions are not met
                       child: Text(isOnline
                           ? (isChallengeable ? 'Challenge' : 'Watch Game')
                           : 'Player Offline'),
@@ -374,10 +551,6 @@ class UserHomePageState extends State<UserHomePage>
       },
     );
   }
-
-
-
-
 
   Future<void> _sendChallenge(String opponentId, String betAmount, String localTimerValue) async {
 
@@ -425,6 +598,26 @@ class UserHomePageState extends State<UserHomePage>
     } else {
       print('User is not logged in.');
     }
+  }
+
+  void showInsufficientFundsDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Insufficient Chess Coins"),
+          content: Text(message),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("OK"),
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Function to retrieve the user's name from Firestore
@@ -642,3 +835,4 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
+
