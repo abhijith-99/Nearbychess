@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:mychessapp/main.dart';
@@ -40,6 +41,8 @@ class UserHomePageState extends State<UserHomePage>
   double? get userLat => null;
   double? get userLon => null;
 
+  String _mapStyle = '';
+
   // Add GoogleMapController
   GoogleMapController? mapController;
   Set<Marker> markers = {};
@@ -48,7 +51,9 @@ class UserHomePageState extends State<UserHomePage>
   // Location location = Location();
   loc.Location location = loc.Location();
 
-  String? get placeName => null;
+  String? get locationName => null;
+
+  // String? get placeName => null;
 
 
  Future<void> _determinePosition() async {
@@ -111,11 +116,13 @@ class UserHomePageState extends State<UserHomePage>
     setupUserListener();
     listenToChallengeRequests();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
-
+    _loadMapStyle();
     _determinePosition().then((_) {
-      // Assuming you have stored the user's current lat and lon in userLat and userLon variables
       setupOpponentsListener(userLat!, userLon!); // Replace userLat and userLon with actual variables
     });
+  }
+  Future<void> _loadMapStyle() async {
+    _mapStyle = await rootBundle.loadString('assets/new_map.json');
   }
 
   // This function remains unchanged
@@ -210,6 +217,19 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
+
+  // Function to get the human-readable location name from coordinates
+  Future<String> getLocationName(double latitude, double longitude) async {
+    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    if (placemarks != null && placemarks.isNotEmpty) {
+      Placemark placemark = placemarks[0];
+      return placemark.locality ?? placemark.name ?? 'Unknown Location';
+    } else {
+      return 'Unknown Location';
+    }
+  }
+
+
   void setupUserListener() {
     var user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -230,24 +250,30 @@ class UserHomePageState extends State<UserHomePage>
           // Assuming we take the first placemark as the major point
           Placemark majorPoint = placemarks.first;
 
+          // Retrieve the city name using coordinates
+          String city = await getLocationName(userLat, userLon);
+          // String userlocation = await getLocationName(userLat, userLon);
+
+
+          print("384902384329048city$city");
+
+
           // Update Firestore with the major point name
           await FirebaseFirestore.instance
               .collection('users')
               .doc(user.uid)
-              .update({'location': majorPoint.name});
-
-          // setState(() {
-          //   userLocation = majorPoint.name ?? 'Unknown';
-          //   onlineUsersStream = fetchOnlineUsers(userLat, userLon);
-          //   userLocation = placeName!;
-          //   // Update your stream if needed, or any other state updates
-          // });
-
-          setState(() {
-            userLocation = userData['locationName'] ?? 'Unknown';
-            // Call fetchOnlineUsers with the user's location name
-            onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
-          });
+              // .update({'location': userLocation});
+              .update({'location': majorPoint.name, 'city': city});
+            setState(() {
+              // userLocation = userData['locationName'] ?? 'Unknown';
+              // userLocation = userData['location'] ?? 'Unknown';
+              userLocation = userData['city'] ?? 'Unknown';
+              city = userData['city'] ?? 'Unknown';
+              // userLocation = userData['location'] ?? 'Unknown';
+              print("_+_+####################$userLocation");
+              // onlineUsersStream = fetchOnlineUsersWithLocationName(userlocation);
+              onlineUsersStream = fetchOnlineUsersWithLocationName(city);
+            });
         }
       });
     }
@@ -321,13 +347,13 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String userLocationName) {
+  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
     // Set the distance threshold for nearby users, for example, within 10 km
     double distanceThreshold = 10.0;
 
     return FirebaseFirestore.instance
         .collection('users')
-        .where('locationName', isEqualTo: userLocationName) // Filter by location name
+        .where('locationName', isEqualTo: city) // Filter by location name
         .snapshots()
         .map((snapshot) => snapshot.docs.where((doc) {
       var userData = doc.data() as Map<String, dynamic>;
@@ -630,6 +656,7 @@ class UserHomePageState extends State<UserHomePage>
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _determinePosition();
+    mapController?.setMapStyle(_mapStyle);
   }
 
   @override
@@ -693,6 +720,7 @@ class UserHomePageState extends State<UserHomePage>
 
           Text(
             'Players in $userLocation',
+            // 'players $city',
             style: const TextStyle(
               fontFamily: 'Poppins',
               color: Color.fromARGB(255, 12, 4, 4),

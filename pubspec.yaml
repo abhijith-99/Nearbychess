@@ -54,6 +54,7 @@ flutter:
     - assets/logo1.png
     - assets/paper-plane-solid.svg
     - assets/android_light_rd_SI.svg
+    - assets/new_map.json
 
   fonts:
     - family: Roboto
