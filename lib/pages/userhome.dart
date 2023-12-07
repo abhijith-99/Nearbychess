@@ -19,6 +19,12 @@ import 'dart:math' show cos, sqrt, asin, pi;
 import 'package:geocoding/geocoding.dart';
 import 'package:geocoding/geocoding.dart' hide Location;
 
+
+import 'package:location/location.dart';
+
+import 'package:geocoding/geocoding.dart' as geocoding;
+
+
 class UserHomePage extends StatefulWidget {
   const UserHomePage({Key? key}) : super(key: key);
 
@@ -118,7 +124,8 @@ class UserHomePageState extends State<UserHomePage>
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
     _loadMapStyle();
     _determinePosition().then((_) {
-      setupOpponentsListener(userLat!, userLon!); // Replace userLat and userLon with actual variables
+      // setupOpponentsListener(userLat!, userLon!); // Replace userLat and userLon with actual variables
+      setupOpponentsListener();
     });
   }
   Future<void> _loadMapStyle() async {
@@ -252,6 +259,7 @@ class UserHomePageState extends State<UserHomePage>
 
           // Retrieve the city name using coordinates
           String city = await getLocationName(userLat, userLon);
+
           // String userlocation = await getLocationName(userLat, userLon);
 
 
@@ -267,12 +275,23 @@ class UserHomePageState extends State<UserHomePage>
             setState(() {
               // userLocation = userData['locationName'] ?? 'Unknown';
               // userLocation = userData['location'] ?? 'Unknown';
-              userLocation = userData['city'] ?? 'Unknown';
+              // userLocation = userData['city'] ?? 'Unknown';
+              userLocation = city;
               city = userData['city'] ?? 'Unknown';
               // userLocation = userData['location'] ?? 'Unknown';
               print("_+_+####################$userLocation");
               // onlineUsersStream = fetchOnlineUsersWithLocationName(userlocation);
               onlineUsersStream = fetchOnlineUsersWithLocationName(city);
+              // onlineUsersStream = fetchNearbyOpponents(userLat, userLon, 10.0);
+
+
+              onlineUsersStream.listen((userDocs) {
+                print("Fetched Users: $userDocs");
+                if (userDocs.isNotEmpty) {
+                  // Update your UI with this list
+                  updateMarkers(userDocs);
+                }
+              });
             });
         }
       });
@@ -326,6 +345,8 @@ class UserHomePageState extends State<UserHomePage>
   }
 
 
+
+
   Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
     return FirebaseFirestore.instance
         .collection('users')
@@ -338,31 +359,54 @@ class UserHomePageState extends State<UserHomePage>
     }).toList());
   }
 
-  void setupOpponentsListener(double userLat, double userLon) {
-    fetchNearbyOpponents(userLat, userLon, 10.0) // 10.0 km radius, adjust as needed
-        .listen((userDocs) {
-      updateMarkers(userDocs);
+
+
+  void setupOpponentsListener() {
+    _determinePosition().then((_) {
+      // Check if currentLocation is not null before using it
+      if (currentLocation != null) {
+        double userLat = currentLocation!.latitude!;
+        double userLon = currentLocation!.longitude!;
+
+        // Now call fetchNearbyOpponents with the actual latitude and longitude
+        fetchNearbyOpponents(userLat, userLon, 10.0) // Adjust the radius as needed
+            .listen((userDocs) {
+          updateMarkers(userDocs); // Update the map markers
+          // Update any other UI components that list the nearby users
+        });
+      }
     });
   }
 
 
 
+
+
   Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
-    // Set the distance threshold for nearby users, for example, within 10 km
-    double distanceThreshold = 10.0;
+    // Assuming currentLocation is not null and contains the correct data
+    final double userLat = currentLocation!.latitude!;
+    final double userLon = currentLocation!.longitude!;
+    final double distanceThreshold = 10.0; // 10 km radius for nearby users
 
     return FirebaseFirestore.instance
         .collection('users')
-        .where('locationName', isEqualTo: city) // Filter by location name
+        .where('city', isEqualTo: city) // Filter by city name
+        .where('isOnline', isEqualTo: true) // Ensure the user is online
         .snapshots()
         .map((snapshot) => snapshot.docs.where((doc) {
       var userData = doc.data() as Map<String, dynamic>;
-      // You could further filter by distance if needed
-      // var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
-      // return distance <= distanceThreshold;
-      return true; // If you just want to filter by location name, return true
+      var distance = calculateDistance(
+        userLat,
+        userLon,
+        userData['latitude'],
+        userData['longitude'],
+      );
+      return distance <= distanceThreshold; // Check if within the distance threshold
     }).toList());
   }
+
+
+
 
 
 
@@ -391,7 +435,6 @@ class UserHomePageState extends State<UserHomePage>
   }
 
 
-
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
@@ -402,8 +445,6 @@ class UserHomePageState extends State<UserHomePage>
       'longitude': location.longitude,
     });
   }
-
-
 
 
 
