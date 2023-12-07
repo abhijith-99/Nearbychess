@@ -22,7 +22,7 @@ class _MessageScreenState extends State<MessageScreen> {
   void initState() {
     super.initState();
     myUserId = FirebaseAuth.instance.currentUser!.uid;
-    chatId = getChatId(myUserId, widget.opponentUId) as String;
+    chatId = getChatId(myUserId, widget.opponentUId);
 
     _messagesStream = FirebaseFirestore.instance
         .collection('chats')
@@ -31,7 +31,19 @@ class _MessageScreenState extends State<MessageScreen> {
         .orderBy('timestamp', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs);
+
+    resetUnreadCount();
   }
+
+  void resetUnreadCount() {
+    if (chatId.isNotEmpty) {
+      FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
+        chatId: {'unreadCount': 0},
+      }, SetOptions(merge: true));
+    }
+  }
+
+
 
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
@@ -151,7 +163,8 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   void sendMessageToRecipient(String recipientUserId, String message, {bool isGiftMessage = false}) {
-    FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+    var messageRef = FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').doc();
+    messageRef.set({
       'text': message,
       'fromId': myUserId,
       'toId': recipientUserId,
@@ -159,13 +172,13 @@ class _MessageScreenState extends State<MessageScreen> {
       'isGiftMessage': isGiftMessage,
     });
 
-    FirebaseFirestore.instance.collection('userChats').doc(recipientUserId).set({
+    FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
       chatId: {
-        'lastMessage': message,
-        'timestamp': FieldValue.serverTimestamp(),
+        'unreadCount': FieldValue.increment(1),
       }
     }, SetOptions(merge: true));
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -315,7 +328,8 @@ class _MessageScreenState extends State<MessageScreen> {
 
   void sendMessage(String message, {bool isGiftMessage = false}) {
     if (message.trim().isNotEmpty) {
-      FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').add({
+      var messageRef = FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').doc();
+      messageRef.set({
         'text': message,
         'fromId': myUserId,
         'toId': widget.opponentUId,
@@ -323,17 +337,10 @@ class _MessageScreenState extends State<MessageScreen> {
         'isGiftMessage': isGiftMessage,
       });
 
+      // Create or update chat document
       FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
         chatId: {
-          'lastMessage': message,
-          'timestamp': FieldValue.serverTimestamp(),
-        }
-      }, SetOptions(merge: true));
-
-      FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
-        chatId: {
-          'lastMessage': message,
-          'timestamp': FieldValue.serverTimestamp(),
+          'unreadCount': FieldValue.increment(1),
         }
       }, SetOptions(merge: true));
 

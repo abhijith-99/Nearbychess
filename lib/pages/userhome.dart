@@ -632,6 +632,31 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
+  Stream<int> getUnreadMessageCountStream(String userId) {
+    String myUserId = FirebaseAuth.instance.currentUser!.uid;
+    String chatId = getChatId(myUserId, userId);
+
+    return FirebaseFirestore.instance
+        .collection('userChats')
+        .doc(userId)
+        .snapshots()
+        .map((doc) {
+      if (doc.exists) {
+        var userData = doc.data()?[chatId] as Map<String, dynamic>?;
+        return userData?['unreadCount'] ?? 0;
+      }
+      return 0;
+    });
+  }
+
+
+
+
+  String getChatId(String user1, String user2) {
+    var sortedIds = [user1, user2]..sort();
+    return sortedIds.join('_');
+  }
+
   @override
   Widget build(BuildContext context) {
     var currentUser = FirebaseAuth.instance.currentUser;
@@ -681,7 +706,6 @@ class UserHomePageState extends State<UserHomePage>
               fontWeight: FontWeight.bold,
             ),
           ),
-          // ... rest of the code for GridView.builder ...
           Expanded(
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: onlineUsersStream,
@@ -717,52 +741,59 @@ class UserHomePageState extends State<UserHomePage>
                   itemBuilder: (context, index) {
                     var userData = users[index];
                     String avatarUrl = userData['avatar'];
-                    bool isOnline = userData['isOnline'] ??
-                        false; // Assuming 'isOnline' is a field in your document
-                    return GestureDetector(
-                      onTap: () => _showChallengeModal(context, userData),
-                      child: Column(
-                        children: <Widget>[
-                          CircleAvatar(
-                            backgroundImage: AssetImage(avatarUrl),
-                            radius: 36,
-                            backgroundColor: Colors
-                                .transparent, // Ensures the background is transparent
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                image: DecorationImage(
-                                  image: AssetImage(avatarUrl),
-                                  fit: BoxFit.cover,
-                                  colorFilter: isOnline
-                                      ? null
-                                      : const ColorFilter.mode(
-                                      Colors.grey,
-                                      BlendMode
-                                          .saturation), // Dim the avatar if offline
-                                ),
-                                border: Border.all(
-                                  color: isOnline
-                                      ? Colors.green
-                                      : Colors.grey
-                                      .shade500, // Red border for offline users
-                                  width: 3,
+                    bool isOnline = userData['isOnline'] ?? false;
+                    String userId = userData['uid']; // Assuming each user has a unique 'uid'
+
+                    // Inside GridView.builder
+                    return StreamBuilder<int>(
+                      stream: getUnreadMessageCountStream(userId),
+                      builder: (context, snapshot) {
+                        int unreadCount = snapshot.data ?? 0;
+                        return GestureDetector(
+                          onTap: () => _showChallengeModal(context, userData),
+                          child: Column(
+                            children: <Widget>[
+                              Stack(
+                                alignment: Alignment.topRight,
+                                children: <Widget>[
+                                  CircleAvatar(
+                                    backgroundImage: AssetImage(avatarUrl),
+                                    radius: 36,
+                                  ),
+
+                                  // Unread count badge
+                                  if (unreadCount > 0)
+                                    Positioned(
+                                      right: 0,
+                                      child: Container(
+                                        padding: EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: Colors.red,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Text(
+                                          '$unreadCount',
+                                          style: TextStyle(color: Colors.white, fontSize: 12),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              SizedBox(height: 6),
+                              Text(
+                                userData['name'] ?? 'Username',
+                                style: TextStyle(
+                                  fontFamily: 'Poppins',
+                                  color: Color.fromARGB(255, 12, 6, 6),
+                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            userData['name'] ?? 'Username',
-                            style: const TextStyle(
-                              fontFamily: 'Poppins',
-                              color: Color.fromARGB(255, 12, 6, 6),
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
+
                   },
                 );
               },
