@@ -420,9 +420,14 @@ class UserHomePageState extends State<UserHomePage>
       var userMarker = Marker(
         markerId: MarkerId(doc.id),
         position: LatLng(userData['latitude'], userData['longitude']),
-        infoWindow: InfoWindow(title: userData['name']),
-        // Add custom icon if needed
-        // icon: BitmapDescriptor.fromAsset('path/to/asset'),
+        // infoWindow: InfoWindow(title: userData['name']),
+        infoWindow: InfoWindow(
+          title: userData['name'],
+        ),
+        onTap: () {
+          // Add your onTap functionality here, for example:
+          _showChallengeModal(context, userData);
+        },
       );
 
       newMarkers.add(userMarker);
@@ -433,6 +438,22 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
   void updateUserLocation(LocationData location) async {
