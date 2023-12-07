@@ -46,6 +46,7 @@ class _ChessBoardState extends State<ChessBoard> {
   double betAmount = 0.0; // Variable to store the bet amount
   bool isGameEnded = false;
 
+
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
     String pieceColor = color == chess.Color.WHITE ? 'white' : 'black';
@@ -76,6 +77,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
   Future<double> fetchBetAmount(String gameId) async {
     try {
+
       // Fetch the game document from Firebase Realtime Database
       DatabaseReference ref = FirebaseDatabase.instance.ref('games/$gameId');
       var snapshot = await ref.get();
@@ -83,6 +85,7 @@ class _ChessBoardState extends State<ChessBoard> {
       if (snapshot.exists) {
         var gameData = snapshot.value as Map<dynamic, dynamic>;
         String betAmountString = gameData['betAmount']?.toString() ?? '0';
+
 
         // Extract the numeric part of the betAmountString
         var betAmount = double.tryParse(betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
@@ -92,7 +95,8 @@ class _ChessBoardState extends State<ChessBoard> {
       print('Error fetching bet amount: $e');
       return 0.0; // Return default value in case of error
     }
-    return 0.0; // Return default value if the data does not exist
+    return 0.0; // Return default value if document does not exist
+
   }
 
 
@@ -104,6 +108,7 @@ class _ChessBoardState extends State<ChessBoard> {
   }) async {
 
     bet = betAmount;
+
     // Reference to the Firestore collection
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
@@ -240,6 +245,12 @@ class _ChessBoardState extends State<ChessBoard> {
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
     fetchInitialTimerValue();
+
+    fetchBetAmount(widget.gameId).then((value) {
+      setState(() {
+        betAmount = value;
+      });
+    });
 
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
@@ -876,9 +887,6 @@ return WillPopScope(
                           if (isLastMoveSquare) {
                             squareColor = Colors.blueGrey.withOpacity(0.5); // Adjust the color and opacity as needed
                           }
-
-
-
                           return GestureDetector(
                             onTap: () {
 
