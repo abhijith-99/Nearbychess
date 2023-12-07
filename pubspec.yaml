@@ -10,27 +10,29 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  chess: ^0.7.0
+  chess: ^0.8.1
   cupertino_icons: ^1.0.2
   location: ^5.0.3
   geolocator: ^10.1.0
   permission_handler: ^11.0.1
-  firebase_auth: ^4.12.1
+  firebase_auth: ^4.14.1
   cloud_firestore: ^4.12.2
   firebase_storage: ^11.4.1
   flutter_launcher_icons: ^0.13.1
   flutter_svg: ^2.0.9
-  intl: ^0.17.0
-
+  intl: ^0.18.1
   google_sign_in: ^6.1.6
   google_sign_in_web: ^0.12.1
   firebase_database: ^10.3.5
   firebase_core: ^2.23.0
+  rxdart: ^0.27.7
+
+
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.0
+  flutter_lints: ^3.0.1
 
 flutter:
   uses-material-design: true
@@ -45,13 +47,25 @@ flutter:
     - assets/google_logo.svg
     - assets/phone_logo.svg
     - assets/Animation.gif
-
+    - assets/challenge.webp
+    - assets/timer.svg
+    - assets/background_knight.jpg
+    - assets/logo1.png
+    - assets/paper-plane-solid.svg
+    - assets/android_light_rd_SI.svg
+    - assets/NBC-token.png
   fonts:
+    -  family: Roboto
+       fonts:
+         - asset: assets/fonts/Roboto-Medium.ttf
+
     - family: Poppins
       fonts:
         - asset: assets/fonts/Poppins-Regular.ttf
         - asset: assets/fonts/Poppins-Bold.ttf
           weight: 700
+
+
 
 flutter_icons:
   android: true

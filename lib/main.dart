@@ -21,7 +21,10 @@ Future<void> main() async {
           apiKey: "AIzaSyA5LntFnqarzEsZoDAx8WuO98rnLaZjFzA",
           appId: "1:820296910788:web:00ca69115e86ddd8cd8691",
           messagingSenderId: "820296910788",
-          projectId: "chessapp-68652"));
+          projectId: "chessapp-68652",
+          databaseURL: "https://chessapp-68652-default-rtdb.firebaseio.com/"
+
+      ));
   runApp(const ChessApp());
 }
 
@@ -93,12 +96,14 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       home: const ChessSplashScreen(),
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey, // Assign the global navigator key here
+     
       routes: {
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
         '/login_register': (context) => const LoginRegisterPage(),
         // other routes...
 
       },
+      
     );
   }
 }

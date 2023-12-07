@@ -31,6 +31,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         CollectionReference users =
         FirebaseFirestore.instance.collection('users');
         String userId = FirebaseAuth.instance.currentUser!.uid;
+        DateTime now = DateTime.now();
         await users.doc(userId).set({
           'uid': userId,
           'name': _nameController.text,
@@ -38,6 +39,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
           'avatar': _selectedAvatar,
           'isOnline': true,
           'inGame': false,
+          'chessCoins': 100,
+          'lastLoginDate': Timestamp.fromDate(now),
+          'consecutiveLoginDays': 0,
+          'bonusReadyToClaim': false,
         });
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const UserHomePage()),
