@@ -17,7 +17,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _referralCodeController = TextEditingController();
   bool isReferralCodeValid = false;
   String verificationMessage = '';
-  String? _selectedLocation;
+  String? _selectedLocation = 'Kakkanad';
   String? _selectedAvatar;
   bool isAvatarListVisible = false;
 
@@ -322,6 +322,4 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
     );
   }
-
-
 }
