@@ -17,9 +17,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _referralCodeController = TextEditingController();
   bool isReferralCodeValid = false;
   String verificationMessage = '';
-  String? _selectedLocation;
+  String? _selectedLocation = 'Kakkanad';
   String? _selectedAvatar;
-  final List<String> _locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
   bool isAvatarListVisible = false;
 
   @override
@@ -267,32 +266,32 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       buildAvatarSelector(),
                       const SizedBox(height: 20),
                       Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: _referralCodeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Referral Code (Optional)',
-                            border: OutlineInputBorder(),
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _referralCodeController,
+                              decoration: const InputDecoration(
+                                labelText: 'Referral Code (Optional)',
+                                border: OutlineInputBorder(),
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Icon(isReferralCodeValid ? Icons.check : Icons.search),
+                            onPressed: verifyReferralCode,
+                          ),
+                        ],
+                      ),
+                      if (verificationMessage.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0),
+                          child: Text(
+                            verificationMessage,
+                            style: TextStyle(
+                              color: isReferralCodeValid ? Colors.green : Colors.red,
+                            ),
                           ),
                         ),
-                      ),
-                      IconButton(
-                        icon: Icon(isReferralCodeValid ? Icons.check : Icons.search),
-                        onPressed: verifyReferralCode,
-                      ),
-                    ],
-                  ),
-                  if (verificationMessage.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        verificationMessage,
-                        style: TextStyle(
-                          color: isReferralCodeValid ? Colors.green : Colors.red,
-                        ),
-                      ),
-                    ),
                       ElevatedButton(
                         onPressed: createUserProfile,
                         style: ElevatedButton.styleFrom(
@@ -323,6 +322,4 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
     );
   }
-
-
 }
