@@ -136,77 +136,91 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
 
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: Center(
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: <Widget>[
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Create User Profile',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'Poppins',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextFormField(
-                    controller: _nameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Name',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    value: _selectedLocation,
-                    hint: const Text('Select Location'),
-                    onChanged: (newValue) {
-                      setState(() {
-                        _selectedLocation = newValue;
-                      });
-                    },
-                    items: _locations.map<DropdownMenuItem<String>>((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  buildAvatarSelector(),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: createUserProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF3F6669),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18.0),
+
+        body: Stack(
+          fit: StackFit.expand,
+          children: <Widget>[
+            Image.asset(
+              'assets/mono-white.jpg', // Replace with your image asset
+              fit: BoxFit.cover,
+            ),
+            Center(
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: <Widget>[
+                      const SizedBox(height: 50),
+                      const Text(
+                        'Create User Profile',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'Poppins',
+                          color: Colors.black,
+                        ),
                       ),
-                      padding: const EdgeInsets.symmetric(vertical: 15),
-                    ),
-                    child: const Text('Save Profile'),
+                      const SizedBox(height: 20),
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: InputDecoration(
+                          labelText: 'Name',
+                          labelStyle: const TextStyle(color: Colors.black),
+                          enabledBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Colors.black),
+                            borderRadius: BorderRadius.circular(8.0), // Border radius
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderSide: const BorderSide(color: Colors.black),
+                            borderRadius: BorderRadius.circular(8.0), // Border radius
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjust vertical padding
+                        ),
+                        style: const TextStyle(color: Colors.black),
+                      ),
+
+                      buildAvatarSelector(),
+                      const SizedBox(height: 20),
+
+                      ElevatedButton(
+                        onPressed: createUserProfile,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent, // Transparent background
+                          foregroundColor: Colors.black, // Black text color
+                          elevation: 0, // Remove elevation shadow
+                          side: const BorderSide(color: Colors.black, width: 1.3), // Thicker black border
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10.0),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                        ),
+                        child: const Text('Save Profile'),
+                      ),
+
+
+
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
+
+
+          ],
         ),
+
       ),
     );
   }
+
+
 }
