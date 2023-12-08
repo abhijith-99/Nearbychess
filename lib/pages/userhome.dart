@@ -828,6 +828,30 @@ class UserHomePageState extends State<UserHomePage>
                                   CircleAvatar(
                                     backgroundImage: AssetImage(avatarUrl),
                                     radius: 36,
+                                    backgroundColor: Colors
+                                        .transparent, // Ensures the background is transparent
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        image: DecorationImage(
+                                          image: AssetImage(avatarUrl),
+                                          fit: BoxFit.cover,
+                                          colorFilter: isOnline
+                                              ? null
+                                              : const ColorFilter.mode(
+                                              Colors.grey,
+                                              BlendMode
+                                                  .saturation), // Dim the avatar if offline
+                                        ),
+                                        border: Border.all(
+                                          color: isOnline
+                                              ? Colors.green
+                                              : Colors.grey
+                                              .shade500, // Red border for offline users
+                                          width: 3,
+                                        ),
+                                      ),
+                                    ),
                                   ),
 
                                   // Unread count badge
@@ -935,4 +959,3 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
-
