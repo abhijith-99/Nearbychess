@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -12,6 +14,9 @@ class UserProfilePage extends StatefulWidget {
 
 class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _referralCodeController = TextEditingController();
+  bool isReferralCodeValid = false;
+  String verificationMessage = '';
   String? _selectedLocation;
   String? _selectedAvatar;
   final List<String> _locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
@@ -23,6 +28,28 @@ class _UserProfilePageState extends State<UserProfilePage> {
     super.dispose();
   }
 
+  Future<void> verifyReferralCode() async {
+    String referralCode = _referralCodeController.text.trim();
+    if (referralCode.isNotEmpty) {
+      var referrerDoc = await FirebaseFirestore.instance.collection('users')
+          .where('referralCode', isEqualTo: referralCode)
+          .limit(1)
+          .get();
+
+      if (referrerDoc.docs.isNotEmpty) {
+        setState(() {
+          isReferralCodeValid = true;
+          verificationMessage = 'Valid Referral Code';
+        });
+      } else {
+        setState(() {
+          isReferralCodeValid = false;
+          verificationMessage = 'Invalid Referral Code';
+        });
+      }
+    }
+  }
+
   Future<void> createUserProfile() async {
     if (_nameController.text.isNotEmpty &&
         _selectedLocation != null &&
@@ -31,6 +58,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         CollectionReference users =
         FirebaseFirestore.instance.collection('users');
         String userId = FirebaseAuth.instance.currentUser!.uid;
+        String referralCode = generateReferralCode(userId);
         DateTime now = DateTime.now();
         await users.doc(userId).set({
           'uid': userId,
@@ -43,7 +71,15 @@ class _UserProfilePageState extends State<UserProfilePage> {
           'lastLoginDate': Timestamp.fromDate(now),
           'consecutiveLoginDays': 0,
           'bonusReadyToClaim': false,
+          'referralCode': referralCode,
+          'appliedReferralCode': _referralCodeController.text.trim(),
         });
+
+        // If a referral code was applied, handle the referral bonus
+        if (isReferralCodeValid) {
+          await applyReferralBonus(userId, _referralCodeController.text.trim());
+        }
+
         Navigator.of(context).pushReplacement(
           MaterialPageRoute(builder: (context) => const UserHomePage()),
         );
@@ -59,7 +95,48 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
+  Future<void> applyReferralBonus(String newUserId, String appliedReferralCode) async {
+    // Award bonus to the new user
+    await FirebaseFirestore.instance.collection('users').doc(newUserId)
+        .update({'chessCoins': FieldValue.increment(100)}); // Increment by 100
 
+    // Find the referrer's user ID and name using the referral code
+    var referrerDoc = await FirebaseFirestore.instance.collection('users')
+        .where('referralCode', isEqualTo: appliedReferralCode)
+        .limit(1)
+        .get();
+
+    if (referrerDoc.docs.isNotEmpty) {
+      // Award bonus to the referrer
+      var referrerUserData = referrerDoc.docs.first.data();
+      String referrerUserId = referrerDoc.docs.first.id;
+      String referrerName = referrerUserData['name']; // Assuming 'name' field exists
+
+      await FirebaseFirestore.instance.collection('users').doc(referrerUserId)
+          .update({'chessCoins': FieldValue.increment(100)}); // Increment by 100
+
+      // Update the referrer's document with referral bonus info
+      await FirebaseFirestore.instance.collection('users').doc(referrerUserId).update({
+        'referralBonusInfo': {
+          'type': 'referrer',
+          'referredName': (await FirebaseFirestore.instance.collection('users').doc(newUserId).get()).data()?['name'],
+        }
+      });
+
+      // Update the new user's document with referral bonus info
+      await FirebaseFirestore.instance.collection('users').doc(newUserId).update({
+        'referralBonusInfo': {
+          'type': 'received',
+          'referrerName': referrerName,
+        }
+      });
+    }
+  }
+
+
+  String generateReferralCode(String userId) {
+    return "100NBC${userId.substring(0, min(6, userId.length))}";
+  }
 
   Widget buildAvatarSelector() {
     return Column(
@@ -189,6 +266,34 @@ class _UserProfilePageState extends State<UserProfilePage> {
                   ),
                   const SizedBox(height: 20),
                   buildAvatarSelector(),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: _referralCodeController,
+                          decoration: const InputDecoration(
+                            labelText: 'Referral Code (Optional)',
+                            border: OutlineInputBorder(),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(isReferralCodeValid ? Icons.check : Icons.search),
+                        onPressed: verifyReferralCode,
+                      ),
+                    ],
+                  ),
+                  if (verificationMessage.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        verificationMessage,
+                        style: TextStyle(
+                          color: isReferralCodeValid ? Colors.green : Colors.red,
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: createUserProfile,
