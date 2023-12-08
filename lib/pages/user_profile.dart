@@ -142,7 +142,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
           fit: StackFit.expand,
           children: <Widget>[
             Image.asset(
-              'assets/monochrome-board.jpg', // Replace with your image asset
+              'assets/mono-white.jpg', // Replace with your image asset
               fit: BoxFit.cover,
             ),
             Center(
@@ -153,7 +153,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: <Widget>[
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 50),
                       const Text(
                         'Create User Profile',
                         textAlign: TextAlign.center,
@@ -161,7 +161,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           fontFamily: 'Poppins',
-                          color: Colors.white,
+                          color: Colors.black,
                         ),
                       ),
                       const SizedBox(height: 20),
@@ -169,32 +169,39 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         controller: _nameController,
                         decoration: InputDecoration(
                           labelText: 'Name',
-                          labelStyle: TextStyle(color: Colors.white), // White placeholder text
+                          labelStyle: const TextStyle(color: Colors.black),
                           enabledBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white), // White border
+                            borderSide: const BorderSide(color: Colors.black),
+                            borderRadius: BorderRadius.circular(8.0), // Border radius
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderSide: BorderSide(color: Colors.white), // White border when focused
+                            borderSide: const BorderSide(color: Colors.black),
+                            borderRadius: BorderRadius.circular(8.0), // Border radius
                           ),
+                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjust vertical padding
                         ),
-                        style: TextStyle(color: Colors.white), // White input text
+                        style: const TextStyle(color: Colors.black),
                       ),
 
                       buildAvatarSelector(),
                       const SizedBox(height: 20),
+
                       ElevatedButton(
                         onPressed: createUserProfile,
                         style: ElevatedButton.styleFrom(
-                          primary: Colors.transparent, // Transparent background
-                          onPrimary: Colors.white, // White text color
-                          side: BorderSide(color: Colors.white), // White border
+                          backgroundColor: Colors.transparent, // Transparent background
+                          foregroundColor: Colors.black, // Black text color
+                          elevation: 0, // Remove elevation shadow
+                          side: const BorderSide(color: Colors.black, width: 1.3), // Thicker black border
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
+                            borderRadius: BorderRadius.circular(10.0),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 15),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
                         child: const Text('Save Profile'),
                       ),
+
+
 
                     ],
                   ),

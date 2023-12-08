@@ -52,6 +52,7 @@ flutter:
     - assets/paper-plane-solid.svg
     - assets/android_light_rd_SI.svg
     - assets/monochrome-board.jpg
+    - assets/mono-white.jpg
 
   fonts:
     -  family: Roboto
