@@ -51,7 +51,76 @@ class UserHomePageState extends State<UserHomePage>
       });
 
     });
+    listenForReferralBonus();
   }
+
+  void listenForReferralBonus() {
+    String myUserId = FirebaseAuth.instance.currentUser!.uid;
+    FirebaseFirestore.instance
+        .collection('users')
+        .doc(myUserId)
+        .snapshots()
+        .listen((snapshot) {
+      if (snapshot.exists && snapshot.data()!.containsKey('referralBonusInfo')) {
+        var bonusInfo = snapshot.data()!['referralBonusInfo'];
+        if (bonusInfo != null) {
+          showReferralBonusPopup(bonusInfo);
+          // Optionally, remove the referral bonus info after showing the popup
+          FirebaseFirestore.instance.collection('users').doc(myUserId).update({'referralBonusInfo': FieldValue.delete()});
+        }
+      }
+    });
+  }
+
+  void showReferralBonusPopup(Map<String, dynamic> bonusInfo) {
+    String message;
+    if (bonusInfo['type'] == 'received') {
+      message = "Claimed referral from ${bonusInfo['referrerName']}.";
+    } else {
+      message = "${bonusInfo['referredName']} entered with your referral.";
+    }
+
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          contentPadding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          title: Center(
+            child: CircleAvatar(
+              radius: 40,
+              backgroundImage: AssetImage('assets/NBC-token.png'),
+            ),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              Text(
+                "100",
+                style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+          actions: <Widget>[
+            Center(
+              child: TextButton(
+                child: const Text("OK"),
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   Future<void> checkAndUpdateDailyLoginBonus(String userId) async {
     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
