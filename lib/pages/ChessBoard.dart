@@ -45,7 +45,7 @@ class _ChessBoardState extends State<ChessBoard> {
   bool _whiteTimerActive = false;
   double betAmount = 0.0; // Variable to store the bet amount
   bool isGameEnded = false;
-
+  int moveNumber=0;
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -226,7 +226,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
     // Append move number for white's move
     if (game.turn == chess.Color.BLACK) { // Check if the next turn is black's
-      int moveNumber = (game.history.length / 2).ceil() + 1;
+      moveNumber = moveNumber + 1;
       pgnNotation += '$moveNumber. ';
     }
 
