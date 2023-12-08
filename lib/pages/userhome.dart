@@ -347,6 +347,7 @@ class UserHomePageState extends State<UserHomePage>
           setState(() {
             userLocation = userData['location'] ?? 'Unknown';
             onlineUsersStream = fetchOnlineUsers(userLocation);
+            currentUserChessCoins = userData['chessCoins'] ?? 0;
           });
         }
       });
@@ -732,170 +733,199 @@ class UserHomePageState extends State<UserHomePage>
 
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 223, 225, 237),
-      appBar: AppBar(
-        toolbarHeight: 0, // AppBar is hidden
-        elevation: 0,
-      ),
-      body: Column(
-        children: <Widget>[
-          if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-            child: Container(
-              constraints: const BoxConstraints(
-                  maxWidth: 600), // Set a maximum width for the search bar
-              child: TextField(
-                onChanged: _onSearchChanged,
-                decoration: InputDecoration(
-                  labelText: 'Search Players in $userLocation',
-                  hintText: 'Enter player name...',
-                  prefixIcon: const Icon(Icons.search), // Add search icon
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(
-                        10), // Rounded corners for the border
-                    borderSide: BorderSide(
-                        color: Colors.blueGrey.shade800), // Custom border color
+      body: SafeArea( // Wrap the content in SafeArea
+        child: Stack(
+          children: [
+            // Your existing Column with user profile and grid
+            Column(
+              children: <Widget>[
+                if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  child: Container(
+                    constraints: const BoxConstraints(
+                        maxWidth: 600), // Set a maximum width for the search bar
+                    child: TextField(
+                      onChanged: _onSearchChanged,
+                      decoration: InputDecoration(
+                        labelText: 'Search Players in $userLocation',
+                        hintText: 'Enter player name...',
+                        prefixIcon: const Icon(Icons.search), // Add search icon
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(
+                              10), // Rounded corners for the border
+                          borderSide: BorderSide(
+                              color: Colors.blueGrey.shade800), // Custom border color
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            vertical: 20,
+                            horizontal: 20), // Padding inside the text field
+                        hintStyle: TextStyle(
+                            color: Colors.grey.shade500), // Lighter hint text color
+                      ),
+                    ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                      vertical: 20,
-                      horizontal: 20), // Padding inside the text field
-                  hintStyle: TextStyle(
-                      color: Colors.grey.shade500), // Lighter hint text color
+                ),
+
+                Text(
+                  'Players in $userLocation',
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    color: Color.fromARGB(255, 12, 4, 4),
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Expanded(
+                  child: StreamBuilder<List<DocumentSnapshot>>(
+                    stream: onlineUsersStream,
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                        return const Center(child: Text('No players Here'));
+                      }
+
+                      var currentUser = FirebaseAuth.instance.currentUser;
+                      var users = snapshot.data!
+                          .where((doc) => doc.id != currentUser!.uid)
+                          .map((doc) => doc.data() as Map<String, dynamic>)
+                          .toList();
+
+                      // Sorting users based on 'isOnline' status
+                      users.sort((a, b) {
+                        bool isOnlineA = a['isOnline'] ?? false;
+                        bool isOnlineB = b['isOnline'] ?? false;
+                        if (isOnlineA == isOnlineB) return 0;
+                        if (isOnlineA && !isOnlineB) return -1;
+                        return 1;
+                      });
+
+                      return GridView.builder(
+                        padding: const EdgeInsets.all(16),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 16,
+                          childAspectRatio: 1,
+                        ),
+                        itemCount: users.length,
+                        itemBuilder: (context, index) {
+                          var userData = users[index];
+                          String avatarUrl = userData['avatar'];
+                          bool isOnline = userData['isOnline'] ?? false;
+                          String userId = userData['uid']; // Assuming each user has a unique 'uid'
+
+                          // Inside GridView.builder
+                          return StreamBuilder<int>(
+                            stream: getUnreadMessageCountStream(userId),
+                            builder: (context, snapshot) {
+                              int unreadCount = snapshot.data ?? 0;
+                              return GestureDetector(
+                                onTap: () => _showChallengeModal(context, userData),
+                                child: Column(
+                                  children: <Widget>[
+                                    Stack(
+                                      alignment: Alignment.topRight,
+                                      children: <Widget>[
+                                        CircleAvatar(
+                                          backgroundImage: AssetImage(avatarUrl),
+                                          radius: 36,
+                                          backgroundColor: Colors
+                                              .transparent, // Ensures the background is transparent
+                                          child: Container(
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              image: DecorationImage(
+                                                image: AssetImage(avatarUrl),
+                                                fit: BoxFit.cover,
+                                                colorFilter: isOnline
+                                                    ? null
+                                                    : const ColorFilter.mode(
+                                                    Colors.grey,
+                                                    BlendMode
+                                                        .saturation), // Dim the avatar if offline
+                                              ),
+                                              border: Border.all(
+                                                color: isOnline
+                                                    ? Colors.green
+                                                    : Colors.grey
+                                                    .shade500, // Red border for offline users
+                                                width: 3,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+
+                                        // Unread count badge
+                                        if (unreadCount > 0)
+                                          Positioned(
+                                            right: 0,
+                                            child: Container(
+                                              padding: EdgeInsets.all(6),
+                                              decoration: BoxDecoration(
+                                                color: Colors.red,
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: Text(
+                                                '$unreadCount',
+                                                style: TextStyle(color: Colors.white, fontSize: 12),
+                                              ),
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    SizedBox(height: 6),
+                                    Text(
+                                      userData['name'] ?? 'Username',
+                                      style: TextStyle(
+                                        fontFamily: 'Poppins',
+                                        color: Color.fromARGB(255, 12, 6, 6),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          );
+
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+            // Positioned widget to show balance
+            Positioned(
+              top: 20, // Adjust top padding as needed
+              right: 5, // Adjust right padding as needed
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '$currentUserChessCoins',
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    CircleAvatar(
+                      backgroundImage: AssetImage('assets/NBC-token.png'),
+                      radius: 10,
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-
-          Text(
-            'Players in $userLocation',
-            style: const TextStyle(
-              fontFamily: 'Poppins',
-              color: Color.fromARGB(255, 12, 4, 4),
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<DocumentSnapshot>>(
-              stream: onlineUsersStream,
-              builder: (context, snapshot) {
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No players Here'));
-                }
-
-                var currentUser = FirebaseAuth.instance.currentUser;
-                var users = snapshot.data!
-                    .where((doc) => doc.id != currentUser!.uid)
-                    .map((doc) => doc.data() as Map<String, dynamic>)
-                    .toList();
-
-                // Sorting users based on 'isOnline' status
-                users.sort((a, b) {
-                  bool isOnlineA = a['isOnline'] ?? false;
-                  bool isOnlineB = b['isOnline'] ?? false;
-                  if (isOnlineA == isOnlineB) return 0;
-                  if (isOnlineA && !isOnlineB) return -1;
-                  return 1;
-                });
-
-                return GridView.builder(
-                  padding: const EdgeInsets.all(16),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    childAspectRatio: 1,
-                  ),
-                  itemCount: users.length,
-                  itemBuilder: (context, index) {
-                    var userData = users[index];
-                    String avatarUrl = userData['avatar'];
-                    bool isOnline = userData['isOnline'] ?? false;
-                    String userId = userData['uid']; // Assuming each user has a unique 'uid'
-
-                    // Inside GridView.builder
-                    return StreamBuilder<int>(
-                      stream: getUnreadMessageCountStream(userId),
-                      builder: (context, snapshot) {
-                        int unreadCount = snapshot.data ?? 0;
-                        return GestureDetector(
-                          onTap: () => _showChallengeModal(context, userData),
-                          child: Column(
-                            children: <Widget>[
-                              Stack(
-                                alignment: Alignment.topRight,
-                                children: <Widget>[
-                                  CircleAvatar(
-                                    backgroundImage: AssetImage(avatarUrl),
-                                    radius: 36,
-                                    backgroundColor: Colors
-                                        .transparent, // Ensures the background is transparent
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        image: DecorationImage(
-                                          image: AssetImage(avatarUrl),
-                                          fit: BoxFit.cover,
-                                          colorFilter: isOnline
-                                              ? null
-                                              : const ColorFilter.mode(
-                                              Colors.grey,
-                                              BlendMode
-                                                  .saturation), // Dim the avatar if offline
-                                        ),
-                                        border: Border.all(
-                                          color: isOnline
-                                              ? Colors.green
-                                              : Colors.grey
-                                              .shade500, // Red border for offline users
-                                          width: 3,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  // Unread count badge
-                                  if (unreadCount > 0)
-                                    Positioned(
-                                      right: 0,
-                                      child: Container(
-                                        padding: EdgeInsets.all(6),
-                                        decoration: BoxDecoration(
-                                          color: Colors.red,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '$unreadCount',
-                                          style: TextStyle(color: Colors.white, fontSize: 12),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                userData['name'] ?? 'Username',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins',
-                                  color: Color.fromARGB(255, 12, 6, 6),
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
-
-                  },
-                );
-              },
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
 }
 
 class UserProfileHeader extends StatelessWidget {
