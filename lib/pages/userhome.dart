@@ -1,4 +1,6 @@
 import 'dart:async';
+import 'dart:ui' as ui;
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -15,14 +17,14 @@ import 'challenge_request_screen.dart';
 
 import 'package:location/location.dart' as loc;
 
-import 'dart:math' show cos, sqrt, asin, pi;
+import 'dart:math' show asin, cos, max, pi, sqrt;
 import 'package:geocoding/geocoding.dart';
-import 'package:geocoding/geocoding.dart' hide Location;
+// import 'package:geocoding/geocoding.dart' hide Location;
 
 
 import 'package:location/location.dart';
 
-import 'package:geocoding/geocoding.dart' as geocoding;
+// import 'package:geocoding/geocoding.dart' as geocoding;
 
 
 class UserHomePage extends StatefulWidget {
@@ -59,10 +61,62 @@ class UserHomePageState extends State<UserHomePage>
 
   String? get locationName => null;
 
-  // String? get placeName => null;
 
 
- Future<void> _determinePosition() async {
+  Future<Uint8List> createCustomMarker(String userName) async {
+    final PictureRecorder pictureRecorder = PictureRecorder();
+    final Canvas canvas = Canvas(pictureRecorder);
+    final double iconSize = 100.0; // Size for the icon
+
+    final TextPainter textPainter = TextPainter(
+      text: TextSpan(
+        text: userName,
+        style: TextStyle(
+          fontSize: 35.0, // Font size for the text
+          color: Colors.yellow, // Color for the text
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+      textDirection: TextDirection.ltr,
+    );
+
+    textPainter.layout(); // Layout the text
+
+    // Calculate the total height of the canvas to fit the icon and the text
+    final double canvasHeight = textPainter.height + iconSize; // Text height plus icon size
+    final double canvasWidth = max(textPainter.width, iconSize); // The max width between text and icon
+
+    // Draw the text at the top of the canvas
+    final Offset textOffset = Offset((canvasWidth - textPainter.width) / 2, 0);
+    textPainter.paint(canvas, textOffset);
+
+    // Draw the icon below the text
+    final Paint paintCircle = Paint()..color = Colors.red;
+    final double iconOffsetY = textPainter.height; // Offset Y by the height of the text
+    canvas.drawCircle(
+      Offset(canvasWidth / 2, iconOffsetY + iconSize / 2), // Center of the icon in the canvas
+      iconSize / 2, // Radius of the icon
+      paintCircle,
+    );
+
+    // Convert the canvas drawing into an image
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
+      canvasWidth.toInt(),
+      canvasHeight.toInt(),
+    );
+
+    // Convert the image to bytes
+    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List uint8List = byteData!.buffer.asUint8List();
+
+    return uint8List;
+  }
+
+
+
+
+
+  Future<void> _determinePosition() async {
   bool serviceEnabled;
   loc.PermissionStatus permissionGranted;
 
@@ -87,6 +141,19 @@ class UserHomePageState extends State<UserHomePage>
   // Get the current location.
   currentLocation = await location.getLocation();
 
+
+
+
+  String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+  DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  String userName = userDoc['name']; // Replace 'name' with your Firestore field
+
+  // Create the custom marker
+  final Uint8List markerIcon = await createCustomMarker(userName);
+
+
+
+
   // Update the location on the map.
   mapController?.animateCamera(
     CameraUpdate.newCameraPosition(
@@ -103,16 +170,25 @@ class UserHomePageState extends State<UserHomePage>
       Marker(
         markerId: const MarkerId("current_location"),
         position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-        // Include the info window with the user name
-        infoWindow: const InfoWindow(
-          title: "User Name", // Replace with actual user name fetched from Firestore
-          snippet: "Current Location",
-        ),
-        icon: BitmapDescriptor.defaultMarker, // Replace with custom icon if needed
+
+        // icon: BitmapDescriptor.defaultMarker,
+
+        icon: BitmapDescriptor.fromBytes(markerIcon),
       ),
     );
   });
 }
+
+
+
+
+
+
+
+
+
+
+
 
 
   @override
@@ -412,24 +488,46 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  void updateMarkers(List<DocumentSnapshot> userDocs) {
+  // void updateMarkers(List<DocumentSnapshot> userDocs) {
+  //   Set<Marker> newMarkers = {};
+  //   for (var doc in userDocs) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     var userMarker = Marker(
+  //       markerId: MarkerId(doc.id),
+  //       position: LatLng(userData['latitude'], userData['longitude']),
+  //       infoWindow: InfoWindow(
+  //         title: userData['name'],
+  //       ),
+  //       onTap: () {
+  //         _showChallengeModal(context, userData);
+  //       },
+  //     );
+  //     newMarkers.add(userMarker);
+  //   }
+  //   setState(() {
+  //     markers.clear();
+  //     markers = newMarkers;
+  //   });
+  // }
+
+
+
+
+  void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
 
     for (var doc in userDocs) {
       var userData = doc.data() as Map<String, dynamic>;
+      final markerIcon = await createCustomMarker(userData['name']); // Assume 'name' is the field
+
       var userMarker = Marker(
         markerId: MarkerId(doc.id),
         position: LatLng(userData['latitude'], userData['longitude']),
-        // infoWindow: InfoWindow(title: userData['name']),
-        infoWindow: InfoWindow(
-          title: userData['name'],
-        ),
+        icon: BitmapDescriptor.fromBytes(markerIcon),
         onTap: () {
-          // Add your onTap functionality here, for example:
           _showChallengeModal(context, userData);
         },
       );
-
       newMarkers.add(userMarker);
     }
 
@@ -438,20 +536,6 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -482,6 +566,16 @@ class UserHomePageState extends State<UserHomePage>
 
   void _showChallengeModal(
       BuildContext context, Map<String, dynamic> opponentData) {
+    final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+    // Add this check at the beginning of the method
+    if (opponentData['uid'] == currentUserId) {
+      print("45367284975632-54578475-2745897457-89");
+      return; // Exit the function if the user is trying to challenge themselves
+    }
+
+
+
+
     String localBetAmount = betAmount; // Local variable for bet amount
     String localTimerValue =
         this.localTimerValue; // Initialize with the local value
@@ -538,10 +632,10 @@ class UserHomePageState extends State<UserHomePage>
                             if (userId != null) {
                               navigateToUserDetails(context, userId);
                             } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Error: User ID is null")),
-                              );
+                              // ScaffoldMessenger.of(context).showSnackBar(
+                              //   const SnackBar(
+                              //       content: Text("Error: User ID is null")),
+                              // );
                             }
                           },
                           child: const Text('Visit'),

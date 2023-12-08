@@ -2,11 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
-// import 'package:geocoding/geocoding.dart';
+import 'package:geocoding/geocoding.dart';
 import 'package:mychessapp/pages/userhome.dart';
 
 import 'package:location/location.dart';
 import 'package:location/location.dart' as loc;
+
+
+
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'geocoding_stub.dart'
+if (dart.library.html) 'geocoding_web.dart';
+
+
+
+
+
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({Key? key}) : super(key: key);
 
@@ -25,6 +36,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
     _nameController.dispose();
     super.dispose();
   }
+
 
 
 
@@ -57,51 +69,74 @@ class _UserProfilePageState extends State<UserProfilePage> {
       print("Location Data: Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}");
 
       if (_locationData.latitude != null && _locationData.longitude != null) {
-        List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
-          _locationData.latitude!,
-          _locationData.longitude!,
-        );
+        String detailedLocationName;
 
-        if (placemarks.isNotEmpty) {
-          geocoding.Placemark place = placemarks.first;
-          String detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
-          print("Geocoded place name: $detailedLocationName");
-
-          if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
-            CollectionReference users = FirebaseFirestore.instance.collection('users');
-            String userId = FirebaseAuth.instance.currentUser!.uid;
-            await users.doc(userId).set({
-              'uid': userId,
-              'name': _nameController.text,
-              'avatar': _selectedAvatar,
-              'isOnline': true,
-              'inGame': false,
-              'latitude': _locationData.latitude,
-              'longitude': _locationData.longitude,
-              'location': detailedLocationName,
-            });
-
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(builder: (context) => const UserHomePage()),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Please fill in all fields')),
-            );
-          }
+        // Check if running on the web
+        if (kIsWeb) {
+          // Use web implementation
+          detailedLocationName = await getPlaceFromCoordinates(
+            _locationData.latitude!,
+            _locationData.longitude!,
+          );
+          print("4567890using werb");
         } else {
-          throw Exception('Geocoding returned no results');
+          // Use mobile implementation
+          List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
+            _locationData.latitude!,
+            _locationData.longitude!,
+          );
+          if (placemarks.isNotEmpty) {
+            geocoding.Placemark place = placemarks.first;
+            detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
+          } else {
+            throw Exception('Geocoding returned no results');
+          }
+        }
+
+        print("Geocoded place name: $detailedLocationName");
+
+        if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
+          CollectionReference users = FirebaseFirestore.instance.collection('users');
+          String userId = FirebaseAuth.instance.currentUser!.uid;
+          await users.doc(userId).set({
+            'uid': userId,
+            'name': _nameController.text,
+            'avatar': _selectedAvatar,
+            'isOnline': true,
+            'inGame': false,
+            'latitude': _locationData.latitude,
+            'longitude': _locationData.longitude,
+            'location': detailedLocationName,
+          });
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const UserHomePage()),
+          );
+        } else {
+          // Un-comment this line to show the snackbar when fields are not filled
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(content: Text('Please fill in all fields')),
+          // );
         }
       } else {
         throw Exception('Invalid location coordinates');
       }
     } catch (e) {
       print('Error in createUserProfile: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error in creating profile: $e')),
-      );
+      // Un-comment this line to show the snackbar when an error occurs
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(content: Text('Error in creating profile: $e')),
+      // );
     }
   }
+
+
+
+
+
+
+
+
 
 
 
