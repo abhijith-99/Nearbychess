@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -19,12 +20,16 @@ import 'package:location/location.dart' as loc;
 
 import 'dart:math' show asin, cos, max, pi, sqrt;
 import 'package:geocoding/geocoding.dart';
-// import 'package:geocoding/geocoding.dart' hide Location;
-
-
 import 'package:location/location.dart';
+import 'geocoding_stub.dart';
 
-// import 'package:geocoding/geocoding.dart' as geocoding;
+
+// import 'package:opencage_geocoder/opencage_geocoder.dart';
+
+
+
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 
 class UserHomePage extends StatefulWidget {
@@ -37,7 +42,8 @@ class UserHomePage extends StatefulWidget {
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
-  String userLocation = 'Unknown';
+  String userLocation = 'nowhere';
+
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
   String betAmount = '5\$'; // Default value
@@ -71,7 +77,7 @@ class UserHomePageState extends State<UserHomePage>
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: userName,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 35.0, // Font size for the text
           color: Colors.yellow, // Color for the text
           fontWeight: FontWeight.bold,
@@ -183,6 +189,57 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
+  //
+  Future<void> getUserLocationForWeb() async {
+    try {
+      loc.Location location = loc.Location();
+      bool _serviceEnabled;
+      loc.PermissionStatus _permissionGranted;
+      loc.LocationData _locationData;
+
+      _serviceEnabled = await location.serviceEnabled();
+      if (!_serviceEnabled) {
+        _serviceEnabled = await location.requestService();
+        if (!_serviceEnabled) {
+          throw Exception('Location services are disabled.');
+        }
+      }
+
+      _permissionGranted = await location.hasPermission();
+      if (_permissionGranted == loc.PermissionStatus.denied) {
+        _permissionGranted = await location.requestPermission();
+        if (_permissionGranted != loc.PermissionStatus.granted) {
+          throw Exception('Location permissions are denied');
+        }
+      }
+
+      _locationData = await location.getLocation();
+      String cityName = await getPlaceFromCoordinates(
+        _locationData.latitude!,
+        _locationData.longitude!,
+
+      );
+
+      setState(() {
+        userLocation = cityName;
+        print("dfjhskdjfhjkdfhdsjkfhsdin werbdsfs$userLocation");
+        onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
+
+      });
+
+
+    } catch (e) {
+      print('Error getting location for web: $e');
+      setState(() {
+        userLocation = 'Unknownsss';
+        print('Error getting location for web: ${e.toString()}');
+      });
+    }
+  }
+
+
+
+
 
 
 
@@ -203,10 +260,27 @@ class UserHomePageState extends State<UserHomePage>
       // setupOpponentsListener(userLat!, userLon!); // Replace userLat and userLon with actual variables
       setupOpponentsListener();
     });
+
+
+
+
+    if (kIsWeb) {
+      getUserLocationForWeb();
+      print("ldsjfldsflwebiskisne$userLocation");
+
+    }
+
+
   }
+
+
+
+
   Future<void> _loadMapStyle() async {
-    _mapStyle = await rootBundle.loadString('assets/new_map.json');
+     _mapStyle = await rootBundle.loadString('assets/new_map.json');
   }
+
+
 
   // This function remains unchanged
   void listenToChallengeRequests() {
@@ -314,6 +388,8 @@ class UserHomePageState extends State<UserHomePage>
 
 
   void setupUserListener() {
+
+
     var user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       userSubscription = FirebaseFirestore.instance
@@ -353,21 +429,41 @@ class UserHomePageState extends State<UserHomePage>
               // userLocation = userData['location'] ?? 'Unknown';
               // userLocation = userData['city'] ?? 'Unknown';
               userLocation = city;
-              city = userData['city'] ?? 'Unknown';
+              city = userData['city'] ?? 'Unknownarea';
               // userLocation = userData['location'] ?? 'Unknown';
               print("_+_+####################$userLocation");
               // onlineUsersStream = fetchOnlineUsersWithLocationName(userlocation);
+              // onlineUsersStream = fetchOnlineUsersWithLocationName(city);
+              // onlineUsersStream.listen((userDocs) {
+              //   print("Fetched Users: $userDocs");
+              //   if (userDocs.isNotEmpty) {
+              //     // Update your UI with this list
+              //     updateMarkers(userDocs);
+              //   }
+              // });
+
+
+
+
+
               onlineUsersStream = fetchOnlineUsersWithLocationName(city);
-              // onlineUsersStream = fetchNearbyOpponents(userLat, userLon, 10.0);
-
-
               onlineUsersStream.listen((userDocs) {
                 print("Fetched Users: $userDocs");
-                if (userDocs.isNotEmpty) {
+                List<DocumentSnapshot> validUsers = userDocs.where((doc) {
+                  var userData = doc.data() as Map<String, dynamic>;
+                  return userData['latitude'] != null && userData['longitude'] != null;
+                }).toList();
+
+                if (validUsers.isNotEmpty) {
                   // Update your UI with this list
-                  updateMarkers(userDocs);
+                  updateMarkers(validUsers);
                 }
               });
+
+
+
+
+
             });
         }
       });
@@ -412,6 +508,13 @@ class UserHomePageState extends State<UserHomePage>
 
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
+
+
+    if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
+      // handle null case, maybe return a default value or throw an exception
+      return 0.0; // Example default value
+    }
+
     var p = 0.017453292519943295;
     var c = cos;
     var a = 0.5 -
@@ -423,17 +526,35 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
+  // Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
+  //   return FirebaseFirestore.instance
+  //       .collection('users')
+  //       .where('isOnline', isEqualTo: true)
+  //       .snapshots()
+  //       .map((snapshot) => snapshot.docs.where((doc) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
+  //     return distance <= radiusInKm;
+  //   }).toList());
+  // }
+
+
+
   Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
     return FirebaseFirestore.instance
         .collection('users')
         .where('isOnline', isEqualTo: true)
         .snapshots()
-        .map((snapshot) => snapshot.docs.where((doc) {
-      var userData = doc.data() as Map<String, dynamic>;
-      var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
-      return distance <= radiusInKm;
-    }).toList());
+        .map((snapshot) {
+      return snapshot.docs.where((doc) {
+        var userData = doc.data() as Map<String, dynamic>;
+        var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
+        return distance <= radiusInKm;
+      }).toList();
+    });
   }
+
+
 
 
 
@@ -486,49 +607,27 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-
-
-  // void updateMarkers(List<DocumentSnapshot> userDocs) {
-  //   Set<Marker> newMarkers = {};
-  //   for (var doc in userDocs) {
-  //     var userData = doc.data() as Map<String, dynamic>;
-  //     var userMarker = Marker(
-  //       markerId: MarkerId(doc.id),
-  //       position: LatLng(userData['latitude'], userData['longitude']),
-  //       infoWindow: InfoWindow(
-  //         title: userData['name'],
-  //       ),
-  //       onTap: () {
-  //         _showChallengeModal(context, userData);
-  //       },
-  //     );
-  //     newMarkers.add(userMarker);
-  //   }
-  //   setState(() {
-  //     markers.clear();
-  //     markers = newMarkers;
-  //   });
-  // }
-
-
-
-
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
 
     for (var doc in userDocs) {
       var userData = doc.data() as Map<String, dynamic>;
-      final markerIcon = await createCustomMarker(userData['name']); // Assume 'name' is the field
+      double? lat = userData['latitude'] as double?;
+      double? lon = userData['longitude'] as double?;
 
-      var userMarker = Marker(
-        markerId: MarkerId(doc.id),
-        position: LatLng(userData['latitude'], userData['longitude']),
-        icon: BitmapDescriptor.fromBytes(markerIcon),
-        onTap: () {
-          _showChallengeModal(context, userData);
-        },
-      );
-      newMarkers.add(userMarker);
+      if (lat != null && lon != null) {
+        final markerIcon = await createCustomMarker(userData['name']);
+
+        var userMarker = Marker(
+          markerId: MarkerId(doc.id),
+          position: LatLng(lat, lon),
+          icon: BitmapDescriptor.fromBytes(markerIcon),
+          onTap: () {
+            _showChallengeModal(context, userData);
+          },
+        );
+        newMarkers.add(userMarker);
+      }
     }
 
     setState(() {
@@ -536,6 +635,8 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
+
+
 
 
 
@@ -856,6 +957,7 @@ class UserHomePageState extends State<UserHomePage>
                 onChanged: _onSearchChanged,
                 decoration: InputDecoration(
                   labelText: 'Search Players in $userLocation',
+
                   hintText: 'Enter player name...',
                   prefixIcon: const Icon(Icons.search), // Add search icon
                   border: OutlineInputBorder(

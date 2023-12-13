@@ -1,6 +1,7 @@
 // TODO Implement this library.
-// TODO Implement this library.
+// TODO Implement this librar
 import 'package:geocoding/geocoding.dart' as geocoding;
+// import 'package:opencage_geocoder/opencage_geocoder.dart';
 
 Future<String> getPlaceFromCoordinates(double latitude, double longitude) async {
   try {
@@ -10,7 +11,9 @@ Future<String> getPlaceFromCoordinates(double latitude, double longitude) async 
       geocoding.Placemark place = placemarks.first;
       String detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown Location';
       return detailedLocationName;
-    } else {
+
+    }
+    else {
       throw Exception('No results found');
     }
   } catch (e) {

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+
 Future<String> getPlaceFromCoordinates(double latitude, double longitude) async {
   var url = Uri.parse('https://api.opencagedata.com/geocode/v1/json?q=$latitude+$longitude&key=e8c9f5423a8d4089af7af3ece5b1d0b3');
   var response = await http.get(url);
@@ -8,13 +9,13 @@ Future<String> getPlaceFromCoordinates(double latitude, double longitude) async 
   if (response.statusCode == 200) {
     var jsonResponse = json.decode(response.body);
 
-    // Check if results are available
     if (jsonResponse['results'] != null && jsonResponse['results'].isNotEmpty) {
-      var firstResult = jsonResponse['results'][0];
+      var components = jsonResponse['results'][0]['components'];
+      // Prioritize 'suburb' or similar fields that might contain specific location names like 'Kakkanad'
+      String specificLocation = components['suburb'] ?? components['neighbourhood'] ?? components['town'] ?? components['city'] ?? components['village'] ?? 'Unknown Location';
 
-      // Extracting location name
-      String locationName = firstResult['formatted'] ?? 'Unknown Location';
-      return locationName;
+      print("Specific location from geocoding: $specificLocation");
+      return specificLocation;
     } else {
       throw Exception('No results found');
     }
@@ -22,3 +23,6 @@ Future<String> getPlaceFromCoordinates(double latitude, double longitude) async 
     throw Exception('Failed to load location data');
   }
 }
+
+
+
