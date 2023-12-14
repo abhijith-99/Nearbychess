@@ -31,6 +31,14 @@
           }
         },
         {
+          "client_id": "820296910788-efsn7fbjrotdfpcnispi5oi5khjb3fac.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mychessapp",
+            "certificate_hash": "6633f94fd0d15e6032d66caedad2c69e5f2e6b23"
+          }
+        },
+        {
           "client_id": "820296910788-i6oe69qb6b8fni7uq4e73eu2bp2nm2kl.apps.googleusercontent.com",
           "client_type": 3
         }

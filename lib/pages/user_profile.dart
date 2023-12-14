@@ -1,101 +1,183 @@
-import 'dart:math';
+  import 'package:flutter/material.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
+  import 'package:geocoding/geocoding.dart' as geocoding;
+  import 'package:geocoding/geocoding.dart';
+  import 'package:mychessapp/pages/userhome.dart';
+  import 'package:location/location.dart';
+  import 'package:location/location.dart' as loc;
+  import 'package:flutter/foundation.dart' show kIsWeb;
+  import 'geocoding_stub.dart';
+  import 'dart:math';
+  import 'package:flutter/material.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
+  import 'package:mychessapp/pages/userhome.dart';
+  import 'dart:ui';
+  
+  if (dart.library.html) 'geocoding_web.dart';
+    import 'geocoding_web.dart';
 
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mychessapp/pages/userhome.dart';
-import 'dart:ui';
 
+  class UserProfilePage extends StatefulWidget {
+    const UserProfilePage({Key? key}) : super(key: key);
 
-class UserProfilePage extends StatefulWidget {
-  const UserProfilePage({Key? key}) : super(key: key);
-
-  @override
-  _UserProfilePageState createState() => _UserProfilePageState();
-}
-
-class _UserProfilePageState extends State<UserProfilePage> {
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _referralCodeController = TextEditingController();
-  bool isReferralCodeValid = false;
-  String verificationMessage = '';
-  String? _selectedLocation ='Kakkanad';
-  String? _selectedAvatar;
-  final List<String> _locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
-  bool isAvatarListVisible = false;
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    super.dispose();
+    @override
+    _UserProfilePageState createState() => _UserProfilePageState();
   }
 
-  Future<void> verifyReferralCode() async {
-    String referralCode = _referralCodeController.text.trim();
-    if (referralCode.isNotEmpty) {
-      var referrerDoc = await FirebaseFirestore.instance.collection('users')
-          .where('referralCode', isEqualTo: referralCode)
-          .limit(1)
-          .get();
+  class _UserProfilePageState extends State<UserProfilePage> {
+    final TextEditingController _nameController = TextEditingController();
+    final TextEditingController _referralCodeController = TextEditingController();
+    String? _selectedAvatar;
+    bool isAvatarListVisible = false;
+    bool isReferralCodeValid = false;
+    String verificationMessage = '';
 
-      if (referrerDoc.docs.isNotEmpty) {
-        setState(() {
-          isReferralCodeValid = true;
-          verificationMessage = 'Valid Referral Code';
-        });
-      } else {
-        setState(() {
-          isReferralCodeValid = false;
-          verificationMessage = 'Invalid Referral Code';
-        });
+    @override
+    void dispose() {
+      _nameController.dispose();
+      super.dispose();
+    }
+
+    Future<void> verifyReferralCode() async {
+    String referralCode = _referralCodeController.text.trim();
+      if (referralCode.isNotEmpty) {
+        var referrerDoc = await FirebaseFirestore.instance.collection('users')
+            .where('referralCode', isEqualTo: referralCode)
+            .limit(1)
+            .get();
+
+        if (referrerDoc.docs.isNotEmpty) {
+          setState(() {
+            isReferralCodeValid = true;
+            verificationMessage = 'Valid Referral Code';
+          });
+        } else {
+          setState(() {
+            isReferralCodeValid = false;
+            verificationMessage = 'Invalid Referral Code';
+          });
+        }
       }
     }
-  }
 
-  Future<void> createUserProfile() async {
-    if (_nameController.text.isNotEmpty &&
-        _selectedLocation != null &&
-        _selectedAvatar != null) {
+    Future<void> createUserProfile() async {
+      print("createUserProfile called");
+      loc.Location location = loc.Location();
+      bool _serviceEnabled;
+      loc.PermissionStatus _permissionGranted;
+      loc.LocationData _locationData;
+
       try {
-        CollectionReference users =
-        FirebaseFirestore.instance.collection('users');
-        String userId = FirebaseAuth.instance.currentUser!.uid;
-        String referralCode = generateReferralCode(userId);
-        DateTime now = DateTime.now();
-        await users.doc(userId).set({
-          'uid': userId,
-          'name': _nameController.text,
-          'location': _selectedLocation,
-          'avatar': _selectedAvatar,
-          'isOnline': true,
-          'inGame': false,
-          'chessCoins': 100,
-          'lastLoginDate': Timestamp.fromDate(now),
-          'consecutiveLoginDays': 0,
-          'bonusReadyToClaim': false,
-          'referralCode': referralCode,
-          'appliedReferralCode': _referralCodeController.text.trim(),
-        });
-
-        // If a referral code was applied, handle the referral bonus
-        if (isReferralCodeValid) {
-          await applyReferralBonus(userId, _referralCodeController.text.trim());
+        _serviceEnabled = await location.serviceEnabled();
+        if (!_serviceEnabled) {
+          _serviceEnabled = await location.requestService();
+          if (!_serviceEnabled) {
+            throw Exception('Location service not enabled');
+          }
         }
 
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const UserHomePage()),
-        );
+        _permissionGranted = await location.hasPermission();
+        if (_permissionGranted == loc.PermissionStatus.denied) {
+          _permissionGranted = await location.requestPermission();
+          if (_permissionGranted != loc.PermissionStatus.granted) {
+            throw Exception('Location permission not granted');
+          }
+        }
+
+        _locationData = await location.getLocation();
+        print("Location Data: Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}");
+
+        if (_locationData.latitude != null && _locationData.longitude != null) {
+          String detailedLocationName;
+          String city;
+          // Check if running on the web
+          if (kIsWeb) {
+            // Use web implementation
+            detailedLocationName = await getPlaceFromCoordinates(
+              _locationData.latitude!,
+              _locationData.longitude!,
+            );
+            // city = await getPlaceFromCoordinates(
+            //   _locationData.latitude!,
+            //   _locationData.longitude!,
+            // );
+            print("4567890using web $detailedLocationName");
+
+          } else {
+            // Use mobile implementation
+            List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
+              _locationData.latitude!,
+              _locationData.longitude!,
+            );
+            if (placemarks.isNotEmpty) {
+              geocoding.Placemark place = placemarks.first;
+              detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
+
+              // city = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
+            } else {
+              throw Exception('Geocoding returned no results');
+            }
+          }
+
+          // print("Geocoded place name: $detailedLocationName");
+
+
+
+          city = await getPlaceFromCoordinates(
+            _locationData.latitude!,
+            _locationData.longitude!,
+          );
+          print("City name: $city");
+
+
+
+          if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
+            CollectionReference users = FirebaseFirestore.instance.collection('users');
+            String userId = FirebaseAuth.instance.currentUser!.uid;
+            String referralCode = generateReferralCode(userId);
+            DateTime now = DateTime.now();
+            await users.doc(userId).set({
+              'uid': userId,
+              'name': _nameController.text,
+              'avatar': _selectedAvatar,
+              'isOnline': true,
+              'inGame': false,
+              'latitude': _locationData.latitude,
+              'longitude': _locationData.longitude,
+              'location': detailedLocationName,
+              'city': city,
+              'chessCoins': 100,
+              'lastLoginDate': Timestamp.fromDate(now),
+              'consecutiveLoginDays': 0,
+              'bonusReadyToClaim': false,
+              'referralCode': referralCode,
+              'appliedReferralCode': _referralCodeController.text.trim(),
+
+            });
+
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const UserHomePage()),
+            );
+
+          } else {
+          
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Please fill in all fields')),
+            );
+          }
+        } else {
+          throw Exception('Invalid location coordinates');
+        }
       } catch (e) {
+        print('Error in createUserProfile: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating profile: $e')),
+          SnackBar(content: Text('Error in creating profile: $e')),
         );
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
-      );
     }
-  }
+
 
   Future<void> applyReferralBonus(String newUserId, String appliedReferralCode) async {
     // Award bonus to the new user
@@ -135,12 +217,12 @@ class _UserProfilePageState extends State<UserProfilePage> {
     }
   }
 
-
   String generateReferralCode(String userId) {
     return "100NBC${userId.substring(0, min(6, userId.length))}";
   }
 
-  Widget buildAvatarSelector() {
+
+Widget buildAvatarSelector() {
     // Initialize with a default avatar if none is selected
     _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
 
@@ -416,3 +498,5 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
 
 }
+
+
