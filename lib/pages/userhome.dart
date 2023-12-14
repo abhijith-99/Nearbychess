@@ -39,6 +39,10 @@ class UserHomePage extends StatefulWidget {
   UserHomePageState createState() => UserHomePageState();
 }
 
+
+
+
+
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
@@ -189,8 +193,8 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  //
   Future<void> getUserLocationForWeb() async {
+    print("getuserlocationforweb is called");
     try {
       loc.Location location = loc.Location();
       bool _serviceEnabled;
@@ -223,7 +227,9 @@ class UserHomePageState extends State<UserHomePage>
       setState(() {
         userLocation = cityName;
         print("dfjhskdjfhjkdfhdsjkfhsdin werbdsfs$userLocation");
+        print("fetched cityname $cityName");
         onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
+
 
       });
 
@@ -236,6 +242,10 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
+
+
+
+
 
 
 
@@ -269,8 +279,6 @@ class UserHomePageState extends State<UserHomePage>
       print("ldsjfldsflwebiskisne$userLocation");
 
     }
-
-
   }
 
 
@@ -388,8 +396,6 @@ class UserHomePageState extends State<UserHomePage>
 
 
   void setupUserListener() {
-
-
     var user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       userSubscription = FirebaseFirestore.instance
@@ -432,15 +438,6 @@ class UserHomePageState extends State<UserHomePage>
               city = userData['city'] ?? 'Unknownarea';
               // userLocation = userData['location'] ?? 'Unknown';
               print("_+_+####################$userLocation");
-              // onlineUsersStream = fetchOnlineUsersWithLocationName(userlocation);
-              // onlineUsersStream = fetchOnlineUsersWithLocationName(city);
-              // onlineUsersStream.listen((userDocs) {
-              //   print("Fetched Users: $userDocs");
-              //   if (userDocs.isNotEmpty) {
-              //     // Update your UI with this list
-              //     updateMarkers(userDocs);
-              //   }
-              // });
 
 
 
@@ -459,10 +456,6 @@ class UserHomePageState extends State<UserHomePage>
                   updateMarkers(validUsers);
                 }
               });
-
-
-
-
 
             });
         }
@@ -526,19 +519,6 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  // Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
-  //   return FirebaseFirestore.instance
-  //       .collection('users')
-  //       .where('isOnline', isEqualTo: true)
-  //       .snapshots()
-  //       .map((snapshot) => snapshot.docs.where((doc) {
-  //     var userData = doc.data() as Map<String, dynamic>;
-  //     var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
-  //     return distance <= radiusInKm;
-  //   }).toList());
-  // }
-
-
 
   Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
     return FirebaseFirestore.instance
@@ -583,7 +563,7 @@ class UserHomePageState extends State<UserHomePage>
     // Assuming currentLocation is not null and contains the correct data
     final double userLat = currentLocation!.latitude!;
     final double userLon = currentLocation!.longitude!;
-    final double distanceThreshold = 10.0; // 10 km radius for nearby users
+    const double distanceThreshold = 10.0; // 10 km radius for nearby users
 
     return FirebaseFirestore.instance
         .collection('users')

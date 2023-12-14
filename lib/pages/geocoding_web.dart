@@ -24,5 +24,3 @@ Future<String> getPlaceFromCoordinates(double latitude, double longitude) async 
   }
 }
 
-
-

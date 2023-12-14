@@ -17,7 +17,6 @@
 
 
 
-
   class UserProfilePage extends StatefulWidget {
     const UserProfilePage({Key? key}) : super(key: key);
 
@@ -36,6 +35,7 @@
       _nameController.dispose();
       super.dispose();
     }
+
 
 
 
@@ -69,20 +69,21 @@
         print("Location Data: Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}");
 
         if (_locationData.latitude != null && _locationData.longitude != null) {
-          // String detailedLocationName;
+          String detailedLocationName;
           String city;
           // Check if running on the web
           if (kIsWeb) {
             // Use web implementation
-            // detailedLocationName = await getPlaceFromCoordinates(
-            //   _locationData.latitude!,
-            //   _locationData.longitude!,
-            // );
-            city = await getPlaceFromCoordinates(
+            detailedLocationName = await getPlaceFromCoordinates(
               _locationData.latitude!,
               _locationData.longitude!,
             );
-            print("4567890using web $city");
+            // city = await getPlaceFromCoordinates(
+            //   _locationData.latitude!,
+            //   _locationData.longitude!,
+            // );
+            print("4567890using web $detailedLocationName");
+
           } else {
             // Use mobile implementation
             List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
@@ -91,9 +92,9 @@
             );
             if (placemarks.isNotEmpty) {
               geocoding.Placemark place = placemarks.first;
-              // detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
+              detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
 
-              city = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
+              // city = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
             } else {
               throw Exception('Geocoding returned no results');
             }
@@ -122,7 +123,7 @@
               'inGame': false,
               'latitude': _locationData.latitude,
               'longitude': _locationData.longitude,
-              // 'location': detailedLocationName,
+              'location': detailedLocationName,
 
 
               'city': city,
@@ -131,6 +132,9 @@
             Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const UserHomePage()),
             );
+
+
+
           } else {
             // Un-comment this line to show the snackbar when fields are not filled
             // ScaffoldMessenger.of(context).showSnackBar(
