@@ -79,8 +79,6 @@
   class _UserDetailsPageState extends State<UserDetailsPage> {
     Map<String, dynamic>? userDetails;
 
-    // ... (Your existing methods: initState, fetchUserDetails, fetchUserMatches, getOpponentDetails, fetchMatchStatistics)
-
 
     @override
     void initState() {
@@ -426,4 +424,3 @@
     }
   }
 
-  // Define your MessageScreen class or ensure it's imported correctly

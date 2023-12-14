@@ -45,6 +45,7 @@ class _ChessBoardState extends State<ChessBoard> {
   bool _whiteTimerActive = false;
   double betAmount = 0.0; // Variable to store the bet amount
   bool isGameEnded = false;
+  int moveNumber=0;
 
   String getPieceAsset(chess.PieceType type, chess.Color? color) {
     String assetPath;
@@ -76,6 +77,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
   Future<double> fetchBetAmount(String gameId) async {
     try {
+
       // Fetch the game document from Firebase Realtime Database
       DatabaseReference ref = FirebaseDatabase.instance.ref('games/$gameId');
       var snapshot = await ref.get();
@@ -83,6 +85,7 @@ class _ChessBoardState extends State<ChessBoard> {
       if (snapshot.exists) {
         var gameData = snapshot.value as Map<dynamic, dynamic>;
         String betAmountString = gameData['betAmount']?.toString() ?? '0';
+
 
         // Extract the numeric part of the betAmountString
         var betAmount = double.tryParse(betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
@@ -92,7 +95,8 @@ class _ChessBoardState extends State<ChessBoard> {
       print('Error fetching bet amount: $e');
       return 0.0; // Return default value in case of error
     }
-    return 0.0; // Return default value if the data does not exist
+    return 0.0; // Return default value if document does not exist
+
   }
 
 
@@ -104,6 +108,7 @@ class _ChessBoardState extends State<ChessBoard> {
   }) async {
 
     bet = betAmount;
+
     // Reference to the Firestore collection
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     String matchId = FirebaseFirestore.instance.collection('matches').doc().id; // Generate a new document ID for the match
@@ -221,7 +226,7 @@ class _ChessBoardState extends State<ChessBoard> {
 
     // Append move number for white's move
     if (game.turn == chess.Color.BLACK) { // Check if the next turn is black's
-      int moveNumber = (game.history.length / 2).ceil() + 1;
+      moveNumber = moveNumber + 1;
       pgnNotation += '$moveNumber. ';
     }
 
@@ -240,6 +245,12 @@ class _ChessBoardState extends State<ChessBoard> {
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
     fetchInitialTimerValue();
+
+    fetchBetAmount(widget.gameId).then((value) {
+      setState(() {
+        betAmount = value;
+      });
+    });
 
     gameSubscription = FirebaseDatabase.instance
         .ref('games/${widget.gameId}')
@@ -274,6 +285,12 @@ class _ChessBoardState extends State<ChessBoard> {
         whiteCapturedPieces = List<String>.from(gameData['whiteCapturedPieces'] ?? []);
         blackCapturedPieces = List<String>.from(gameData['blackCapturedPieces'] ?? []);
         pgnNotation = newPgnNotation;
+
+        // Reset selectedSquare if it's now the current user's turn
+        if (currentTurnUID == currentUserUID) {
+          selectedSquare = null;
+        }
+
       });
     });
 
@@ -289,8 +306,8 @@ class _ChessBoardState extends State<ChessBoard> {
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
         ),
-        title: Text('Draw Offered', style: TextStyle(color: Colors.white)),
-        content: Text('Your opponent has offered a draw. Do you agree to a draw?', style: TextStyle(color: Colors.white)),
+        title: const Text('Draw Offered', style: TextStyle(color: Colors.white)),
+        content: const Text('Your opponent has offered a draw. Do you agree to a draw?', style: TextStyle(color: Colors.white)),
         actions: <Widget>[
           TextButton(
             style: TextButton.styleFrom(
@@ -302,7 +319,7 @@ class _ChessBoardState extends State<ChessBoard> {
               _updateGameStatus('draw');
               Navigator.of(context).pop(); // Close the dialog
             },
-            child: Text('Accept Draw'),
+            child: const Text('Accept Draw'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -315,7 +332,7 @@ class _ChessBoardState extends State<ChessBoard> {
               gameRef.update({'drawOffer': null}); // Clear the draw offer
               Navigator.of(context).pop(); // Close the dialog
             },
-            child: Text('Decline Draw'),
+            child: const Text('Decline Draw'),
           ),
         ],
       ),
@@ -331,16 +348,51 @@ class _ChessBoardState extends State<ChessBoard> {
   }) {
     if (!isGameEnded) {
       isGameEnded = true; // Set the flag to indicate the game has ended
+
+      // Determine the winner and loser based on the result
+      String winnerUID = (result == 'win') ? userId1 : userId2;
+      String loserUID = (winnerUID == userId1) ? userId2 : userId1;
+
       updateMatchHistory(
         userId1: userId1,
         userId2: userId2,
         result: result,
         bet: bet,
       );
+      if (result != 'draw') {
+        updateChessCoinsBalance(winnerUID, bet, true); // Winner
+        updateChessCoinsBalance(loserUID, bet, false); // Loser
+      }
     }
   }
 
-    void _updateGameStatus(String newStatus) {
+  Future<void> updateChessCoinsBalance(String userId, double betAmount, bool didWin) async {
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+
+      if (!snapshot.exists) {
+        throw Exception("User does not exist!");
+      }
+
+      // Cast the data to Map<String, dynamic> before accessing its properties
+      var userData = snapshot.data() as Map<String, dynamic>;
+      int currentBalance = userData['chessCoins'] ?? 0;
+
+      // Compute the updated balance
+      int updatedBalance = didWin ? (currentBalance + betAmount).round() : (currentBalance - betAmount).round();
+
+      transaction.update(userRef, {'chessCoins': updatedBalance});
+    }).catchError((error) {
+      print("Error updating balance: $error");
+      // Handle the error appropriately
+    });
+  }
+
+
+
+  void _updateGameStatus(String newStatus) {
       DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
       gameRef.update({
         'gameStatus': newStatus,
@@ -667,29 +719,6 @@ class _ChessBoardState extends State<ChessBoard> {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
-  // Future<bool> _onBackPressed() async {
-  //   return await showDialog(
-  //     context: context,
-  //     builder: (context) => AlertDialog(
-  //       title: Text('Confirm'),
-  //       content: Text('Choose an option:'),
-  //       actions: <Widget>[
-  //         TextButton(
-  //           onPressed: () => Navigator.of(context).pop(false), // Continue the game
-  //           child: Text('Continue Game'),
-  //         ),
-  //         TextButton(
-  //           onPressed: _handleUserResignation, // Resign the game
-  //           child: Text('Resign'),
-  //         ),
-  //         TextButton(
-  //           onPressed: _handleOfferDraw, // Offer a draw
-  //           child: Text('Offer Draw'),
-  //         ),
-  //       ],
-  //     ),
-  //   ) ?? false; // If dialog is dismissed, return false
-  // }
   Future<bool> _onBackPressed() async {
     return await showDialog(
       context: context,
@@ -699,8 +728,8 @@ class _ChessBoardState extends State<ChessBoard> {
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
         ),
-        title: Text('Confirm', style: TextStyle(color: Colors.white)),
-        content: Text('Choose an option:', style: TextStyle(color: Colors.white)),
+        title: const Text('Confirm', style: TextStyle(color: Colors.white)),
+        content: const Text('Choose an option:', style: TextStyle(color: Colors.white)),
         actions: <Widget>[
           TextButton(
             style: TextButton.styleFrom(
@@ -708,7 +737,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(false), // Continue the game
-            child: Text('Continue Game'),
+            child: const Text('Continue Game'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -716,7 +745,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.black,
             ),
             onPressed: _handleUserResignation, // Resign the game
-            child: Text('Resign'),
+            child: const Text('Resign'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -724,7 +753,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.white,
             ),
             onPressed: _handleOfferDraw, // Offer a draw
-            child: Text('Offer Draw'),
+            child: const Text('Offer Draw'),
           ),
         ],
       ),
@@ -763,18 +792,23 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
 
   // Get the size of the screen
   Size screenSize = MediaQuery.of(context).size;
-  // Set the size for the chessboard to be responsive
-  double boardSize = screenSize.width < 600 ? screenSize.width : 600;
+  double boardSize = screenSize.width < screenSize.height ? screenSize.width : screenSize.height;
+  boardSize = boardSize < 600 ? boardSize : 600; // Limit the size to 600 if it's larger
+  if (screenSize.height < screenSize.width) {
+    boardSize = screenSize.height * 0.6; // or some other factor that fits
+  }
 
 return WillPopScope(
         onWillPop: _onBackPressed,
         child: Scaffold(
-      backgroundColor: Color(0xffacacaf),
+      backgroundColor: const Color(0xffacacaf),
       appBar: AppBar(
         title: const Text('NearbyChess'),
         centerTitle: true,
@@ -783,7 +817,7 @@ return WillPopScope(
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30.0), // Set the height as required
           child: Container(
-            color: Color(0xFF595a5c), // Background color for the strip
+            color: const Color(0xFF595a5c), // Background color for the strip
             width: double.infinity, // Ensures the container takes full width
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -816,11 +850,10 @@ return WillPopScope(
                   _buildPlayerArea(blackCapturedPieces, true, player1Name),
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 Container(
-                  height: MediaQuery.of(context).size.width,
-                  //child: Center(
+                  height: boardSize, // Use boardSize instead of MediaQuery.of(context).size.width
                   child: AspectRatio(
                     aspectRatio: 1,
                     child: Container(
@@ -858,13 +891,10 @@ return WillPopScope(
                           bool isLegalMove = legalMovesForSelected.contains(squareName);
 
                           // Check if the square is the starting or ending position of the last move
-                          bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
-                          if (isLastMoveSquare) {
-                            squareColor = Colors.blueGrey.withOpacity(0.5); // Adjust the color and opacity as needed
-                          }
-
-
-
+                          //bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
+                          // if (isLastMoveSquare) {
+                          //   squareColor = Colors.blueGrey.withOpacity(0.0); // Adjust the color and opacity as needed
+                          // }
                           return GestureDetector(
                             onTap: () {
 
@@ -874,7 +904,8 @@ return WillPopScope(
                               }
 
                               setState(() {
-                                //if (game.get(squareName)?.color == game.turn) {
+
+
                                 if (piece != null && piece.color == game.turn) {
                                   // Select the piece at the tapped square
                                   selectedSquare = squareName;
@@ -883,7 +914,6 @@ return WillPopScope(
                                       .where((move) => move.fromAlgebraic == selectedSquare)
                                       .map((move) => move.toAlgebraic)
                                       .toList();
-                                  print('Piece selected at $selectedSquare. Legal moves: $legalMovesForSelected');
 
                                   // If no legal moves, deselect the piece
                                   if (legalMovesForSelected.isEmpty) {
@@ -914,12 +944,14 @@ return WillPopScope(
                                       'currentBoardState': game.fen,
                                       'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
                                     });
-                                    print('Inside: ${game.fen}');
-                                    print('BET AMOUNT PLAYED FOR IS : $betAmount');
+                                    selectedSquare = null;
+
                                   }
+                                  
 
                                   lastMoveFrom = selectedSquare;
                                   lastMoveTo = squareName;
+                                  selectedSquare = null;
 
 
 
@@ -1005,12 +1037,14 @@ return WillPopScope(
                                   }
                                 }
                               });
-                              print('Outside:${game.fen}');
+
                               updateLastMoveInRealTimeDatabase(lastMoveFrom!, lastMoveTo!);
+
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: squareColor,
+                                //color: squareColor,
+                                color: selectedSquare == squareName ? Colors.blue : squareColor,
                                 border: border,
                               ),
                               child: Stack(
@@ -1057,7 +1091,6 @@ return WillPopScope(
                       ),
                     ),
                   ),
-                  //),
                 ),
 
                 SizedBox(height: 20),

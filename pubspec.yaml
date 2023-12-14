@@ -29,6 +29,7 @@ dependencies:
   google_maps_flutter: ^2.5.0
   geocoding: ^2.1.1
   http: ^1.1.2
+  share: ^2.0.4
 
 
 
@@ -57,6 +58,9 @@ flutter:
     - assets/paper-plane-solid.svg
     - assets/android_light_rd_SI.svg
     - assets/new_map.json
+    - assets/monochrome-board.jpg
+    - assets/mono-white.jpg
+    - assets/NBC-token.png
 
   fonts:
     - family: Roboto
