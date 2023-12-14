@@ -300,8 +300,8 @@ class _ChessBoardState extends State<ChessBoard> {
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
         ),
-        title: Text('Draw Offered', style: TextStyle(color: Colors.white)),
-        content: Text('Your opponent has offered a draw. Do you agree to a draw?', style: TextStyle(color: Colors.white)),
+        title: const Text('Draw Offered', style: TextStyle(color: Colors.white)),
+        content: const Text('Your opponent has offered a draw. Do you agree to a draw?', style: TextStyle(color: Colors.white)),
         actions: <Widget>[
           TextButton(
             style: TextButton.styleFrom(
@@ -313,7 +313,7 @@ class _ChessBoardState extends State<ChessBoard> {
               _updateGameStatus('draw');
               Navigator.of(context).pop(); // Close the dialog
             },
-            child: Text('Accept Draw'),
+            child: const Text('Accept Draw'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -326,7 +326,7 @@ class _ChessBoardState extends State<ChessBoard> {
               gameRef.update({'drawOffer': null}); // Clear the draw offer
               Navigator.of(context).pop(); // Close the dialog
             },
-            child: Text('Decline Draw'),
+            child: const Text('Decline Draw'),
           ),
         ],
       ),
@@ -722,8 +722,8 @@ class _ChessBoardState extends State<ChessBoard> {
           borderRadius: BorderRadius.circular(15),
           side: BorderSide(color: Colors.black, width: 2), // Black border to mimic chessboard lines
         ),
-        title: Text('Confirm', style: TextStyle(color: Colors.white)),
-        content: Text('Choose an option:', style: TextStyle(color: Colors.white)),
+        title: const Text('Confirm', style: TextStyle(color: Colors.white)),
+        content: const Text('Choose an option:', style: TextStyle(color: Colors.white)),
         actions: <Widget>[
           TextButton(
             style: TextButton.styleFrom(
@@ -731,7 +731,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(false), // Continue the game
-            child: Text('Continue Game'),
+            child: const Text('Continue Game'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -739,7 +739,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.black,
             ),
             onPressed: _handleUserResignation, // Resign the game
-            child: Text('Resign'),
+            child: const Text('Resign'),
           ),
           TextButton(
             style: TextButton.styleFrom(
@@ -747,7 +747,7 @@ class _ChessBoardState extends State<ChessBoard> {
               backgroundColor: Colors.white,
             ),
             onPressed: _handleOfferDraw, // Offer a draw
-            child: Text('Offer Draw'),
+            child: const Text('Offer Draw'),
           ),
         ],
       ),
@@ -800,7 +800,7 @@ class _ChessBoardState extends State<ChessBoard> {
 return WillPopScope(
         onWillPop: _onBackPressed,
         child: Scaffold(
-      backgroundColor: Color(0xffacacaf),
+      backgroundColor: const Color(0xffacacaf),
       appBar: AppBar(
         title: const Text('NearbyChess'),
         centerTitle: true,
@@ -809,7 +809,7 @@ return WillPopScope(
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(30.0), // Set the height as required
           child: Container(
-            color: Color(0xFF595a5c), // Background color for the strip
+            color: const Color(0xFF595a5c), // Background color for the strip
             width: double.infinity, // Ensures the container takes full width
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
@@ -842,7 +842,7 @@ return WillPopScope(
                   _buildPlayerArea(blackCapturedPieces, true, player1Name),
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
                 Container(
                   height: boardSize, // Use boardSize instead of MediaQuery.of(context).size.width
@@ -905,7 +905,6 @@ return WillPopScope(
                                       .where((move) => move.fromAlgebraic == selectedSquare)
                                       .map((move) => move.toAlgebraic)
                                       .toList();
-                                  print('Piece selected at $selectedSquare. Legal moves: $legalMovesForSelected');
 
                                   // If no legal moves, deselect the piece
                                   if (legalMovesForSelected.isEmpty) {
@@ -936,8 +935,7 @@ return WillPopScope(
                                       'currentBoardState': game.fen,
                                       'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
                                     });
-                                    print('Inside: ${game.fen}');
-                                    print('BET AMOUNT PLAYED FOR IS : $betAmount');
+
                                   }
 
                                   lastMoveFrom = selectedSquare;
@@ -1027,7 +1025,7 @@ return WillPopScope(
                                   }
                                 }
                               });
-                              print('Outside:${game.fen}');
+
                               updateLastMoveInRealTimeDatabase(lastMoveFrom!, lastMoveTo!);
                             },
                             child: Container(
