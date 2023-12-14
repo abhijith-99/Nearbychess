@@ -229,8 +229,8 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: shareReferralCode,
-        label: Text('Share And Win 100'),
-        icon: Icon(Icons.share),
+        label: const Text('Share And Win 100'),
+        icon: const Icon(Icons.share),
         backgroundColor: Colors.blue,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
