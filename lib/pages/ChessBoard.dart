@@ -285,6 +285,12 @@ class _ChessBoardState extends State<ChessBoard> {
         whiteCapturedPieces = List<String>.from(gameData['whiteCapturedPieces'] ?? []);
         blackCapturedPieces = List<String>.from(gameData['blackCapturedPieces'] ?? []);
         pgnNotation = newPgnNotation;
+
+        // Reset selectedSquare if it's now the current user's turn
+        if (currentTurnUID == currentUserUID) {
+          selectedSquare = null;
+        }
+
       });
     });
 
@@ -786,6 +792,8 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
+
+
   @override
   Widget build(BuildContext context) {
 
@@ -883,10 +891,10 @@ return WillPopScope(
                           bool isLegalMove = legalMovesForSelected.contains(squareName);
 
                           // Check if the square is the starting or ending position of the last move
-                          bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
-                          if (isLastMoveSquare) {
-                            squareColor = Colors.blueGrey.withOpacity(0.5); // Adjust the color and opacity as needed
-                          }
+                          //bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
+                          // if (isLastMoveSquare) {
+                          //   squareColor = Colors.blueGrey.withOpacity(0.0); // Adjust the color and opacity as needed
+                          // }
                           return GestureDetector(
                             onTap: () {
 
@@ -896,7 +904,8 @@ return WillPopScope(
                               }
 
                               setState(() {
-                                //if (game.get(squareName)?.color == game.turn) {
+
+
                                 if (piece != null && piece.color == game.turn) {
                                   // Select the piece at the tapped square
                                   selectedSquare = squareName;
@@ -935,11 +944,14 @@ return WillPopScope(
                                       'currentBoardState': game.fen,
                                       'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
                                     });
+                                    selectedSquare = null;
 
                                   }
+                                  
 
                                   lastMoveFrom = selectedSquare;
                                   lastMoveTo = squareName;
+                                  selectedSquare = null;
 
 
 
@@ -1027,10 +1039,12 @@ return WillPopScope(
                               });
 
                               updateLastMoveInRealTimeDatabase(lastMoveFrom!, lastMoveTo!);
+
                             },
                             child: Container(
                               decoration: BoxDecoration(
-                                color: squareColor,
+                                //color: squareColor,
+                                color: selectedSquare == squareName ? Colors.blue : squareColor,
                                 border: border,
                               ),
                               child: Stack(
@@ -1077,7 +1091,6 @@ return WillPopScope(
                       ),
                     ),
                   ),
-                  //),
                 ),
 
                 SizedBox(height: 20),

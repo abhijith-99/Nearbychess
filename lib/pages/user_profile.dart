@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mychessapp/pages/userhome.dart';
+import 'dart:ui';
+
 
 class UserProfilePage extends StatefulWidget {
   const UserProfilePage({Key? key}) : super(key: key);
@@ -17,8 +19,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
   final TextEditingController _referralCodeController = TextEditingController();
   bool isReferralCodeValid = false;
   String verificationMessage = '';
-  String? _selectedLocation = 'Kakkanad';
+  String? _selectedLocation ='Kakkanad';
   String? _selectedAvatar;
+  final List<String> _locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
   bool isAvatarListVisible = false;
 
   @override
@@ -138,35 +141,20 @@ class _UserProfilePageState extends State<UserProfilePage> {
   }
 
   Widget buildAvatarSelector() {
-    return Column(
-      children: [
-        ListTile(
-          title: const Text('Choose Avatar'),
-          trailing: IconButton(
-            icon: Icon(isAvatarListVisible
-                ? Icons.arrow_upward
-                : Icons.arrow_downward),
-            onPressed: () {
-              setState(() {
-                isAvatarListVisible = !isAvatarListVisible;
-              });
-            },
-          ),
-          onTap: () {
-            setState(() {
-              isAvatarListVisible = !isAvatarListVisible;
-            });
-          },
-        ),
-        if (isAvatarListVisible) buildAvatarGrid(),
-      ],
+    // Initialize with a default avatar if none is selected
+    _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
+
+    return Offstage(
+      offstage: !isAvatarListVisible,
+      child: buildAvatarRow(), // The method you already have
     );
   }
 
 
 
 
-  Widget buildAvatarGrid() {
+
+  Widget buildAvatarRow() {
     List<String> avatarImages = [
       'assets/avatars/avatar1.png',
       'assets/avatars/avatar2.png',
@@ -174,47 +162,46 @@ class _UserProfilePageState extends State<UserProfilePage> {
       'assets/avatars/avatar4.png',
       'assets/avatars/avatar5.png',
       'assets/avatars/avatar6.png',
-      // ... Add paths for all avatar images
+      //'assets/avatars/avatar-default.png'
+
     ];
 
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 4,
-        mainAxisSpacing: 4,
-      ),
-      itemCount: avatarImages.length,
-      itemBuilder: (context, index) {
-        bool isSelected = avatarImages[index] == _selectedAvatar;
-        return GestureDetector(
-          onTap: () {
-            setState(() {
-              _selectedAvatar = avatarImages[index];
-            });
-          },
-          child: Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              border:
-              isSelected ? Border.all(color: Colors.blue, width: 3) : null,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Opacity(
-              opacity: isSelected ? 1.0 : 0.5,
+    return Container(
+      height: 50.0, // Set the height of the container that holds the list view
+      child: ListView.builder(
+        shrinkWrap: true,
+        scrollDirection: Axis.horizontal,
+        itemCount: avatarImages.length,
+        itemBuilder: (context, index) {
+          bool isSelected = avatarImages[index] == _selectedAvatar;
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedAvatar = avatarImages[index];
+              });
+            },
+            child: Container(
+              width: 50.0, // Approximate width to match the height
+              padding: const EdgeInsets.all(2), // Reduced padding
+              margin: const EdgeInsets.symmetric(horizontal: 4), // Spacing between items
+              decoration: BoxDecoration(
+                border: isSelected ? Border.all(color: Colors.blue, width: 2) : null,
+                borderRadius: BorderRadius.circular(8),
+              ),
               child: Image.asset(avatarImages[index]),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
 
 
+
   @override
   Widget build(BuildContext context) {
+    _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -244,68 +231,172 @@ class _UserProfilePageState extends State<UserProfilePage> {
                           color: Colors.black,
                         ),
                       ),
-                      const SizedBox(height: 20),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: InputDecoration(
-                          labelText: 'Name',
-                          labelStyle: const TextStyle(color: Colors.black),
-                          enabledBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black),
-                            borderRadius: BorderRadius.circular(8.0), // Border radius
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderSide: const BorderSide(color: Colors.black),
-                            borderRadius: BorderRadius.circular(8.0), // Border radius
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 10.0), // Adjust vertical padding
-                        ),
-                        style: const TextStyle(color: Colors.black),
-                      ),
+                      const SizedBox(height: 30),
 
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: <Widget>[
+                          GestureDetector(
+                            onTap: () {
+                              // Toggle the avatar selection view
+                              setState(() {
+                                isAvatarListVisible = !isAvatarListVisible;
+                              });
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.all(2), // Space for the border
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.black, // Border color
+                                  width: 1.0, // Border width
+                                ),
+                              ),
+                            child: CircleAvatar(
+                              backgroundImage: AssetImage(_selectedAvatar!),
+                              radius: 22.0, // Adjust the size to fit your layout
+                              backgroundColor: Colors.white,
+                            ),
+                          ),
+                          ),
+                          const SizedBox(width: 10.0),
+                          Expanded(
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: Colors.black),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0), // Same as Container border radius
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1), // Adjust the opacity as needed
+                                    ),
+                                    child: TextFormField(
+                                      controller: _nameController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Name',
+                                        labelStyle: TextStyle(color: Colors.black),
+                                        border: InputBorder.none,
+                                        contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                                      ),
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+
+                        ],
+                      ),
+                      const SizedBox(height: 5),
                       buildAvatarSelector(),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 5),
                       Row(
                         children: [
                           Expanded(
-                            child: TextFormField(
-                              controller: _referralCodeController,
-                              decoration: const InputDecoration(
-                                labelText: 'Referral Code (Optional)',
-                                border: OutlineInputBorder(),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8.0),
+                                border: Border.all(color: Colors.black),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8.0), // Same as Container border radius
+                                child: BackdropFilter(
+                                  filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                                  child: Container(
+                                    alignment: Alignment.center,
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.1), // Adjust the opacity as needed
+                                    ),
+                                    child: TextFormField(
+                                      controller: _referralCodeController,
+                                      decoration: InputDecoration(
+                                        labelText: 'Referral Code (Optional)',
+                                        labelStyle: TextStyle(color: Colors.black),
+                                        contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
+                                        border: InputBorder.none, // Removes the default border
+                                        enabledBorder: InputBorder.none, // Removes the enabled border
+                                        focusedBorder: InputBorder.none, // Removes the focused border
+                                      ),
+                                      style: TextStyle(color: Colors.black),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
                           ),
-                          IconButton(
-                            icon: Icon(isReferralCodeValid ? Icons.check : Icons.search),
-                            onPressed: verifyReferralCode,
-                          ),
+
+                          const SizedBox(width: 10,),
+                          Container(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(8.0), // Border radius to match TextFormField
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(8.0),
+                              child: BackdropFilter(
+                                filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withOpacity(0.7), // Adjust the opacity as needed
+                                    border: Border.all(color: Colors.black), // Border for the container
+                                    borderRadius: BorderRadius.circular(8.0),
+                                  ),
+                                  child: IconButton(
+                                    icon: Icon(
+                                      isReferralCodeValid ? Icons.check : Icons.search,
+                                      color: Colors.black,
+                                    ),
+                                    onPressed: verifyReferralCode,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          )
+
                         ],
                       ),
+                      const SizedBox(height: 10),
                       if (verificationMessage.isNotEmpty)
                         Padding(
-                          padding: const EdgeInsets.only(top: 8.0),
+                          padding: const EdgeInsets.only(top: 4.0,left: 8.0),
                           child: Text(
                             verificationMessage,
                             style: TextStyle(
                               color: isReferralCodeValid ? Colors.green : Colors.red,
+                              fontSize: 10.0,
                             ),
                           ),
                         ),
-                      ElevatedButton(
-                        onPressed: createUserProfile,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.transparent, // Transparent background
-                          foregroundColor: Colors.black, // Black text color
-                          elevation: 0, // Remove elevation shadow
-                          side: const BorderSide(color: Colors.black, width: 1.3), // Thicker black border
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10.0),
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(10.0), // Match the border radius of ElevatedButton
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 5.0, sigmaY: 5.0),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.1), // Adjust the opacity as needed
+                              borderRadius: BorderRadius.circular(10.0),
+                              border: Border.all(color: Colors.black, width: 1.3),
+                            ),
+                            child: TextButton(
+                              onPressed: createUserProfile,
+                              style: TextButton.styleFrom(
+                                primary: Colors.black, // Text color
+                                padding: const EdgeInsets.symmetric(vertical: 10),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                              ),
+                              child: const Text('Save Profile'),
+                            ),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 10),
                         ),
-                        child: const Text('Save Profile'),
-                      ),
+                      )
+
 
 
 
@@ -322,4 +413,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
       ),
     );
   }
+
+
 }
