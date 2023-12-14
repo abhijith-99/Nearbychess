@@ -13,6 +13,7 @@
   import 'package:flutter/foundation.dart' show kIsWeb;
   import 'geocoding_stub.dart'
   if (dart.library.html) 'geocoding_web.dart';
+import 'geocoding_web.dart';
 
 
 

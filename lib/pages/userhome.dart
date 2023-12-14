@@ -31,6 +31,8 @@ import 'geocoding_stub.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+import 'geocoding_web.dart';
+
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({Key? key}) : super(key: key);
@@ -225,10 +227,12 @@ class UserHomePageState extends State<UserHomePage>
       );
 
       setState(() {
+        print("fetched cityname $cityName");
+
         userLocation = cityName;
         print("dfjhskdjfhjkdfhdsjkfhsdin werbdsfs$userLocation");
-        print("fetched cityname $cityName");
         onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
+        print("whats up");
 
 
       });
