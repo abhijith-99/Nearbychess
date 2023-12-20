@@ -16,24 +16,18 @@ import 'ChessBoard.dart';
 import 'UserDetails.dart';
 import 'challenge_request_screen.dart';
 import 'package:location/location.dart' as loc;
-import 'dart:math' show asin, cos, max, pi, sqrt;
+import 'dart:math' show asin, cos, max, sqrt;
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
-import 'geocoding_stub.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'geocoding_web.dart';
 
 
 class UserHomePage extends StatefulWidget {
-  const UserHomePage({Key? key}) : super(key: key);
+  const UserHomePage({super.key});
 
   @override
   UserHomePageState createState() => UserHomePageState();
 }
-
-
-
 
 
 class UserHomePageState extends State<UserHomePage>
@@ -67,7 +61,7 @@ class UserHomePageState extends State<UserHomePage>
   Future<Uint8List> createCustomMarker(String userName) async {
     final PictureRecorder pictureRecorder = PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-    final double iconSize = 100.0; // Size for the icon
+    const double iconSize = 100.0; // Size for the icon
 
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
@@ -175,7 +169,9 @@ class UserHomePageState extends State<UserHomePage>
 
 
   Future<void> getUserLocationForWeb() async {
-    print("getuserlocationforweb is called");
+    if (kDebugMode) {
+      print("getuserlocationforweb is called");
+    }
     try {
       loc.Location location = loc.Location();
       bool _serviceEnabled;
@@ -253,6 +249,10 @@ class UserHomePageState extends State<UserHomePage>
 
   Future<void> _loadMapStyle() async {
      _mapStyle = await rootBundle.loadString('assets/new_map.json');
+
+    if (mapController != null) {
+       mapController!.setMapStyle(_mapStyle);
+     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -389,7 +389,7 @@ class UserHomePageState extends State<UserHomePage>
               title: Center(
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       "Daily Login Bonus",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -539,7 +539,11 @@ class UserHomePageState extends State<UserHomePage>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChessBoard(gameId: gameId),
+              // builder: (context) => ChessBoard(gameId: gameId),
+
+
+
+      builder: (context) => ChessBoard(gameId: gameId,isSpectator: true),
             ),
           ).then((_) {
             // User has left the Chessboard, update the inGame status
@@ -553,7 +557,7 @@ class UserHomePageState extends State<UserHomePage>
   // Function to get the human-readable location name from coordinates
   Future<String> getLocationName(double latitude, double longitude) async {
     List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-    if (placemarks != null && placemarks.isNotEmpty) {
+    if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       return placemark.locality ?? placemark.name ?? 'Unknown Location';
     } else {
@@ -969,7 +973,8 @@ void _showChallengeModal(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ChessBoard(gameId: currentGameId),
+                                    ChessBoard(gameId: currentGameId, isSpectator: true),
+                                // ChessBoard(gameId: currentGameId),
                               ),
                             );
                           }
@@ -1078,6 +1083,17 @@ void _showChallengeModal(
     mapController?.setMapStyle(_mapStyle);
   }
 
+
+  //
+  // void _onMapCreated(GoogleMapController controller) async {
+  //   mapController = controller;
+  //   String style = await DefaultAssetBundle.of(context).loadString('assets/new_map.json');
+  //   _determinePosition();
+  //   mapController!.setMapStyle(style);
+  // }
+
+
+
   Stream<int> getUnreadMessageCountStream(String userId) {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     String chatId = getChatId(myUserId, userId);
@@ -1126,6 +1142,8 @@ Widget build(BuildContext context) {
                   markers: markers,
                 ),
               ),
+
+              if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                 child: TextField(
@@ -1237,7 +1255,7 @@ Widget build(BuildContext context) {
                                             right: 0,
                                             child: Container(
                                               padding: EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
+                                              decoration: const BoxDecoration(
                                                 color: Colors.red,
                                                 shape: BoxShape.circle,
                                               ),
@@ -1249,10 +1267,10 @@ Widget build(BuildContext context) {
                                           ),
                                       ],
                                     ),
-                                    SizedBox(height: 6),
+                                    const SizedBox(height: 6),
                                     Text(
                                       userData['name'] ?? 'Username',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontFamily: 'Poppins',
                                         color: Color.fromARGB(255, 12, 6, 6),
                                         fontWeight: FontWeight.bold,
@@ -1282,13 +1300,13 @@ Widget build(BuildContext context) {
                 children: [
                   Text(
                     '$currentUserChessCoins',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(width: 8),
-                  CircleAvatar(
+                  const SizedBox(width: 8),
+                  const CircleAvatar(
                     backgroundImage: AssetImage('assets/NBC-token.png'),
                     radius: 10,
                   ),
@@ -1307,7 +1325,7 @@ Widget build(BuildContext context) {
 class UserProfileHeader extends StatelessWidget {
   final String userId;
 
-  const UserProfileHeader({Key? key, required this.userId}) : super(key: key);
+  const UserProfileHeader({super.key, required this.userId});
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
