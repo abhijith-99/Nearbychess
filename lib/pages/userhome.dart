@@ -16,24 +16,23 @@ import 'ChessBoard.dart';
 import 'UserDetails.dart';
 import 'challenge_request_screen.dart';
 import 'package:location/location.dart' as loc;
-import 'dart:math' show asin, cos, max, pi, sqrt;
+import 'dart:math' show asin, cos, max, sqrt;
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
-import 'geocoding_stub.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'geocoding_web.dart';
 
 
+
+
+
+import 'package:flutter_svg/flutter_svg.dart';
+
 class UserHomePage extends StatefulWidget {
-  const UserHomePage({Key? key}) : super(key: key);
+  const UserHomePage({super.key});
 
   @override
   UserHomePageState createState() => UserHomePageState();
 }
-
-
-
 
 
 class UserHomePageState extends State<UserHomePage>
@@ -63,55 +62,80 @@ class UserHomePageState extends State<UserHomePage>
   String? get locationName => null;
 
 
-
-  Future<Uint8List> createCustomMarker(String userName) async {
-    final PictureRecorder pictureRecorder = PictureRecorder();
+  //
+  Future<Uint8List> createCustomMarker(String userName, double zoomLevel) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-    final double iconSize = 100.0; // Size for the icon
 
+    // Adjust the size based on the zoom level
+    final double iconSize = 50.0 * zoomLevel / 15.0; // Example scaling factor
+    final double fontSize = 35.0 * zoomLevel / 15.0; // Adjust font size based on zoom level
+
+    // Define paint for the circle
+    final Paint paintCircle = Paint()
+      ..color = Colors.red;
+
+    // Define paint for the triangle
+    final Paint paintTriangle = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    // Draw the circle for location
+    final double circleRadius = iconSize / 4; // Radius of the circle
+    final Offset circleOffset = Offset(iconSize / 2, circleRadius); // Center of the circle
+    canvas.drawCircle(circleOffset, circleRadius, paintCircle);
+
+    // Draw the triangle for location
+    final Path trianglePath = Path()
+      ..moveTo(iconSize / 2, iconSize) // Bottom point of the triangle
+      ..lineTo(iconSize / 2 - circleRadius, circleRadius * 2) // Top left point
+      ..lineTo(iconSize / 2 + circleRadius, circleRadius * 2) // Top right point
+      ..close();
+    canvas.drawPath(trianglePath, paintTriangle);
+
+    // Calculate the total height of the canvas to fit the icon and the text
+    final double canvasHeight = iconSize + fontSize * 1.2; // Space for text
+
+    // Draw the text
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: userName,
         style: const TextStyle(
-          fontSize: 35.0, // Font size for the text
-          color: Colors.yellow, // Color for the text
+          fontSize: 20.0,
+          color: Colors. yellow, // Text color
           fontWeight: FontWeight.bold,
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
     );
-
-    textPainter.layout(); // Layout the text
-
-    // Calculate the total height of the canvas to fit the icon and the text
-    final double canvasHeight = textPainter.height + iconSize; // Text height plus icon size
-    final double canvasWidth = max(textPainter.width, iconSize); // The max width between text and icon
-
-    // Draw the text at the top of the canvas
-    final Offset textOffset = Offset((canvasWidth - textPainter.width) / 2, 0);
+    textPainter.layout();
+    final Offset textOffset = Offset((iconSize - textPainter.width) / 2, iconSize - (fontSize * 0.2));
     textPainter.paint(canvas, textOffset);
 
-    // Draw the icon below the text
-    final Paint paintCircle = Paint()..color = Colors.red;
-    final double iconOffsetY = textPainter.height; // Offset Y by the height of the text
-    canvas.drawCircle(
-      Offset(canvasWidth / 2, iconOffsetY + iconSize / 2), // Center of the icon in the canvas
-      iconSize / 2, // Radius of the icon
-      paintCircle,
-    );
+    // Convert canvas to image
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(iconSize.toInt(), canvasHeight.toInt());
 
-    // Convert the canvas drawing into an image
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
-      canvasWidth.toInt(),
-      canvasHeight.toInt(),
-    );
-
-    // Convert the image to bytes
+    // Convert image to bytes
     final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List uint8List = byteData!.buffer.asUint8List();
 
     return uint8List;
   }
+
+
+
+
+
+
+
+
+  void _onCameraMove(CameraPosition position) {
+    final double _currentZoomLevel = position.zoom;
+  }
+
+
+
+
 
   Future<void> _determinePosition() async {
   bool serviceEnabled;
@@ -143,7 +167,7 @@ class UserHomePageState extends State<UserHomePage>
   String userName = userDoc['name']; // Replace 'name' with your Firestore field
 
   // Create the custom marker
-  final Uint8List markerIcon = await createCustomMarker(userName);
+  final Uint8List markerIcon = await createCustomMarker(userName, _currentZoomLevel);
 
 
 
@@ -175,7 +199,9 @@ class UserHomePageState extends State<UserHomePage>
 
 
   Future<void> getUserLocationForWeb() async {
-    print("getuserlocationforweb is called");
+    if (kDebugMode) {
+      print("getuserlocationforweb is called");
+    }
     try {
       loc.Location location = loc.Location();
       bool _serviceEnabled;
@@ -253,6 +279,10 @@ class UserHomePageState extends State<UserHomePage>
 
   Future<void> _loadMapStyle() async {
      _mapStyle = await rootBundle.loadString('assets/new_map.json');
+
+    if (mapController != null) {
+       mapController!.setMapStyle(_mapStyle);
+     }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -389,7 +419,7 @@ class UserHomePageState extends State<UserHomePage>
               title: Center(
                 child: Column(
                   children: [
-                    Text(
+                    const Text(
                       "Daily Login Bonus",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
@@ -539,7 +569,11 @@ class UserHomePageState extends State<UserHomePage>
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => ChessBoard(gameId: gameId),
+              // builder: (context) => ChessBoard(gameId: gameId),
+
+
+
+      builder: (context) => ChessBoard(gameId: gameId,isSpectator: true),
             ),
           ).then((_) {
             // User has left the Chessboard, update the inGame status
@@ -553,7 +587,7 @@ class UserHomePageState extends State<UserHomePage>
   // Function to get the human-readable location name from coordinates
   Future<String> getLocationName(double latitude, double longitude) async {
     List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
-    if (placemarks != null && placemarks.isNotEmpty) {
+    if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       return placemark.locality ?? placemark.name ?? 'Unknown Location';
     } else {
@@ -696,8 +730,9 @@ class UserHomePageState extends State<UserHomePage>
         // Now call fetchNearbyOpponents with the actual latitude and longitude
         fetchNearbyOpponents(userLat, userLon, 10.0) // Adjust the radius as needed
             .listen((userDocs) {
-          updateMarkers(userDocs); // Update the map markers
+          // updateMarkers(userDocs); // Update the map markers
           // Update any other UI components that list the nearby users
+          updateMarkers(userDocs);
         });
       }
     });
@@ -726,6 +761,39 @@ class UserHomePageState extends State<UserHomePage>
     }).toList());
   }
 
+  // void updateMarkers(List<DocumentSnapshot> userDocs) async {
+  //   Set<Marker> newMarkers = {};
+  //
+  //   for (var doc in userDocs) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     double? lat = userData['latitude'] as double?;
+  //     double? lon = userData['longitude'] as double?;
+  //
+  //     if (lat != null && lon != null) {
+  //       final markerIcon = await createCustomMarker(userData['name']);
+  //
+  //       var userMarker = Marker(
+  //         markerId: MarkerId(doc.id),
+  //         position: LatLng(lat, lon),
+  //         icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         onTap: () {
+  //           _showChallengeModal(context, userData);
+  //         },
+  //       );
+  //       newMarkers.add(userMarker);
+  //     }
+  //   }
+  //
+  //   setState(() {
+  //     markers.clear();
+  //     markers = newMarkers;
+  //   });
+  // }
+
+
+
+  double _currentZoomLevel = 30.0; // Starting with a default zoom level
+
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
 
@@ -735,7 +803,8 @@ class UserHomePageState extends State<UserHomePage>
       double? lon = userData['longitude'] as double?;
 
       if (lat != null && lon != null) {
-        final markerIcon = await createCustomMarker(userData['name']);
+        // Pass the current zoom level to createCustomMarker
+        final Uint8List markerIcon = await createCustomMarker(userData['name'], _currentZoomLevel);
 
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
@@ -754,6 +823,56 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
+
+
+
+  //
+  // Future<void> updateMarkers(List<DocumentSnapshot> userDocs) async {
+  //   Set<Marker> newMarkers = {};
+  //
+  //   for (var doc in userDocs) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     double? lat = userData['latitude'] as double?;
+  //     double? lon = userData['longitude'] as double?;
+  //
+  //     if (lat != null && lon != null) {
+  //       // Use the current zoom level or a default value if you don't have one
+  //       double zoomLevel = _currentZoomLevel; // Make sure this variable is defined and updated based on the map zoom level
+  //       final Uint8List markerIcon = await createCustomMarker(userData['name'], zoomLevel);
+  //
+  //       var userMarker = Marker(
+  //         markerId: MarkerId(doc.id),
+  //         position: LatLng(lat, lon),
+  //         icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         onTap: () {
+  //           // Your tap callback here
+  //           _showChallengeModal(context, userData);
+  //         },
+  //       );
+  //       newMarkers.add(userMarker);
+  //     }
+  //   }
+  //
+  //   // Using setState only if this code is within a StatefulWidget and you want to update the UI
+  //   setState(() {
+  //     markers.clear();
+  //     markers.addAll(newMarkers);
+  //   });
+  // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -969,7 +1088,8 @@ void _showChallengeModal(
                               context,
                               MaterialPageRoute(
                                 builder: (context) =>
-                                    ChessBoard(gameId: currentGameId),
+                                    ChessBoard(gameId: currentGameId, isSpectator: true),
+                                // ChessBoard(gameId: currentGameId),
                               ),
                             );
                           }
@@ -1078,6 +1198,8 @@ void _showChallengeModal(
     mapController?.setMapStyle(_mapStyle);
   }
 
+
+
   Stream<int> getUnreadMessageCountStream(String userId) {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     String chatId = getChatId(myUserId, userId);
@@ -1126,6 +1248,8 @@ Widget build(BuildContext context) {
                   markers: markers,
                 ),
               ),
+
+              if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                 child: TextField(
@@ -1237,7 +1361,7 @@ Widget build(BuildContext context) {
                                             right: 0,
                                             child: Container(
                                               padding: EdgeInsets.all(6),
-                                              decoration: BoxDecoration(
+                                              decoration: const BoxDecoration(
                                                 color: Colors.red,
                                                 shape: BoxShape.circle,
                                               ),
@@ -1249,10 +1373,10 @@ Widget build(BuildContext context) {
                                           ),
                                       ],
                                     ),
-                                    SizedBox(height: 6),
+                                    const SizedBox(height: 6),
                                     Text(
                                       userData['name'] ?? 'Username',
-                                      style: TextStyle(
+                                      style: const TextStyle(
                                         fontFamily: 'Poppins',
                                         color: Color.fromARGB(255, 12, 6, 6),
                                         fontWeight: FontWeight.bold,
@@ -1282,13 +1406,13 @@ Widget build(BuildContext context) {
                 children: [
                   Text(
                     '$currentUserChessCoins',
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  SizedBox(width: 8),
-                  CircleAvatar(
+                  const SizedBox(width: 8),
+                  const CircleAvatar(
                     backgroundImage: AssetImage('assets/NBC-token.png'),
                     radius: 10,
                   ),
@@ -1307,7 +1431,7 @@ Widget build(BuildContext context) {
 class UserProfileHeader extends StatelessWidget {
   final String userId;
 
-  const UserProfileHeader({Key? key, required this.userId}) : super(key: key);
+  const UserProfileHeader({super.key, required this.userId});
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =

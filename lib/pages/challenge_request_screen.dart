@@ -1,34 +1,66 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../firebase_game_service.dart';
 import '../utils.dart';
 import 'ChessBoard.dart';
 
-class ChallengeRequestScreen extends StatelessWidget {
+// Convert this to a StatefulWidget
+class ChallengeRequestScreen extends StatefulWidget {
   final String challengerName;
   final String challengerUID; // UID of the challenger
   final String opponentUID; // UID of the opponent (current user)
   final String betAmount; // The bet amount for the game
   final String challengeId; // The challenge request ID
-  final String challengerImageUrl; // Add this line
-  final String localTimerValue;
+  final String challengerImageUrl; // Image URL for the challenger
+  final String localTimerValue; // Timer value for the game
 
   const ChallengeRequestScreen({
-    super.key,
+    Key? key,
     required this.challengerName,
     required this.challengerUID,
     required this.opponentUID,
     required this.betAmount,
     required this.localTimerValue,
     required this.challengeId,
-    required this.challengerImageUrl, // Add this line
-  });
+    required this.challengerImageUrl,
+  }) : super(key: key);
 
+  @override
+  _ChallengeRequestScreenState createState() => _ChallengeRequestScreenState();
+}
+
+class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
+  late StreamSubscription<DocumentSnapshot> challengeRequestSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    challengeRequestSubscription = FirebaseFirestore.instance
+        .collection('challengeRequests')
+        .doc(widget.challengeId)
+        .snapshots()
+        .listen((snapshot) {
+      if (!snapshot.exists || snapshot.data()?['status'] == 'canceled') {
+        Navigator.of(context).pop();
+        challengeRequestSubscription.cancel();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    challengeRequestSubscription.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    print('Received Timer Value: $localTimerValue');
+    print('Received Timer Value: ${widget.localTimerValue}');
+    // Rest of the build method goes here...
+    // Make sure to use `widget.` to access the properties of the StatefulWidget
     return Dialog(
+      // ... rest of the dialog UI code ...
       shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12.0)), // Makes dialog rounded
       child: Padding(
@@ -46,14 +78,14 @@ class ChallengeRequestScreen extends StatelessWidget {
             const SizedBox(height: 20),
             CircleAvatar(
               backgroundImage:
-              AssetImage(challengerImageUrl), // Use NetworkImage
+              AssetImage(widget.challengerImageUrl), // Use NetworkImage
               radius: 40,
             ),
             const SizedBox(height: 10),
-            Text(challengerName, style: const TextStyle(fontSize: 18)),
+            Text(widget.challengerName, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
             Text(
-              'Wants to play for $betAmount in $localTimerValue minutes',
+              'Wants to play for ${widget.betAmount} in ${widget.localTimerValue} minutes',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600, // Added weight for the bet amount
@@ -67,12 +99,12 @@ class ChallengeRequestScreen extends StatelessWidget {
                 onPressed: () async {
                   // Accept the challenge
                   String newGameId = await FirebaseGameService.createNewGame(
-                      challengerUID, opponentUID, challengeId, betAmount, localTimerValue);
+                      widget.challengerUID, widget.opponentUID, widget.challengeId, widget.betAmount, widget.localTimerValue);
 
                   // Update the challenge request in Firestore
                   await FirebaseFirestore.instance
                       .collection('challengeRequests')
-                      .doc(challengeId)
+                      .doc(widget.challengeId)
                       .update({
                     'status': 'accepted',
                     'gameId': newGameId, // The ID of the newly created game
@@ -82,10 +114,10 @@ class ChallengeRequestScreen extends StatelessWidget {
                   CollectionReference users =
                   FirebaseFirestore.instance.collection('users');
                   await users
-                      .doc(challengerUID)
+                      .doc(widget.challengerUID)
                       .update({'inGame': true, 'currentGameId': newGameId});
                   await users
-                      .doc(opponentUID)
+                      .doc(widget.opponentUID)
                       .update({'inGame': true, 'currentGameId': newGameId});
 
                   Navigator.pushReplacement(

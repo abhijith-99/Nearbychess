@@ -31,6 +31,8 @@ dependencies:
   http: ^1.1.2
   share: ^2.0.4
 
+  google_geocoding_api: ^1.4.1
+
 
 
 dev_dependencies:
@@ -61,6 +63,9 @@ flutter:
     - assets/monochrome-board.jpg
     - assets/mono-white.jpg
     - assets/NBC-token.png
+    - assets/location-pin-solid.png
+    - assets/location-pin-solid.webp
+
 
   fonts:
     - family: Roboto

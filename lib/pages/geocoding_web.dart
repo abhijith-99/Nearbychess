@@ -14,6 +14,10 @@ Future<String> getPlaceFromCoordinates(double latitude, double longitude) async 
       // Prioritize 'suburb' or similar fields that might contain specific location names like 'Kakkanad'
       String specificLocation = components['suburb'] ?? components['neighbourhood'] ?? components['town'] ?? components['city'] ?? components['village'] ?? 'Unknown Location';
 
+
+
+      // String specificLocation = components['neighbourhood'] ?? components['town'] ?? components['city'] ?? components['village'] ?? 'Unknown Location';
+
       String userLocation = specificLocation.split(" ")[0];
       // String userLocation = components['suburb'] ?? components['neighbourhood'] ?? components['town'] ?? components['city'] ?? components['village'] ?? 'Unknown Location';
 

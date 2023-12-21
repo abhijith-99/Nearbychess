@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
@@ -134,7 +136,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
     FirebaseFirestore.instance
         .collection('challengeRequests')
         .doc(challengeRequestId) // Use the challengeRequestId for deletion
-         .update({'status': 'canceled'}) 
+         .update({'status': 'canceled'})
         // .delete()
         .then((_) {
           Navigator.pop(context);
@@ -144,3 +146,23 @@ class ChallengeWaitingScreen extends StatelessWidget {
         .catchError((error) => print('Error deleting challenge request: $error'));
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
