@@ -63,6 +63,9 @@ flutter:
     - assets/monochrome-board.jpg
     - assets/mono-white.jpg
     - assets/NBC-token.png
+    - assets/location-pin-solid.png
+    - assets/location-pin-solid.webp
+
 
   fonts:
     - family: Roboto

@@ -109,18 +109,13 @@
                 throw Exception('Geocoding returned no results');
               }
             }
-  
-            // print("Geocoded place name: $detailedLocationName");
-  
-  
-  
+
             city = await getPlaceFromCoordinates(
               _locationData.latitude!,
               _locationData.longitude!,
             );
             print("City name: $city");
-  
-  
+
   
             if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
               CollectionReference users = FirebaseFirestore.instance.collection('users');

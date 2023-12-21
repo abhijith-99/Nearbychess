@@ -22,6 +22,11 @@ import 'package:location/location.dart';
 import 'geocoding_web.dart';
 
 
+
+
+
+import 'package:flutter_svg/flutter_svg.dart';
+
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
 
@@ -57,55 +62,80 @@ class UserHomePageState extends State<UserHomePage>
   String? get locationName => null;
 
 
-
-  Future<Uint8List> createCustomMarker(String userName) async {
-    final PictureRecorder pictureRecorder = PictureRecorder();
+  //
+  Future<Uint8List> createCustomMarker(String userName, double zoomLevel) async {
+    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
-    const double iconSize = 100.0; // Size for the icon
 
+    // Adjust the size based on the zoom level
+    final double iconSize = 50.0 * zoomLevel / 15.0; // Example scaling factor
+    final double fontSize = 35.0 * zoomLevel / 15.0; // Adjust font size based on zoom level
+
+    // Define paint for the circle
+    final Paint paintCircle = Paint()
+      ..color = Colors.red;
+
+    // Define paint for the triangle
+    final Paint paintTriangle = Paint()
+      ..color = Colors.red
+      ..style = PaintingStyle.fill;
+
+    // Draw the circle for location
+    final double circleRadius = iconSize / 4; // Radius of the circle
+    final Offset circleOffset = Offset(iconSize / 2, circleRadius); // Center of the circle
+    canvas.drawCircle(circleOffset, circleRadius, paintCircle);
+
+    // Draw the triangle for location
+    final Path trianglePath = Path()
+      ..moveTo(iconSize / 2, iconSize) // Bottom point of the triangle
+      ..lineTo(iconSize / 2 - circleRadius, circleRadius * 2) // Top left point
+      ..lineTo(iconSize / 2 + circleRadius, circleRadius * 2) // Top right point
+      ..close();
+    canvas.drawPath(trianglePath, paintTriangle);
+
+    // Calculate the total height of the canvas to fit the icon and the text
+    final double canvasHeight = iconSize + fontSize * 1.2; // Space for text
+
+    // Draw the text
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: userName,
         style: const TextStyle(
-          fontSize: 35.0, // Font size for the text
-          color: Colors.yellow, // Color for the text
+          fontSize: 20.0,
+          color: Colors. yellow, // Text color
           fontWeight: FontWeight.bold,
         ),
       ),
-      textDirection: TextDirection.ltr,
+      textDirection: ui.TextDirection.ltr,
     );
-
-    textPainter.layout(); // Layout the text
-
-    // Calculate the total height of the canvas to fit the icon and the text
-    final double canvasHeight = textPainter.height + iconSize; // Text height plus icon size
-    final double canvasWidth = max(textPainter.width, iconSize); // The max width between text and icon
-
-    // Draw the text at the top of the canvas
-    final Offset textOffset = Offset((canvasWidth - textPainter.width) / 2, 0);
+    textPainter.layout();
+    final Offset textOffset = Offset((iconSize - textPainter.width) / 2, iconSize - (fontSize * 0.2));
     textPainter.paint(canvas, textOffset);
 
-    // Draw the icon below the text
-    final Paint paintCircle = Paint()..color = Colors.red;
-    final double iconOffsetY = textPainter.height; // Offset Y by the height of the text
-    canvas.drawCircle(
-      Offset(canvasWidth / 2, iconOffsetY + iconSize / 2), // Center of the icon in the canvas
-      iconSize / 2, // Radius of the icon
-      paintCircle,
-    );
+    // Convert canvas to image
+    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(iconSize.toInt(), canvasHeight.toInt());
 
-    // Convert the canvas drawing into an image
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
-      canvasWidth.toInt(),
-      canvasHeight.toInt(),
-    );
-
-    // Convert the image to bytes
+    // Convert image to bytes
     final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List uint8List = byteData!.buffer.asUint8List();
 
     return uint8List;
   }
+
+
+
+
+
+
+
+
+  void _onCameraMove(CameraPosition position) {
+    final double _currentZoomLevel = position.zoom;
+  }
+
+
+
+
 
   Future<void> _determinePosition() async {
   bool serviceEnabled;
@@ -137,7 +167,7 @@ class UserHomePageState extends State<UserHomePage>
   String userName = userDoc['name']; // Replace 'name' with your Firestore field
 
   // Create the custom marker
-  final Uint8List markerIcon = await createCustomMarker(userName);
+  final Uint8List markerIcon = await createCustomMarker(userName, _currentZoomLevel);
 
 
 
@@ -700,8 +730,9 @@ class UserHomePageState extends State<UserHomePage>
         // Now call fetchNearbyOpponents with the actual latitude and longitude
         fetchNearbyOpponents(userLat, userLon, 10.0) // Adjust the radius as needed
             .listen((userDocs) {
-          updateMarkers(userDocs); // Update the map markers
+          // updateMarkers(userDocs); // Update the map markers
           // Update any other UI components that list the nearby users
+          updateMarkers(userDocs);
         });
       }
     });
@@ -730,6 +761,39 @@ class UserHomePageState extends State<UserHomePage>
     }).toList());
   }
 
+  // void updateMarkers(List<DocumentSnapshot> userDocs) async {
+  //   Set<Marker> newMarkers = {};
+  //
+  //   for (var doc in userDocs) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     double? lat = userData['latitude'] as double?;
+  //     double? lon = userData['longitude'] as double?;
+  //
+  //     if (lat != null && lon != null) {
+  //       final markerIcon = await createCustomMarker(userData['name']);
+  //
+  //       var userMarker = Marker(
+  //         markerId: MarkerId(doc.id),
+  //         position: LatLng(lat, lon),
+  //         icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         onTap: () {
+  //           _showChallengeModal(context, userData);
+  //         },
+  //       );
+  //       newMarkers.add(userMarker);
+  //     }
+  //   }
+  //
+  //   setState(() {
+  //     markers.clear();
+  //     markers = newMarkers;
+  //   });
+  // }
+
+
+
+  double _currentZoomLevel = 30.0; // Starting with a default zoom level
+
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
 
@@ -739,7 +803,8 @@ class UserHomePageState extends State<UserHomePage>
       double? lon = userData['longitude'] as double?;
 
       if (lat != null && lon != null) {
-        final markerIcon = await createCustomMarker(userData['name']);
+        // Pass the current zoom level to createCustomMarker
+        final Uint8List markerIcon = await createCustomMarker(userData['name'], _currentZoomLevel);
 
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
@@ -758,6 +823,56 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
+
+
+
+  //
+  // Future<void> updateMarkers(List<DocumentSnapshot> userDocs) async {
+  //   Set<Marker> newMarkers = {};
+  //
+  //   for (var doc in userDocs) {
+  //     var userData = doc.data() as Map<String, dynamic>;
+  //     double? lat = userData['latitude'] as double?;
+  //     double? lon = userData['longitude'] as double?;
+  //
+  //     if (lat != null && lon != null) {
+  //       // Use the current zoom level or a default value if you don't have one
+  //       double zoomLevel = _currentZoomLevel; // Make sure this variable is defined and updated based on the map zoom level
+  //       final Uint8List markerIcon = await createCustomMarker(userData['name'], zoomLevel);
+  //
+  //       var userMarker = Marker(
+  //         markerId: MarkerId(doc.id),
+  //         position: LatLng(lat, lon),
+  //         icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         onTap: () {
+  //           // Your tap callback here
+  //           _showChallengeModal(context, userData);
+  //         },
+  //       );
+  //       newMarkers.add(userMarker);
+  //     }
+  //   }
+  //
+  //   // Using setState only if this code is within a StatefulWidget and you want to update the UI
+  //   setState(() {
+  //     markers.clear();
+  //     markers.addAll(newMarkers);
+  //   });
+  // }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -1082,15 +1197,6 @@ void _showChallengeModal(
     _determinePosition();
     mapController?.setMapStyle(_mapStyle);
   }
-
-
-  //
-  // void _onMapCreated(GoogleMapController controller) async {
-  //   mapController = controller;
-  //   String style = await DefaultAssetBundle.of(context).loadString('assets/new_map.json');
-  //   _determinePosition();
-  //   mapController!.setMapStyle(style);
-  // }
 
 
 
