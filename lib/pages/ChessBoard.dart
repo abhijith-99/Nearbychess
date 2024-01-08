@@ -2,9 +2,6 @@ import 'dart:async';
 
 import 'package:chess/chess.dart' as chess;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloud_firestore/cloud_firestore.dart' hide Transaction;
-import 'package:cloud_firestore/cloud_firestore.dart' as fs;
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 
@@ -15,16 +12,17 @@ import '../utils.dart';
 
 class ChessBoard extends StatefulWidget {
   final String gameId;
-  var isSpectator;
+  // final bool isSpectator;
 
-  // ChessBoard({Key? key, required this.gameId}) : super(key: key);
-  ChessBoard({Key? key, required this.gameId,  this.isSpectator = false}) : super(key: key);
-
+  // ChessBoard({Key? key, required this.gameId, this.isSpectator = false}) : super(key: key);
+  ChessBoard({Key? key, required this.gameId,}) : super(key: key);
   @override
   _ChessBoardState createState() => _ChessBoardState();
 }
 
-class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
+// class _ChessBoardState extends State<ChessBoard>
+class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver
+{
   bool isBoardFlipped = false;
   late chess.Chess game;
   late final StreamSubscription<DatabaseEvent> gameSubscription;
@@ -103,6 +101,68 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
     return 0.0; // Return default value if document does not exist
 
   }
+
+
+
+
+
+  void showPromotionDialog(chess.Piece movedPiece, String toSquare) {
+    // Trigger the promotion dialog.
+    showDialog(
+      context: context,
+      barrierDismissible: false, // User must tap button for close.
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Promote Pawn'),
+          content: Text('Select piece to promote to:'),
+          actions: <chess.PieceType>[
+            chess.PieceType.QUEEN,
+            chess.PieceType.ROOK,
+            chess.PieceType.BISHOP,
+            chess.PieceType.KNIGHT
+          ].map((type) => _promotionButton(type, movedPiece.color, toSquare)).toList(),
+        );
+      },
+    );
+  }
+
+  void promotePawn(String toSquare, chess.PieceType type) {
+    print("promote pawn called");
+    // Assuming 'game' is your instance of the chess game
+    game.remove(toSquare); // Remove the pawn from the board
+    game.put(chess.Piece(type, game.turn), toSquare); // Add the promoted piece to the board
+
+    // Update the game state in Firebase
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
+      'currentBoardState': game.fen,
+    });
+    print('toSquare: $toSquare, type: $type, game.fen: ${game.fen}');
+  }
+
+
+
+
+
+  Widget _promotionButton(chess.PieceType type, chess.Color color, String toSquare) {
+    print("promotion button called");
+    return TextButton(
+      child: Image.asset(getPieceAsset(type, color)), // Display the piece image
+      onPressed: () {
+        promotePawn(toSquare, type);
+        // Promote the pawn
+        game.remove(toSquare); // Remove the pawn
+        game.put(chess.Piece(type, color), toSquare); // Place the new piece
+        FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
+          'currentBoardState': game.fen,
+        });
+        Navigator.of(context).pop(); // Close the dialog
+        setState(() {}); // Refresh the board
+      },
+    );
+  }
+
+
+
 
 
   Future<void> updateMatchHistory({
@@ -241,39 +301,23 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
     setState(() {});
   }
 
-
-
-  // Call this function whenever a player's timer needs to be updated
-  void updatePlayerTimeInFirebase(String playerUID, int timeRemaining) {
-    DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
-    String timeField = playerUID == player1UID ? 'player1TimeRemaining' : 'player2TimeRemaining';
-    gameRef.child(timeField).set(timeRemaining);
-  }
-
-
-
-
-
-
-
-
-
-
   @override
   void initState() {
     super.initState();
-    // _startTimer();
 
-    if (!widget.isSpectator) {
-      _startTimer();
-    }
-    WidgetsBinding.instance!.addObserver(this as WidgetsBindingObserver);
-    setupRealTimeTimerUpdates();
+    // if (!widget.isSpectator) {
+    //   _startTimer(); // Start the timer only if not a spectator
+    // } else {
+    //   WidgetsBinding.instance.addObserver(this as WidgetsBindingObserver);
+    //   setupRealTimeTimerUpdates(); // If a spectator, just set up real-time updates
+    // }
 
+    _startTimer();
     isGameEnded = false;
     game = chess.Chess();
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ?? '';
     var gameData;
+    fetchInitialTimerValue();
 
     fetchBetAmount(widget.gameId).then((value) {
       setState(() {
@@ -322,34 +366,19 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
       });
     });
+
   }
 
-
-
-  void setupGameSubscription() {
-    gameSubscription = FirebaseDatabase.instance
-        .ref('games/${widget.gameId}')
-        .onValue
-        .listen((event) {
-      final data = event.snapshot.value;
-      if (data is Map) {
-        var gameData = data.map((key, value) => MapEntry(key.toString(), value));
-        setState(() {
-          _whiteTimeRemaining = int.parse(gameData['player1TimeRemaining'].toString());
-          _blackTimeRemaining = int.parse(gameData['player2TimeRemaining'].toString());
-        });
-
-      }
+  void setupRealTimeTimerUpdates() {
+    // Set up a listener for real-time updates to the timer
+    FirebaseDatabase.instance.ref('games/${widget.gameId}').onValue.listen((event) {
+      var gameData = event.snapshot.value as Map<dynamic, dynamic>;
+      setState(() {
+        _whiteTimeRemaining = int.parse(gameData['player1TimeRemaining'].toString());
+        _blackTimeRemaining = int.parse(gameData['player2TimeRemaining'].toString());
+      });
     });
   }
-
-
-
-
-
-
-
-
 
 
   void _showDrawOfferDialog() {
@@ -458,48 +487,26 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
     }
   }
 
-
-
-
-  void fetchTimerValues() async {
-    DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
-    DatabaseEvent timerEvent = await gameRef.once();
-
+  void fetchInitialTimerValue() async {
+    DatabaseReference timerRef = FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue'); // Updated path
+    DatabaseEvent timerEvent = await timerRef.once();
     if (timerEvent.snapshot.exists) {
-      var gameData = timerEvent.snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        _whiteTimeRemaining = gameData['whiteTimeRemaining'];
-        _blackTimeRemaining = gameData['blackTimeRemaining'];
-      });
+      String timerValue = timerEvent.snapshot.value.toString();
+      try {
+        int initialTimer = int.parse(timerValue);
+        setState(() {
+          _whiteTimeRemaining = initialTimer * 60; // Convert to seconds
+          _blackTimeRemaining = initialTimer * 60; // Convert to seconds
+        });
+      } catch (e) {
+        print('Error parsing timer value: $e');
+      }
     }
   }
 
-  void setupRealTimeTimerUpdates() {
-    FirebaseDatabase.instance
-        .ref('games/${widget.gameId}')
-        .onValue
-        .listen((event) {
-      var gameData = event.snapshot.value as Map<dynamic, dynamic>;
-      setState(() {
-        // _whiteTimeRemaining = gameData['whiteTimeRemaining'];
-        // _blackTimeRemaining = gameData['blackTimeRemaining'];
-
-        _whiteTimeRemaining = int.parse(gameData['player1TimeRemaining'].toString());
-        _blackTimeRemaining = int.parse(gameData['player2TimeRemaining'].toString());
-      });
-    });
-  }
-
-
-
-
-
-
-
-
 
   void _showGameOverDialog(String statusMessage) {
-    if (widget.isSpectator) return;
+    // if (widget.isSpectator) return;
 
     _timer?.cancel();
     showDialog(
@@ -557,8 +564,6 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
         ],
       ),
     );
-    // Update Firebase with the game over status
-    updateGameStatus(statusMessage);
   }
 
   void updateGameStatus(String statusMessage) {
@@ -570,33 +575,32 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
 
 
-
   void _startTimer() {
     const oneSec = Duration(seconds: 1);
-    _timer?.cancel(); // Cancel any existing timers
-    _timer = Timer.periodic(oneSec, (Timer timer) {
-      if (mounted) { // Check if the widget is still in the tree
-        setState(() {
-          if (_whiteTimeRemaining > 0 && game.turn == chess.Color.WHITE) {
+    _timer = Timer.periodic(oneSec, (timer) {
+      setState(() {
+        if (game.turn == chess.Color.WHITE) {
+          if (_whiteTimeRemaining > 0) {
             _whiteTimeRemaining--;
-            updatePlayerTimeInFirebase(player1UID, _whiteTimeRemaining);
-          } else if (_blackTimeRemaining > 0 && game.turn == chess.Color.BLACK) {
-            _blackTimeRemaining--;
-            updatePlayerTimeInFirebase(player2UID, _blackTimeRemaining);
           } else {
-            timer.cancel(); // Cancel the timer if the time has run out
-            _handleTimeout(game.turn); // Handle what happens when the time runs out
+            timer.cancel();
+            _handleTimeout(chess.Color.WHITE);
           }
-        });
-      }
+          _whiteTimerActive = true;
+          _blackTimerActive = false;
+        } else {
+          if (_blackTimeRemaining > 0) {
+            _blackTimeRemaining--;
+          } else {
+            timer.cancel();
+            _handleTimeout(chess.Color.BLACK);
+          }
+          _blackTimerActive = true;
+          _whiteTimerActive = false;
+        }
+      });
     });
   }
-
-
-
-
-
-
 
 
   void _handleTimeout(chess.Color color) {
@@ -627,10 +631,6 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
     // Update the game status in Firebase
     updateGameStatus(statusMessage);
-
-
-    String result = color == chess.Color.WHITE ? "Black wins by timeout" : "White wins by timeout";
-    updateGameStatus(result);
   }
 
 
@@ -644,26 +644,28 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     super.dispose();
     gameSubscription.cancel();
   }
 
 
+
+
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed && !widget.isSpectator) {
-      // App resumed - synchronize the timer with Firebase
-      fetchTimerValues();
-    }
+    // if (state == AppLifecycleState.resumed && !widget.isSpectator) {
+    //   // App resumed - synchronize the timer with Firebase
+    //   setupRealTimeTimerUpdates();
+    //   // setupGameSubscription();
+    // }
     // Optionally handle other states like paused, inactive, etc.
   }
 
 
   Future<void> fetchPlayerDetails() async {
-
     var player1Doc = await FirebaseFirestore.instance.collection('users').doc(player1UID).get();
     if (player1Doc.exists) {
       var player1Data = player1Doc.data();
@@ -689,9 +691,8 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
   Widget _buildPlayerArea(List<String> capturedPieces, bool isTop, String playerName) {
     fetchPlayerDetails();
-
     fetchBetAmount(widget.gameId).then((value) {
-      setState(() {
+        setState(() {
         betAmount = value;
       });
     });
@@ -765,13 +766,14 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
               child: _buildTimer(isTop ? _blackTimerActive : _whiteTimerActive,
                   isTop ? _formatTime(_blackTimeRemaining) : _formatTime(_whiteTimeRemaining)),
             ),
+
+
           ],
         ),
       ),
     );
+
   }
-
-
 
   Widget _buildTimer(bool isActive, String time) {
     return AnimatedContainer(
@@ -819,12 +821,11 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
   }
 
   Future<bool> _onBackPressed() async {
-    if (widget.isSpectator) {
-      Navigator.of(context).pop(); // For spectators, just navigate back without showing the dialog
-      return Future.value(true); // Return true to indicate that the navigation action is handled
-    }
-
-
+    //
+    // if (widget.isSpectator) {
+    //   Navigator.of(context).pop(); // For spectators, just navigate back without showing the dialog
+    //   return Future.value(true); // Return true to indicate that the navigation action is handled
+    // }
 
     return await showDialog(
       context: context,
@@ -868,8 +869,6 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
 
   void _handleOfferDraw() {
-    if (widget.isSpectator) return;
-
     DatabaseReference gameRef = FirebaseDatabase.instance.ref('games/${widget.gameId}');
     gameRef.update({
       'drawOffer': currentUserUID,
@@ -881,8 +880,6 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
 
 
   void _handleUserResignation() {
-
-    if (widget.isSpectator) return;
     String statusMessage;
     String result;
 
@@ -1001,18 +998,17 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                         bool isLegalMove = legalMovesForSelected.contains(squareName);
 
                         // Check if the square is the starting or ending position of the last move
-
+                        //bool isLastMoveSquare = squareName == lastMoveFrom || squareName == lastMoveTo;
+                        // if (isLastMoveSquare) {
+                        //   squareColor = Colors.blueGrey.withOpacity(0.0); // Adjust the color and opacity as needed
+                        // }
                         return GestureDetector(
                           onTap: () {
-
                             if (currentUserUID != currentTurnUID) {
                               print("Not your turn");
                               return;
                             }
-
                             setState(() {
-
-
                               if (piece != null && piece.color == game.turn) {
                                 // Select the piece at the tapped square
                                 selectedSquare = squareName;
@@ -1028,8 +1024,7 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                                 }
                               }
                               // If no square is selected and there is a piece on the current square
-                              else if (selectedSquare != null &&
-                                  legalMovesForSelected.contains(squareName)) {
+                              else if (selectedSquare != null && legalMovesForSelected.contains(squareName)) {
                                 final String fromSquare = selectedSquare!;  // 'from' square is the currently selected square
                                 final String toSquare = squareName;         // 'to' square is the square being moved to
                                 final chess.Piece? pieceBeforeMove = game.get(toSquare);
@@ -1041,6 +1036,7 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                                 final chess.Piece? piece = game.get(fromSquare);
 
                                 if (piece != null) { // Execute the move
+                                  print("Attempting to move from $fromSquare to $toSquare");
                                   game.move({
                                     "from": selectedSquare!,
                                     "to": squareName
@@ -1052,6 +1048,7 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                                     'currentTurn': game.turn == chess.Color.WHITE ? player2UID : player1UID,
                                   });
                                   selectedSquare = null;
+                                  print("New position of the piece after move: ${game.get(toSquare)}");
 
                                 }
 
@@ -1142,6 +1139,20 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                                       .map((move) => move.toAlgebraic)
                                       .toList();
                                 }
+
+
+
+                                final chess.Piece? movedPiece = game.get(toSquare);
+                                print("Moved piece: $movedPiece");
+
+                                // Extracting the rank from the square (assuming toSquare is something like 'h8')
+                                String rank = toSquare[1];  // This extracts the '8' from 'h8' and converts it to an integer.
+
+                                // Assuming movedPiece is of type chess.Piece and toSquare is a String like 'h8'
+                                if (movedPiece != null && movedPiece.type == chess.PieceType.PAWN && (rank == '6' || rank == '1')) {
+                                  showPromotionDialog(movedPiece, toSquare);
+                                  print("Promotion dialog is called");
+                                }
                               }
                             });
 
@@ -1199,7 +1210,9 @@ class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver{
                   ),
                 ),
               ),
+
               SizedBox(height: 20),
+
               Container(
                 height: 50,
                 child: isBoardFlipped ? _buildPlayerArea(blackCapturedPieces, true,player1Name) : _buildPlayerArea(whiteCapturedPieces, false,player2Name),

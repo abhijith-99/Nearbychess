@@ -11,14 +11,14 @@
     import 'geocoding_web.dart';
     // import 'geocoding_web.dart' if (dart.library.html) 'geocoding_web.dart';
 
-  
+
     class UserProfilePage extends StatefulWidget {
       const UserProfilePage({Key? key}) : super(key: key);
-  
+
       @override
       _UserProfilePageState createState() => _UserProfilePageState();
     }
-  
+
     class _UserProfilePageState extends State<UserProfilePage> {
       final TextEditingController _nameController = TextEditingController();
       final TextEditingController _referralCodeController = TextEditingController();
@@ -26,13 +26,13 @@
       bool isAvatarListVisible = false;
       bool isReferralCodeValid = false;
       String verificationMessage = '';
-  
+
       @override
       void dispose() {
         _nameController.dispose();
         super.dispose();
       }
-  
+
       Future<void> verifyReferralCode() async {
       String referralCode = _referralCodeController.text.trim();
         if (referralCode.isNotEmpty) {
@@ -40,7 +40,7 @@
               .where('referralCode', isEqualTo: referralCode)
               .limit(1)
               .get();
-  
+
           if (referrerDoc.docs.isNotEmpty) {
             setState(() {
               isReferralCodeValid = true;
@@ -54,14 +54,14 @@
           }
         }
       }
-  
+
       Future<void> createUserProfile() async {
         print("createUserProfile called");
         loc.Location location = loc.Location();
         bool _serviceEnabled;
         loc.PermissionStatus _permissionGranted;
         loc.LocationData _locationData;
-  
+
         try {
           _serviceEnabled = await location.serviceEnabled();
           if (!_serviceEnabled) {
@@ -78,10 +78,10 @@
               throw Exception('Location permission not granted');
             }
           }
-  
+
           _locationData = await location.getLocation();
           print("Location Data: Latitude: ${_locationData.latitude}, Longitude: ${_locationData.longitude}");
-  
+
           if (_locationData.latitude != null && _locationData.longitude != null) {
             String detailedLocationName;
             String city;
@@ -93,7 +93,7 @@
                 _locationData.longitude!,
               );
               print("4567890using web $detailedLocationName");
-  
+
             } else {
               // Use mobile implementation
               List<geocoding.Placemark> placemarks = await geocoding.placemarkFromCoordinates(
@@ -103,7 +103,7 @@
               if (placemarks.isNotEmpty) {
                 geocoding.Placemark place = placemarks.first;
                 detailedLocationName = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
-  
+
                 // city = place.subLocality ?? place.locality ?? place.subAdministrativeArea ?? place.administrativeArea ?? 'Unknown';
               } else {
                 throw Exception('Geocoding returned no results');
@@ -116,7 +116,7 @@
             );
             print("City name: $city");
 
-  
+
             if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
               CollectionReference users = FirebaseFirestore.instance.collection('users');
               String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -138,15 +138,15 @@
                 'bonusReadyToClaim': false,
                 'referralCode': referralCode,
                 'appliedReferralCode': _referralCodeController.text.trim(),
-  
+
               });
-  
+
               Navigator.of(context).pushReplacement(
                 MaterialPageRoute(builder: (context) => const UserHomePage()),
               );
-  
+
             } else {
-            
+
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(content: Text('Please fill in all fields')),
               );
@@ -161,28 +161,28 @@
           );
         }
       }
-  
-  
+
+
     Future<void> applyReferralBonus(String newUserId, String appliedReferralCode) async {
       // Award bonus to the new user
       await FirebaseFirestore.instance.collection('users').doc(newUserId)
           .update({'chessCoins': FieldValue.increment(100)}); // Increment by 100
-  
+
       // Find the referrer's user ID and name using the referral code
       var referrerDoc = await FirebaseFirestore.instance.collection('users')
           .where('referralCode', isEqualTo: appliedReferralCode)
           .limit(1)
           .get();
-  
+
       if (referrerDoc.docs.isNotEmpty) {
         // Award bonus to the referrer
         var referrerUserData = referrerDoc.docs.first.data();
         String referrerUserId = referrerDoc.docs.first.id;
         String referrerName = referrerUserData['name']; // Assuming 'name' field exists
-  
+
         await FirebaseFirestore.instance.collection('users').doc(referrerUserId)
             .update({'chessCoins': FieldValue.increment(100)}); // Increment by 100
-  
+
         // Update the referrer's document with referral bonus info
         await FirebaseFirestore.instance.collection('users').doc(referrerUserId).update({
           'referralBonusInfo': {
@@ -190,7 +190,7 @@
             'referredName': (await FirebaseFirestore.instance.collection('users').doc(newUserId).get()).data()?['name'],
           }
         });
-  
+
         // Update the new user's document with referral bonus info
         await FirebaseFirestore.instance.collection('users').doc(newUserId).update({
           'referralBonusInfo': {
@@ -200,26 +200,26 @@
         });
       }
     }
-  
+
     String generateReferralCode(String userId) {
       return "100NBC${userId.substring(0, min(6, userId.length))}";
     }
-  
-  
+
+
   Widget buildAvatarSelector() {
       // Initialize with a default avatar if none is selected
       _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
-  
+
       return Offstage(
         offstage: !isAvatarListVisible,
         child: buildAvatarRow(), // The method you already have
       );
     }
-  
-  
-  
-  
-  
+
+
+
+
+
     Widget buildAvatarRow() {
       List<String> avatarImages = [
         'assets/avatars/avatar1.png',
@@ -229,9 +229,9 @@
         'assets/avatars/avatar5.png',
         'assets/avatars/avatar6.png',
         //'assets/avatars/avatar-default.png'
-  
+
       ];
-  
+
       return Container(
         height: 50.0, // Set the height of the container that holds the list view
         child: ListView.builder(
@@ -261,13 +261,15 @@
         ),
       );
     }
-  
-  
-  
-  
+
+
+
+
     @override
     Widget build(BuildContext context) {
       _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
+
+      var screenSize = MediaQuery.of(context).size;
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
@@ -279,6 +281,7 @@
                 fit: BoxFit.cover,
               ),
               Center(
+
                 child: SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -298,7 +301,7 @@
                           ),
                         ),
                         const SizedBox(height: 30),
-  
+
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
@@ -356,7 +359,7 @@
                                 ),
                               ),
                             )
-  
+
                           ],
                         ),
                         const SizedBox(height: 5),
@@ -381,7 +384,7 @@
                                       ),
                                       child: TextFormField(
                                         controller: _referralCodeController,
-                                        decoration: InputDecoration(
+                                        decoration: const InputDecoration(
                                           labelText: 'Referral Code (Optional)',
                                           labelStyle: TextStyle(color: Colors.black),
                                           contentPadding: EdgeInsets.symmetric(vertical: 5.0, horizontal: 10.0),
@@ -396,7 +399,7 @@
                                 ),
                               ),
                             ),
-  
+
                             const SizedBox(width: 10,),
                             Container(
                               decoration: BoxDecoration(
@@ -423,7 +426,7 @@
                                 ),
                               ),
                             )
-  
+
                           ],
                         ),
                         const SizedBox(height: 10),
@@ -462,21 +465,19 @@
                             ),
                           ),
                         )
-  
-  
-  
-  
+
                       ],
                     ),
                   ),
                 ),
               ),
-  
-  
+
             ],
           ),
-  
+
         ),
       );
     }
   }
+
+

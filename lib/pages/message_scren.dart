@@ -36,19 +36,17 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   void resetUnreadCount() {
-    if (chatId.isNotEmpty) {
-      FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
-        chatId: {'unreadCount': 0},
-      }, SetOptions(merge: true));
-    }
+    FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+      chatId: {'unreadCount': 0},
+    }, SetOptions(merge: true));
   }
-
-
 
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
     return sortedIds.join('_');
   }
+
+  // ... Existing methods ...
 
   Future<int> getCurrentUserBalance(String userId) async {
     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -58,10 +56,14 @@ class _MessageScreenState extends State<MessageScreen> {
     return 0;
   }
 
+
   void showGiftModal(BuildContext context) async {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     int myCurrentBalance = await getCurrentUserBalance(myUserId);
     int? selectedAmount;
+
+
+
 
     showModalBottomSheet(
       context: context,
@@ -184,7 +186,20 @@ class _MessageScreenState extends State<MessageScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Message'),
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').doc(myUserId).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('Loading...');
+            }
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Text('Balance: -');
+            }
+            final userData = snapshot.data!.data() as Map<String, dynamic>?;
+            final chessCoins = userData?['chessCoins'] ?? 0;
+            return Text('Balance: $chessCoins');
+          },
+        ),
       ),
       body: Column(
         children: [
@@ -226,6 +241,10 @@ class _MessageScreenState extends State<MessageScreen> {
                     );
                   },
                 );
+
+
+
+                // ... Existing message stream builder ...
               },
             ),
           ),
@@ -274,6 +293,7 @@ class _MessageScreenState extends State<MessageScreen> {
                     sendMessage(_messageController.text);
                   },
                 ),
+
               ],
             ),
           ),
@@ -281,6 +301,9 @@ class _MessageScreenState extends State<MessageScreen> {
       ),
     );
   }
+
+
+
 
   Widget buildGiftMessage(String amount, bool isSender){
     return Container(
@@ -353,4 +376,18 @@ class _MessageScreenState extends State<MessageScreen> {
     _messageController.dispose();
     super.dispose();
   }
+
+
 }
+
+
+
+
+
+
+
+
+
+
+
+

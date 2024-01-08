@@ -1,8 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:math';
+import 'dart:html' as html;
+
 
 
 void main() {
@@ -195,7 +198,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       },
       child: Text(
         isSignUp ? "Sign In ?" : "Sign Up ?",
-        style: TextStyle(
+        style: const TextStyle(
           color: Colors.white, // Change as per your design
           fontWeight: FontWeight.w500, // Medium weight
           fontSize: 12, // Font size set to 16px
@@ -205,6 +208,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     );
   }
 
+
   Future<void> signInWithGoogle() async {
     try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
@@ -212,21 +216,42 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         return; // User canceled the sign-in process
       }
 
-      final GoogleSignInAuthentication googleAuth =
-      await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
       final AuthCredential credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      await _auth.signInWithCredential(credential);
-      // Navigate to your home page if sign-in is successful
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+      // Check if the user exists in your Firestore database
+      DocumentSnapshot userProfile = await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).get();
+
+      // Navigate based on whether the user has a profile
+      if (userProfile.exists) {
+        // User exists, so they are a returning user. Navigate them to the home page.
+        navigateToHome();
+      } else {
+        // User doesn't exist, so they are new. Navigate them to the profile creation page.
+        navigateToProfileCreation();
+      }
+
     } catch (error) {
       setState(() {
         errorMessage = error.toString();
       });
     }
   }
+
+  void navigateToHome() {
+    Navigator.of(context).pushReplacementNamed('/home');
+  }
+
+  void navigateToProfileCreation() {
+    Navigator.of(context).pushReplacementNamed('/profile');
+  }
+
+
 
   Widget googleSignInButton() {
     return ElevatedButton(
@@ -239,7 +264,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           borderRadius: BorderRadius.circular(50), // Rounded corners
           side: BorderSide(color: Color(0xFF747775), width: 0), // Stroke
         ),
-        elevation: 5, // No shadow
+        elevation: 5, // No shadowFa
         padding: EdgeInsets.zero, // No default padding
       ),
       child: Padding(
@@ -252,7 +277,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
             const SizedBox(width: 10), // Spacing between the icon and the text
             Text(
               isSignUp ? "Sign up with Google" : "Sign in with Google",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Color(0xFF1F1F1F), // Font color
                 fontSize: 14, // Font size
                 fontWeight: FontWeight.w500, // Roboto Medium
@@ -285,9 +310,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   @override
   Widget build(BuildContext context) {
     // Define a uniform text field decoration
-    final textFieldDecoration = InputDecoration(
-      border: const OutlineInputBorder(),
-      contentPadding: const EdgeInsets.symmetric(vertical: 15), // Apply consistent padding
+    final textFieldDecoration = const InputDecoration(
+      border: OutlineInputBorder(),
+      contentPadding: EdgeInsets.symmetric(vertical: 15), // Apply consistent padding
       filled: true, // Enable the fill color for the input field
       fillColor: Colors.white, // Set the fill color to white
     );

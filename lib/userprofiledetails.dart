@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:share/share.dart';
 
 class UserProfileDetailsPage extends StatefulWidget {
-  const UserProfileDetailsPage({Key? key,}) : super(key: key);
+  const UserProfileDetailsPage({Key? key}) : super(key: key);
 
   @override
   _UserProfileDetailsPageState createState() => _UserProfileDetailsPageState();
@@ -12,9 +12,6 @@ class UserProfileDetailsPage extends StatefulWidget {
 
 class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   // ... existing variables and functions
-  final List<String> locations = ['Aluva', 'Kakkanad', 'Eranakulam'];
-  String? selectedLocation;
-  bool isEditingLocation = false;
 
   // List of avatar URLs or asset paths
   final List<String> avatarImages = [
@@ -29,11 +26,9 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   Future<void> signOut() async {
     try {
       await FirebaseAuth.instance.signOut();
-      // Replace current route with the login route
       Navigator.of(context).pushNamedAndRemoveUntil('/login_register', (Route<dynamic> route) => false);
     } catch (error) {
       print(error.toString());
-      // Optionally handle the error, e.g., show an error message.
     }
   }
 
@@ -47,14 +42,6 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     await FirebaseFirestore.instance.collection('users').doc(userId).update({'avatar': newAvatar});
     setState(() {});
-  }
-
-  Future<void> updateLocation(String newLocation) async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    await FirebaseFirestore.instance.collection('users').doc(userId).update({'location': newLocation});
-    setState(() {
-      isEditingLocation = false;
-    });
   }
 
   void showAvatarSelection() {
@@ -98,7 +85,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null, // Remove AppBar
+      appBar: null,
       body: FutureBuilder<Map<String, dynamic>?>(
         future: fetchUserProfile(),
         builder: (context, snapshot) {
@@ -125,82 +112,15 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 10),
                     Text(
                       userData['name'] ?? 'Username',
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins', // Applying Poppins font
+                        fontFamily: 'Poppins',
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-                    // ... Location and Edit Icon
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          userData['location'] ?? 'Location',
-                          style: const TextStyle(fontSize: 18),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            setState(() {
-                              isEditingLocation = true;
-                              selectedLocation = userData['location'];
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-
-                    if (isEditingLocation) ...[
-                      // ... DropdownButtonFormField for location
-                      DropdownButtonFormField<String>(
-                        value: selectedLocation,
-                        items: locations.map<DropdownMenuItem<String>>((String value) {
-                          return DropdownMenuItem<String>(
-                            value: value,
-                            child: Text(value),
-                          );
-                        }).toList(),
-                        onChanged: (String? newValue) {
-                          setState(() {
-                            selectedLocation = newValue;
-                          });
-                        },
-                        decoration: const InputDecoration(
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 15),
-                        ),
-
-                      ),
-
-                      const SizedBox(height: 10),
-                      ElevatedButton(
-                        // ... ElevatedButton properties
-                        onPressed: () {
-                          if (selectedLocation != null) {
-                            updateLocation(selectedLocation!);
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.lightGreen,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                          textStyle: const TextStyle(
-                            fontFamily: 'Poppins', // Applying Poppins font
-                          ),
-                        ),
-
-                        child: const Text('Update Location'),
-                      ),
-                    ],
-
                     const SizedBox(height: 20),
                     SizedBox(
                       width: MediaQuery.of(context).size.width * 0.3,
@@ -212,7 +132,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                             borderRadius: BorderRadius.circular(18.0),
                           ),
                           textStyle: const TextStyle(
-                            fontFamily: 'Poppins', // Applying Poppins font
+                            fontFamily: 'Poppins',
                           ),
                         ),
                         child: const Text('Sign Out'),

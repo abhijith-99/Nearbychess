@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:mychessapp/pages/login_register_page.dart';
+import 'package:mychessapp/pages/user_profile.dart';
+import 'package:mychessapp/pages/userhome.dart';
 import 'dart:async';
 import 'package:mychessapp/splash_screen.dart';
 import 'package:mychessapp/userprofiledetails.dart';
@@ -101,6 +103,9 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
         '/login_register': (context) => const LoginRegisterPage(),
         // other routes...
+
+        '/home': (context) => const UserHomePage(),
+        '/profile': (context) => const UserProfilePage(),
 
       },
       
