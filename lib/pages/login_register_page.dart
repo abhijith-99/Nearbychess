@@ -4,7 +4,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'dart:math';
-import 'dart:html' as html;
+// import 'dart:html' as html;
 
 
 
@@ -310,7 +310,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   @override
   Widget build(BuildContext context) {
     // Define a uniform text field decoration
-    final textFieldDecoration = const InputDecoration(
+    const textFieldDecoration = InputDecoration(
       border: OutlineInputBorder(),
       contentPadding: EdgeInsets.symmetric(vertical: 15), // Apply consistent padding
       filled: true, // Enable the fill color for the input field

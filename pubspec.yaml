@@ -30,9 +30,8 @@ dependencies:
   geocoding: ^2.1.1
   http: ^1.1.2
   share: ^2.0.4
-
+  share_plus: ^7.2.1
   google_geocoding_api: ^1.4.1
-
 
 
 dev_dependencies:

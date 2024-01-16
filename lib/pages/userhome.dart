@@ -921,7 +921,7 @@ class UserHomePageState extends State<UserHomePage>
                     ),
                     SizedBox(height: 20),
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
@@ -1159,7 +1159,6 @@ class UserHomePageState extends State<UserHomePage>
 
   @override
   Widget build(BuildContext context) {
-    // var currentUser = FirebaseAuth.instance.currentUser;
     final FirebaseAuth auth = FirebaseAuth.instance;
     final User? currentUser = auth.currentUser;
     final String userId = currentUser?.uid ?? '';
@@ -1170,10 +1169,11 @@ class UserHomePageState extends State<UserHomePage>
       body: SafeArea(
         child: Stack(
           children: [
-            Column(
+        Column(
               children: <Widget>[
+                if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
                 Expanded(
-                  flex: 3, // 75% of the screen
+                  flex: 4, // 75% of the screen
                   child: GoogleMap(
                     onMapCreated: _onMapCreated,
                     initialCameraPosition: const CameraPosition(
@@ -1184,8 +1184,6 @@ class UserHomePageState extends State<UserHomePage>
                   ),
                 ),
 
-                if (currentUser != null) UserProfileHeader(
-                    userId: currentUser.uid),
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: 40, vertical: 20),
@@ -1309,7 +1307,7 @@ class UserHomePageState extends State<UserHomePage>
                                               ),
                                               child: Text(
                                                 '$unreadCount',
-                                                style: TextStyle(
+                                                style: const TextStyle(
                                                     color: Colors.white,
                                                     fontSize: 12),
                                               ),
@@ -1339,6 +1337,8 @@ class UserHomePageState extends State<UserHomePage>
                 // ... The rest of your existing code for the user list ...
               ],
             ),
+
+
             Positioned(
               top: 20,
               right: 5,
@@ -1380,8 +1380,6 @@ class UserHomePageState extends State<UserHomePage>
                 },
               ),
             ),
-
-
           ],
         ),
       ),
@@ -1413,7 +1411,7 @@ class UserProfileHeader extends StatelessWidget {
           String userName = snapshot.data!['name'] ?? 'Unknown User';
 
           return Padding(
-            padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+            padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
             child: Column(
               children: [
                 GestureDetector(
@@ -1423,12 +1421,12 @@ class UserProfileHeader extends StatelessWidget {
                     ),
                   ),
                   child: CircleAvatar(
-                    radius: 60,
+                    radius: 40,
                     backgroundImage: AssetImage(
                         avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   userName,
                   style: const TextStyle(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 
 class UserProfileDetailsPage extends StatefulWidget {
   const UserProfileDetailsPage({Key? key}) : super(key: key);
@@ -71,16 +71,24 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
     );
   }
 
+
   Future<void> shareReferralCode() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    if (userDoc.exists) {
-      var userData = userDoc.data() as Map<String, dynamic>;
-      String referralCode = userData['referralCode'];
-      String shareMessage = "Join me on the ultimate chess battleground! Use my code $referralCode to start your journey with extra 100 NBC rewards. Download now: https://example.com/download";
-      Share.share(shareMessage);
+    try {
+      String userId = FirebaseAuth.instance.currentUser!.uid;
+      var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        var userData = userDoc.data() as Map<String, dynamic>;
+        String referralCode = userData['referralCode'];
+        String shareMessage = "Join me on the ultimate chess battleground! Use my code $referralCode to start your journey with extra 100 NBC rewards. Download now: https://example.com/download";
+        Share.share(shareMessage);
+        print("Referral Code: $referralCode");
+        print("Share Message: $shareMessage");
+      }
+    } catch (error) {
+      print('Failed to share: $error');
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
