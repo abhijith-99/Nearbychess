@@ -15,12 +15,12 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
 
   // List of avatar URLs or asset paths
   final List<String> avatarImages = [
-    'assets/avatars/avatar1.png',
-    'assets/avatars/avatar2.png',
-    'assets/avatars/avatar3.png',
-    'assets/avatars/avatar4.png',
-    'assets/avatars/avatar5.png',
-    'assets/avatars/avatar6.png',
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar1.png?alt=media&token=7fc8ed85-7d37-43b7-bd46-a11f6d80ae7e",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar2.png?alt=media&token=7d77108b-91a3-451a-b633-da1e03df1ea8",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar3.png?alt=media&token=0d97a0c5-0a10-41f1-a972-3c2941a87c52",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar4.png?alt=media&token=5b398b84-8aa8-465b-8db1-111f2195e6fb",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar5.png?alt=media&token=b82e2b51-cbec-421b-a436-2ee2be88d0c2",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar6.png?alt=media&token=2612629f-0dca-4e65-951d-b7f878a6b463"
   ];
 
   Future<void> signOut() async {
@@ -62,7 +62,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
               },
               child: Padding(
                 padding: const EdgeInsets.all(10.0),
-                child: Image.asset(avatarImages[index]),
+                child: Image.network(avatarImages[index]),
               ),
             );
           },
@@ -112,7 +112,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                       children: [
                         CircleAvatar(
                           radius: 60,
-                          backgroundImage: AssetImage(avatarUrl),
+                          backgroundImage: NetworkImage(avatarUrl),
                         ),
                         IconButton(
                           icon: const Icon(Icons.edit),

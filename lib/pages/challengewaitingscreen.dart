@@ -72,7 +72,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
             children: [
               CircleAvatar(
                 radius: 40,
-                backgroundImage: AssetImage(userAvatar),
+                backgroundImage: NetworkImage(userAvatar),
               ),
               SizedBox(height: 10),
               Text(

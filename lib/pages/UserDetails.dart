@@ -168,8 +168,8 @@
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             image: userDetails != null && userDetails!['avatar'] != null
-                                ? AssetImage(userDetails!['avatar'])
-                                : const AssetImage('assets/avatars/default.png'),
+                                ? NetworkImage(userDetails!['avatar'])
+                                : const NetworkImage('assets/avatars/default.png'),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -377,7 +377,7 @@
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                               leading: CircleAvatar(
-                                backgroundImage: AssetImage(opponentData['avatar']),
+                                backgroundImage: NetworkImage(opponentData['avatar']),
                                 radius: 20,
                               ),
                               title: Text(opponentData['name']),

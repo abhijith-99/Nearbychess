@@ -32,6 +32,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
     super.dispose();
   }
 
+
+
+
   Future<void> verifyReferralCode() async {
     String referralCode = _referralCodeController.text.trim();
     if (referralCode.isNotEmpty) {
@@ -97,7 +100,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
         } else {
           // Use mobile implementation
           List<geocoding.Placemark> placemarks =
-              await geocoding.placemarkFromCoordinates(
+          await geocoding.placemarkFromCoordinates(
             _locationData.latitude!,
             _locationData.longitude!,
           );
@@ -123,7 +126,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
         if (_nameController.text.isNotEmpty && _selectedAvatar != null) {
           CollectionReference users =
-              FirebaseFirestore.instance.collection('users');
+          FirebaseFirestore.instance.collection('users');
           String userId = FirebaseAuth.instance.currentUser!.uid;
           String referralCode = generateReferralCode(userId);
           DateTime now = DateTime.now();
@@ -184,13 +187,13 @@ class _UserProfilePageState extends State<UserProfilePage> {
       var referrerUserData = referrerDoc.docs.first.data();
       String referrerUserId = referrerDoc.docs.first.id;
       String referrerName =
-          referrerUserData['name']; // Assuming 'name' field exists
+      referrerUserData['name']; // Assuming 'name' field exists
 
       await FirebaseFirestore.instance
           .collection('users')
           .doc(referrerUserId)
           .update(
-              {'chessCoins': FieldValue.increment(100)}); // Increment by 100
+          {'chessCoins': FieldValue.increment(100)}); // Increment by 100
 
       // Update the referrer's document with referral bonus info
       await FirebaseFirestore.instance
@@ -200,9 +203,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
         'referralBonusInfo': {
           'type': 'referrer',
           'referredName': (await FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(newUserId)
-                  .get())
+              .collection('users')
+              .doc(newUserId)
+              .get())
               .data()?['name'],
         }
       });
@@ -224,39 +227,68 @@ class _UserProfilePageState extends State<UserProfilePage> {
     return "100NBC${userId.substring(0, min(6, userId.length))}";
   }
 
-  Widget buildAvatarSelector() {
-    // Initialize with a default avatar if none is selected
-    _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
 
+  List<String> avatarUrls = [
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar1.png?alt=media&token=7fc8ed85-7d37-43b7-bd46-a11f6d80ae7e",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar2.png?alt=media&token=7d77108b-91a3-451a-b633-da1e03df1ea8",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar3.png?alt=media&token=0d97a0c5-0a10-41f1-a972-3c2941a87c52",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar4.png?alt=media&token=5b398b84-8aa8-465b-8db1-111f2195e6fb",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar5.png?alt=media&token=b82e2b51-cbec-421b-a436-2ee2be88d0c2",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar6.png?alt=media&token=2612629f-0dca-4e65-951d-b7f878a6b463"
+    // ... (rest of the URLs)
+  ];
+
+  Widget buildAvatarSelector() {
     return Offstage(
       offstage: !isAvatarListVisible,
-      child: buildAvatarRow(), // The method you already have
+      child: Container(
+        height: 50.0, // Set the height
+        child: ListView.builder(
+          shrinkWrap: true,
+          scrollDirection: Axis.horizontal,
+          itemCount: avatarUrls.length,
+          itemBuilder: (context, index) {
+            return GestureDetector(
+              onTap: () {
+                setState(() {
+                  _selectedAvatar = avatarUrls[index];
+                });
+              },
+              child: Container(
+                width: 50.0,
+                padding: EdgeInsets.all(2),
+                margin: EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: _selectedAvatar == avatarUrls[index]
+                        ? Colors.blue
+                        : Colors.transparent,
+                    width: 2,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Image.network(avatarUrls[index]),
+              ),
+            );
+          },
+        ),
+      ),
     );
   }
 
   Widget buildAvatarRow() {
-    List<String> avatarImages = [
-      'assets/avatars/avatar1.png',
-      'assets/avatars/avatar2.png',
-      'assets/avatars/avatar3.png',
-      'assets/avatars/avatar4.png',
-      'assets/avatars/avatar5.png',
-      'assets/avatars/avatar6.png',
-      //'assets/avatars/avatar-default.png'
-    ];
-
     return Container(
       height: 50.0, // Set the height of the container that holds the list view
       child: ListView.builder(
         shrinkWrap: true,
         scrollDirection: Axis.horizontal,
-        itemCount: avatarImages.length,
+        itemCount: avatarUrls.length,
         itemBuilder: (context, index) {
-          bool isSelected = avatarImages[index] == _selectedAvatar;
+          bool isSelected = avatarUrls[index] == _selectedAvatar;
           return GestureDetector(
             onTap: () {
               setState(() {
-                _selectedAvatar = avatarImages[index];
+                _selectedAvatar = avatarUrls[index];
               });
             },
             child: Container(
@@ -272,7 +304,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                     : null,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: Image.asset(avatarImages[index]),
+              child: Image.network(avatarUrls[index]),
             ),
           );
         },
@@ -282,7 +314,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    _selectedAvatar = _selectedAvatar ?? 'assets/avatars/avatar-default.png';
+    _selectedAvatar = _selectedAvatar ?? 'https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar-default.png?alt=media&token=7f9fc5da-2c17-4ec4-b5d1-22e46ad8bd33';
 
     var screenSize = MediaQuery.of(context).size;
     double sidePadding = screenSize.width * 0.3; // Adjust the padding value as needed
@@ -305,7 +337,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                       horizontal: sidePadding, vertical: verticalPadding),
                   child: Container(
                     width:
-                        double.infinity, // Ensure the container fills the width
+                    double.infinity, // Ensure the container fills the width
                     padding: EdgeInsets.all(20.0), // Padding inside the box
                     decoration: BoxDecoration(
                       color: Colors.white
@@ -320,7 +352,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         ),
                       ],
                       borderRadius:
-                          BorderRadius.circular(12), // Rounded corners
+                      BorderRadius.circular(12), // Rounded corners
                     ),
                     child: Column(
                       children: <Widget>[
@@ -356,7 +388,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   ),
                                 ),
                                 child: CircleAvatar(
-                                  backgroundImage: AssetImage(_selectedAvatar!),
+                                  backgroundImage: NetworkImage(_selectedAvatar!),
                                   radius: 22.0,
                                   // Adjust the size to fit your layout
                                   backgroundColor: Colors.white,
@@ -387,7 +419,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                         decoration: const InputDecoration(
                                           labelText: 'Name',
                                           labelStyle:
-                                              TextStyle(color: Colors.black,
+                                          TextStyle(color: Colors.black,
                                               fontFamily: 'Poppins'),
                                           border: InputBorder.none,
                                           contentPadding: EdgeInsets.symmetric(
@@ -430,7 +462,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                         decoration: const InputDecoration(
                                           labelText: 'Referral Code (Optional)',
                                           labelStyle:
-                                              TextStyle(color: Colors.black,
+                                          TextStyle(color: Colors.black,
                                               fontFamily: 'Poppins'),
                                           contentPadding: EdgeInsets.symmetric(
                                               vertical: 5.0, horizontal: 10.0),
@@ -509,7 +541,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                 // Adjust the opacity as needed
                                 borderRadius: BorderRadius.circular(10.0),
                                 border:
-                                    Border.all(color: Colors.black, width: 1.3),
+                                Border.all(color: Colors.black, width: 1.3),
                               ),
                               child: TextButton(
                                 onPressed: createUserProfile,
@@ -522,10 +554,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
                                   ),
                                 ),
                                 child: const Text('Save Profile',
-                                style: TextStyle(
-                                  fontFamily: 'Poppins', // Set the font family
-                                  fontSize: 16, // You can also set the font size or other text styles here
-                                ),
+                                  style: TextStyle(
+                                    fontFamily: 'Poppins', // Set the font family
+                                    fontSize: 16, // You can also set the font size or other text styles here
+                                  ),
                                 ),
                               ),
                             ),
@@ -543,3 +575,22 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

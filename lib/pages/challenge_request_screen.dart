@@ -84,7 +84,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
             const SizedBox(height: 20),
             CircleAvatar(
               backgroundImage:
-              AssetImage(widget.challengerImageUrl), // Use NetworkImage
+              NetworkImage(widget.challengerImageUrl), // Use NetworkImage
               radius: 40,
             ),
             const SizedBox(height: 10),

@@ -74,6 +74,12 @@
   <script src="../assets/new_map.json" type="application/json"></script>
 
 
+  <!-- for web render run -->
+
+  <base href="$FLUTTER_BASE_HREF">
+  <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2"></script>
+  <script>window.flutterWebRenderer = 'html';</script>
+
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>
 </head>

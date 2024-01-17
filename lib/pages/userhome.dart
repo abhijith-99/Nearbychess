@@ -21,18 +21,12 @@ import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'geocoding_web.dart';
 
-
-
-
-
-
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
 
   @override
   UserHomePageState createState() => UserHomePageState();
 }
-
 
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
@@ -62,9 +56,8 @@ class UserHomePageState extends State<UserHomePage>
 
   String? get locationName => null;
 
-
-  Future<Uint8List> createCustomMarker(String userName,
-      double zoomLevel) async {
+  Future<Uint8List> createCustomMarker(
+      String userName, double zoomLevel) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
@@ -75,8 +68,7 @@ class UserHomePageState extends State<UserHomePage>
     final double textMaxWidth = iconSize - 10.0;
 
     // Define paint for the pin
-    final Paint paintPin = Paint()
-      ..color = Colors.red;
+    final Paint paintPin = Paint()..color = Colors.red;
 
     // Draw the pin
     final double pinWidth = iconSize / 2; // Width of the pin
@@ -85,8 +77,7 @@ class UserHomePageState extends State<UserHomePage>
     final Path pinPath = Path()
       ..moveTo(pinTip.dx, pinTip.dy) // Move to the tip of the pin
       ..lineTo(pinTip.dx - pinWidth / 2, pinHeight / 2) // Left side of the pin
-      ..quadraticBezierTo(
-          pinTip.dx, pinHeight / 4, pinTip.dx + pinWidth / 2,
+      ..quadraticBezierTo(pinTip.dx, pinHeight / 4, pinTip.dx + pinWidth / 2,
           pinHeight / 2) // Curve for the right side of the pin
       ..close();
     canvas.drawPath(pinPath, paintPin);
@@ -111,26 +102,25 @@ class UserHomePageState extends State<UserHomePage>
     );
     textPainter.layout(
         maxWidth: textMaxWidth); // Set the maximum width for text
-    final Offset textOffset = Offset(
-        (iconSize - textPainter.width) / 2, iconSize);
+    final Offset textOffset =
+    Offset((iconSize - textPainter.width) / 2, iconSize);
     textPainter.paint(canvas, textOffset);
     // Convert canvas to image
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(
-        iconSize.toInt(), canvasHeight.toInt());
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(iconSize.toInt(), canvasHeight.toInt());
 
     // Convert image to bytes
-    final ByteData? byteData = await markerAsImage.toByteData(
-        format: ui.ImageByteFormat.png);
+    final ByteData? byteData =
+    await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List uint8List = byteData!.buffer.asUint8List();
 
     return uint8List;
   }
 
-
   void _onCameraMove(CameraPosition position) {
     final double _currentZoomLevel = position.zoom;
   }
-
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -158,21 +148,21 @@ class UserHomePageState extends State<UserHomePage>
     currentLocation = await location.getLocation();
 
     String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection(
-        'users').doc(userId).get();
-    String userName = userDoc['name']; // Replace 'name' with your Firestore field
+    DocumentSnapshot userDoc =
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    String userName =
+    userDoc['name']; // Replace 'name' with your Firestore field
 
     // Create the custom marker
-    final Uint8List markerIcon = await createCustomMarker(
-        userName, _currentZoomLevel);
-
+    final Uint8List markerIcon =
+    await createCustomMarker(userName, _currentZoomLevel);
 
     // Update the location on the map.
     mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
-          target: LatLng(
-              currentLocation!.latitude!, currentLocation!.longitude!),
+          target:
+          LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
           zoom: 15.0,
         ),
       ),
@@ -183,8 +173,8 @@ class UserHomePageState extends State<UserHomePage>
       markers.add(
         Marker(
           markerId: const MarkerId("current_location"),
-          position: LatLng(
-              currentLocation!.latitude!, currentLocation!.longitude!),
+          position:
+          LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
 
           // icon: BitmapDescriptor.defaultMarker,
 
@@ -193,7 +183,6 @@ class UserHomePageState extends State<UserHomePage>
       );
     });
   }
-
 
   Future<void> getUserLocationForWeb() async {
     if (kDebugMode) {
@@ -225,16 +214,15 @@ class UserHomePageState extends State<UserHomePage>
       String cityName = await getPlaceFromCoordinates(
         _locationData.latitude!,
         _locationData.longitude!,
-
       );
 
       setState(() {
-        print("fetched cityname $cityName");
+
 
         userLocation = cityName;
-        print("dfjhskdjfhjkdfhdsjkfhsdin werbdsfs$userLocation");
+
         onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
-        print("whats up");
+
       });
     } catch (e) {
       print('Error getting location for web: $e');
@@ -244,7 +232,6 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
-
 
   @override
   void initState() {
@@ -262,10 +249,9 @@ class UserHomePageState extends State<UserHomePage>
 
     if (kIsWeb) {
       getUserLocationForWeb();
-      print("ldsjfldsflwebiskisne$userLocation");
+
     }
   }
-
 
   Future<void> _loadMapStyle() async {
     _mapStyle = await rootBundle.loadString('assets/new_map.json');
@@ -300,8 +286,10 @@ class UserHomePageState extends State<UserHomePage>
         if (bonusInfo != null) {
           showReferralBonusPopup(bonusInfo);
           // Optionally, remove the referral bonus info after showing the popup
-          FirebaseFirestore.instance.collection('users').doc(myUserId).update(
-              {'referralBonusInfo': FieldValue.delete()});
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(myUserId)
+              .update({'referralBonusInfo': FieldValue.delete()});
         }
       }
     });
@@ -319,9 +307,9 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          contentPadding: EdgeInsets.symmetric(
-              horizontal: 24.0, vertical: 20.0),
-          title: Center(
+          contentPadding:
+          const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          title: const Center(
             child: CircleAvatar(
               radius: 40,
               backgroundImage: AssetImage('assets/NBC-token.png'),
@@ -330,7 +318,7 @@ class UserHomePageState extends State<UserHomePage>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
+              const Text(
                 "100",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
@@ -357,8 +345,8 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> checkAndUpdateDailyLoginBonus(String userId) async {
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users')
-        .doc(userId);
+    DocumentReference userRef =
+    FirebaseFirestore.instance.collection('users').doc(userId);
 
     FirebaseFirestore.instance.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
@@ -375,8 +363,8 @@ class UserHomePageState extends State<UserHomePage>
       DateTime now = DateTime.now();
       DateTime today = DateTime(now.year, now.month, now.day);
       DateTime lastLogin = lastLoginDate?.toDate() ?? DateTime(1970);
-      DateTime lastLoginDay = DateTime(
-          lastLogin.year, lastLogin.month, lastLogin.day);
+      DateTime lastLoginDay =
+      DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
 
       if (lastLoginDay.isBefore(today) && !bonusReadyToClaim) {
         consecutiveLoginDays =
@@ -396,10 +384,10 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  Future<void> showDailyBonusDialogIfNeeded(BuildContext context,
-      String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection(
-        'users').doc(userId).get();
+  Future<void> showDailyBonusDialogIfNeeded(
+      BuildContext context, String userId) async {
+    DocumentSnapshot userDoc =
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
     if (userDoc.exists) {
       var userData = userDoc.data() as Map<String, dynamic>;
@@ -423,10 +411,10 @@ class UserHomePageState extends State<UserHomePage>
                       "Daily Login Bonus",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     Text(
                       "Login Bonus Day $consecutiveLoginDays",
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -436,17 +424,17 @@ class UserHomePageState extends State<UserHomePage>
                 // Set the mainAxisSize to MainAxisSize.min
                 children: [
                   Container(
-                    child: CircleAvatar(
+                    child: const CircleAvatar(
                       radius: 80,
                       backgroundImage: AssetImage('assets/NBC-token.png'),
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
                     "$bonusAmount NBC",
-                    style: TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   ElevatedButton(
                     child: const Text("Claim Bonus"),
                     onPressed: () {
@@ -468,8 +456,8 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> claimDailyBonus(String userId, int bonusAmount) async {
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users')
-        .doc(userId);
+    DocumentReference userRef =
+    FirebaseFirestore.instance.collection('users').doc(userId);
     FirebaseFirestore.instance.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
       if (snapshot.exists) {
@@ -487,9 +475,7 @@ class UserHomePageState extends State<UserHomePage>
     String userId = FirebaseAuth.instance.currentUser!.uid;
     currentUserChessCoins = await getUserChessCoins(userId);
     setState(() {}); // Trigger a rebuild to update the UI
-
   }
-
 
   // This function remains unchanged
   void listenToChallengeRequests() {
@@ -571,7 +557,7 @@ class UserHomePageState extends State<UserHomePage>
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  // ChessBoard(gameId: gameId, isSpectator: true),
+              // ChessBoard(gameId: gameId, isSpectator: true),
               ChessBoard(gameId: gameId),
             ),
           ).then((_) {
@@ -585,8 +571,8 @@ class UserHomePageState extends State<UserHomePage>
 
   // Function to get the human-readable location name from coordinates
   Future<String> getLocationName(double latitude, double longitude) async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(
-        latitude, longitude);
+    List<Placemark> placemarks =
+    await placemarkFromCoordinates(latitude, longitude);
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       return placemark.locality ?? placemark.name ?? 'Unknown Location';
@@ -594,7 +580,6 @@ class UserHomePageState extends State<UserHomePage>
       return 'Unknown Location';
     }
   }
-
 
   void setupUserListener() {
     var user = FirebaseAuth.instance.currentUser;
@@ -620,10 +605,6 @@ class UserHomePageState extends State<UserHomePage>
           // Retrieve the city name using coordinates
           String city = await getLocationName(userLat, userLon);
 
-          // String userlocation = await getLocationName(userLat, userLon);
-
-          print("384902384329048city$city");
-
           // Update Firestore with the major point name
           await FirebaseFirestore.instance
               .collection('users')
@@ -635,7 +616,7 @@ class UserHomePageState extends State<UserHomePage>
             onlineUsersStream = fetchOnlineUsersWithLocationName(city);
             currentUserChessCoins = userData['chessCoins'] ?? 0;
             onlineUsersStream.listen((userDocs) {
-              print("Fetched Users: $userDocs");
+
               List<DocumentSnapshot> validUsers = userDocs.where((doc) {
                 var userData = doc.data() as Map<String, dynamic>;
                 return userData['latitude'] != null &&
@@ -702,8 +683,8 @@ class UserHomePageState extends State<UserHomePage>
     return 12742 * asin(sqrt(a));
   }
 
-  Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat,
-      double userLon, double radiusInKm) {
+  Stream<List<DocumentSnapshot>> fetchNearbyOpponents(
+      double userLat, double userLon, double radiusInKm) {
     return FirebaseFirestore.instance
         .collection('users')
         .where('isOnline', isEqualTo: true)
@@ -748,21 +729,18 @@ class UserHomePageState extends State<UserHomePage>
         .where('city', isEqualTo: city) // Filter by city name
         .where('isOnline', isEqualTo: true) // Ensure the user is online
         .snapshots()
-        .map((snapshot) =>
-        snapshot.docs.where((doc) {
-          var userData = doc.data() as Map<String, dynamic>;
-          var distance = calculateDistance(
-            userLat,
-            userLon,
-            userData['latitude'],
-            userData['longitude'],
-          );
-          return distance <=
-              distanceThreshold; // Check if within the distance threshold
-        }).toList());
+        .map((snapshot) => snapshot.docs.where((doc) {
+      var userData = doc.data() as Map<String, dynamic>;
+      var distance = calculateDistance(
+        userLat,
+        userLon,
+        userData['latitude'],
+        userData['longitude'],
+      );
+      return distance <=
+          distanceThreshold; // Check if within the distance threshold
+    }).toList());
   }
-
-
 
   double _currentZoomLevel = 30.0; // Starting with a default zoom level
 
@@ -776,8 +754,8 @@ class UserHomePageState extends State<UserHomePage>
 
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
-        final Uint8List markerIcon = await createCustomMarker(
-            userData['name'], _currentZoomLevel);
+        final Uint8List markerIcon =
+        await createCustomMarker(userData['name'], _currentZoomLevel);
 
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
@@ -796,7 +774,6 @@ class UserHomePageState extends State<UserHomePage>
       markers = newMarkers;
     });
   }
-
 
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -819,7 +796,6 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-
   Future<int> getUserChessCoins(String userId) async {
     DocumentSnapshot userDoc =
     await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -833,13 +809,12 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
-  void _showChallengeModal(BuildContext context,
-      Map<String, dynamic> opponentData) {
+  void _showChallengeModal(
+      BuildContext context, Map<String, dynamic> opponentData) {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
     // Add this check at the beginning of the method
     if (opponentData['uid'] == currentUserId) {
-      print("45367284975632-54578475-2745897457-89");
+
       return; // Exit the function if the user is trying to challenge themselves
     }
     int currentUserChessCoins = 0;
@@ -870,8 +845,8 @@ class UserHomePageState extends State<UserHomePage>
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0, vertical: 32.0),
+              padding:
+              const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -889,8 +864,12 @@ class UserHomePageState extends State<UserHomePage>
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 30,
-                          backgroundImage: AssetImage(opponentData['avatar']),
+                          radius: 40,
+                          backgroundImage: NetworkImage(opponentData['avatar']),
+                          onBackgroundImageError: (exception, stackTrace) {
+                            // Handle the error, e.g., by setting a placeholder image
+                            print("exception avatar $exception");
+                          },
                         ),
                         SizedBox(width: 10),
                         Expanded(
@@ -1001,18 +980,18 @@ class UserHomePageState extends State<UserHomePage>
                           } else if (opponentChessCoins < betAmountInt) {
                             showInsufficientFundsDialog(
                                 "Opponent does not have enough Chess Coins for this bet.");
-                          }
-                          else {
+                          } else {
                             // Rest of the challenge logic
                             setModalState(() =>
-                            challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount,
-                                localTimerValue);
+                            challengeButtonCooldown[opponentId] =
+                            false);
+                            await _sendChallenge(opponentData['uid'],
+                                localBetAmount, localTimerValue);
                             Navigator.pop(context);
                             Timer(Duration(seconds: 30), () {
                               setState(() =>
-                              challengeButtonCooldown[opponentId] = true);
+                              challengeButtonCooldown[opponentId] =
+                              true);
                             });
                           }
                         } else if (currentGameId != null) {
@@ -1021,7 +1000,7 @@ class UserHomePageState extends State<UserHomePage>
                             context,
                             MaterialPageRoute(
                               builder: (context) =>
-                                  // ChessBoard(gameId: currentGameId, isSpectator: true),
+                              // ChessBoard(gameId: currentGameId, isSpectator: true),
                               ChessBoard(gameId: currentGameId),
                             ),
                           );
@@ -1033,7 +1012,6 @@ class UserHomePageState extends State<UserHomePage>
                           ? (isChallengeable ? 'Challenge' : 'Watch Game')
                           : 'Player Offline'),
                     ),
-
                   ],
                 ),
               ),
@@ -1044,9 +1022,8 @@ class UserHomePageState extends State<UserHomePage>
     );
   }
 
-
-  Future<void> _sendChallenge(String opponentId, String betAmount,
-      String localTimerValue) async {
+  Future<void> _sendChallenge(
+      String opponentId, String betAmount, String localTimerValue) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
       try {
@@ -1071,14 +1048,13 @@ class UserHomePageState extends State<UserHomePage>
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.push(
             MaterialPageRoute(
-              builder: (context) =>
-                  ChallengeWaitingScreen(
-                    currentUserName: currentUserName,
-                    opponentName: opponentName,
-                    challengeRequestId: challengeDocRef.id,
-                    currentUserId: currentUserId,
-                    opponentId: opponentId,
-                  ),
+              builder: (context) => ChallengeWaitingScreen(
+                currentUserName: currentUserName,
+                opponentName: opponentName,
+                challengeRequestId: challengeDocRef.id,
+                currentUserId: currentUserId,
+                opponentId: opponentId,
+              ),
             ),
           );
         });
@@ -1126,13 +1102,11 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _determinePosition();
     mapController?.setMapStyle(_mapStyle);
   }
-
 
   Stream<int> getUnreadMessageCountStream(String userId) {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
@@ -1151,7 +1125,6 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
     return sortedIds.join('_');
@@ -1163,15 +1136,15 @@ class UserHomePageState extends State<UserHomePage>
     final User? currentUser = auth.currentUser;
     final String userId = currentUser?.uid ?? '';
 
-
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 223, 225, 237),
       body: SafeArea(
         child: Stack(
           children: [
-        Column(
+            Column(
               children: <Widget>[
-                if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
+                if (currentUser != null)
+                  UserProfileHeader(userId: currentUser.uid),
                 Expanded(
                   flex: 4, // 75% of the screen
                   child: GoogleMap(
@@ -1185,8 +1158,8 @@ class UserHomePageState extends State<UserHomePage>
                 ),
 
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 40, vertical: 20),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
                   child: TextField(
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
@@ -1237,7 +1210,8 @@ class UserHomePageState extends State<UserHomePage>
 
                       return GridView.builder(
                         padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 3,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
@@ -1248,7 +1222,8 @@ class UserHomePageState extends State<UserHomePage>
                           var userData = users[index];
                           String avatarUrl = userData['avatar'];
                           bool isOnline = userData['isOnline'] ?? false;
-                          String userId = userData['uid']; // Assuming each user has a unique 'uid'
+                          String userId = userData[
+                          'uid']; // Assuming each user has a unique 'uid'
 
                           // Inside GridView.builder
                           return StreamBuilder<int>(
@@ -1264,17 +1239,16 @@ class UserHomePageState extends State<UserHomePage>
                                       alignment: Alignment.topRight,
                                       children: <Widget>[
                                         CircleAvatar(
-                                          backgroundImage: AssetImage(
-                                              avatarUrl),
+                                          backgroundImage:
+                                          NetworkImage(avatarUrl),
                                           radius: 36,
-                                          backgroundColor: Colors
-                                              .transparent,
+                                          backgroundColor: Colors.transparent,
                                           // Ensures the background is transparent
                                           child: Container(
                                             decoration: BoxDecoration(
                                               shape: BoxShape.circle,
                                               image: DecorationImage(
-                                                image: AssetImage(avatarUrl),
+                                                image: NetworkImage(avatarUrl),
                                                 fit: BoxFit.cover,
                                                 colorFilter: isOnline
                                                     ? null
@@ -1286,8 +1260,7 @@ class UserHomePageState extends State<UserHomePage>
                                               border: Border.all(
                                                 color: isOnline
                                                     ? Colors.green
-                                                    : Colors.grey
-                                                    .shade500,
+                                                    : Colors.grey.shade500,
                                                 // Red border for offline users
                                                 width: 3,
                                               ),
@@ -1337,13 +1310,14 @@ class UserHomePageState extends State<UserHomePage>
                 // ... The rest of your existing code for the user list ...
               ],
             ),
-
-
             Positioned(
               top: 20,
               right: 5,
               child: StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const CircularProgressIndicator();
@@ -1353,12 +1327,13 @@ class UserHomePageState extends State<UserHomePage>
                     return const Text('Loading...');
                   }
 
-                  int chessCoins = (snapshot.data!.data() as Map<String,
-                      dynamic>)['chessCoins'] ?? 0;
+                  int chessCoins = (snapshot.data!.data()
+                  as Map<String, dynamic>)['chessCoins'] ??
+                      0;
 
                   return Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 6),
+                    padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -1385,7 +1360,6 @@ class UserHomePageState extends State<UserHomePage>
       ),
     );
   }
-
 }
 
 class UserProfileHeader extends StatelessWidget {
@@ -1395,7 +1369,7 @@ class UserProfileHeader extends StatelessWidget {
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -1422,7 +1396,7 @@ class UserProfileHeader extends StatelessWidget {
                   ),
                   child: CircleAvatar(
                     radius: 40,
-                    backgroundImage: AssetImage(
+                    backgroundImage: NetworkImage(
                         avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
@@ -1443,9 +1417,38 @@ class UserProfileHeader extends StatelessWidget {
         return const Padding(
           padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
           child:
-              CircularProgressIndicator(), // Show loading indicator while fetching data
+          CircularProgressIndicator(), // Show loading indicator while fetching data
         );
       },
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
