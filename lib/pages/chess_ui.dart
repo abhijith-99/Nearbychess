@@ -50,8 +50,6 @@ class ChessBoardUI {
       bool timerActive,
       int timeRemaining,
       {required Future<void> Function() fetchPlayerDetails}) {
-    print("avatarsssss$playerAvatarUrl");
-    print("playername from build area$playerName");
     fetchPlayerDetails();
 
     // String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;

@@ -867,8 +867,8 @@ class UserHomePageState extends State<UserHomePage>
                           radius: 40,
                           backgroundImage: NetworkImage(opponentData['avatar']),
                           onBackgroundImageError: (exception, stackTrace) {
-                            // Handle the error, e.g., by setting a placeholder image
-                            print("exception avatar $exception");
+                            // // Handle the error, e.g., by setting a placeholder image
+                            // print("exception avatar $exception");
                           },
                         ),
                         SizedBox(width: 10),

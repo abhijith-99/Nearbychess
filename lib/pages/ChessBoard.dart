@@ -1,6 +1,6 @@
 import 'dart:async'; // Import necessary for asynchronous programming features like Timer.
 import 'package:chess/chess.dart'
-as chess; // Import the chess package for chess game logic.
+    as chess; // Import the chess package for chess game logic.
 import 'package:cloud_firestore/cloud_firestore.dart'; // Firebase Firestore for cloud database interactions.
 import 'package:firebase_auth/firebase_auth.dart'; // Firebase Auth for authentication-related operations.
 import 'package:firebase_database/firebase_database.dart'; // Firebase Realtime Database for real-time data storage and synchronization.
@@ -32,30 +32,30 @@ class ChessBoard extends StatefulWidget {
 class _ChessBoardState extends State<ChessBoard>
 
 // class _ChessBoardState extends State<ChessBoard> with WidgetsBindingObserver
-    {
+{
   late FirebaseServices firebaseServices;
   bool isBoardFlipped =
-  false; // Indicates if the chessboard is flipped. False means white pieces are at the bottom (default view).
+      false; // Indicates if the chessboard is flipped. False means white pieces are at the bottom (default view).
   late chess.Chess
-  game; // Instance of the chess game logic. Manages the state and rules of the chess game.
+      game; // Instance of the chess game logic. Manages the state and rules of the chess game.
   late final StreamSubscription<DatabaseEvent>
-  gameSubscription; // Subscription to Firebase database updates for real-time game changes.
+      gameSubscription; // Subscription to Firebase database updates for real-time game changes.
   Timer? _timer; // Timer for managing the countdown of each player's time.
   int _whiteTimeRemaining =
-  600; // Remaining time for the white player in seconds (initially set to 10 minutes).
+      600; // Remaining time for the white player in seconds (initially set to 10 minutes).
   int _blackTimeRemaining =
-  600; // Remaining time for the black player in seconds (initially set to 10 minutes).
+      600; // Remaining time for the black player in seconds (initially set to 10 minutes).
   List<String> whiteCapturedPieces =
-  []; // List of captured pieces by the white player.
+      []; // List of captured pieces by the white player.
   List<String> blackCapturedPieces =
-  []; // List of captured pieces by the black player.
+      []; // List of captured pieces by the black player.
   String?
-  lastMoveFrom; // The starting square of the last move made in the game.
+      lastMoveFrom; // The starting square of the last move made in the game.
   String? lastMoveTo; // The ending square of the last move made in the game.
   String?
-  selectedSquare; // The currently selected square on the chessboard by the user.
+      selectedSquare; // The currently selected square on the chessboard by the user.
   List<String> legalMovesForSelected =
-  []; // List of legal moves for the piece on the selected square.
+      []; // List of legal moves for the piece on the selected square.
   String currentTurnUID =
       ''; // UID of the player whose turn is currently active.
   String currentUserUID =
@@ -71,14 +71,16 @@ class _ChessBoardState extends State<ChessBoard>
   String player1Name = ''; // Display name of player 1.
   String player2Name = ''; // Display name of player 2.
   bool _blackTimerActive =
-  false; // Indicates if the timer for the black player is active.
+      false; // Indicates if the timer for the black player is active.
   bool _whiteTimerActive =
-  false; // Indicates if the timer for the white player is active.
+      false; // Indicates if the timer for the white player is active.
   double betAmount = 0.0; // Amount of the bet placed on the game (if any).
   bool isGameEnded = false; // Flag to indicate if the game has ended.
   int moveNumber = 0; // Counter for the number of moves made in the game.
 
-  void showPromotionDialog(chess.Piece movedPiece, String toSquare) {
+  void showPromotionDialog(chess.Piece movedPiece, String toSquare, String fromSquare) {
+    game.remove(fromSquare);
+
     // Description: Displays a dialog for the user to choose a piece for pawn promotion.
     // Show a dialog with options for promotion
     print("inside the shown promotion");
@@ -99,18 +101,23 @@ class _ChessBoardState extends State<ChessBoard>
             chess.PieceType.BISHOP,
             chess.PieceType.KNIGHT
           ]
-              .map((type) => _promotionButton(type, movedPiece.color, toSquare))
-          // Mapping each piece type to a button. For each type, _promotionButton is called to create a corresponding button.
-          // This will result in a list of buttons in the dialog for each piece type.
+              .map((type) => _promotionButton(type, movedPiece.color, toSquare, fromSquare))
+              // Mapping each piece type to a button. For each type, _promotionButton is called to create a corresponding button.
+              // This will result in a list of buttons in the dialog for each piece type.
               .toList(), // Convert the Iterable returned by map to a List.
         );
       },
     );
+    game.remove(fromSquare);
   }
 
-  void promotePawn(String toSquare, chess.PieceType type, chess.Color color) {
-    String fromSquare;
+  void promotePawn(String toSquare, chess.PieceType type, chess.Color color, String fromSquare) {
     print("promote pawn is called");
+
+    if (game.get(fromSquare)?.type == chess.PieceType.PAWN) {
+      game.remove(fromSquare);
+    }
+
     if (color == chess.Color.WHITE) {
       // For white pawns, the from-square is one rank lower
       fromSquare = String.fromCharCode(toSquare.codeUnitAt(0)) +
@@ -120,6 +127,20 @@ class _ChessBoardState extends State<ChessBoard>
       fromSquare = String.fromCharCode(toSquare.codeUnitAt(0)) +
           (int.parse(toSquare[1]) + 1).toString();
     }
+
+
+
+    chess.Piece? capturedPiece = game.get(toSquare);
+    if (capturedPiece != null && capturedPiece.color != color) {
+      // Add captured piece to the appropriate list
+      String capturedPieceAsset = ChessBoardUI.getPieceAsset(capturedPiece.type, capturedPiece.color);
+      if (color == chess.Color.WHITE) {
+        whiteCapturedPieces.add(capturedPieceAsset);
+      } else {
+        blackCapturedPieces.add(capturedPieceAsset);
+      }
+    }
+
 
     game.remove(fromSquare); // Remove the pawn
     game.put(chess.Piece(type, color), toSquare); // Place the promoted piece
@@ -137,27 +158,21 @@ class _ChessBoardState extends State<ChessBoard>
     setState(() {});
   }
 
-  // Description: Creates a button widget for each promotion option in the promotion dialog.
-  //   - type: The type of chess piece to which the pawn can be promoted.
-  //   - color: The color of the chess piece.
-  //   - toSquare: The square on the chessboard where the promotion is taking place.
   Widget _promotionButton(
-      chess.PieceType type, chess.Color color, String toSquare) {
+      chess.PieceType type, chess.Color color, String toSquare, String fromSquare) {
     print("promotion button called");
     return TextButton(
       child: Image.asset(ChessBoardUI.getPieceAsset(type, color)),
       // // Displays the image of the promotion choice.
       onPressed: () {
         promotePawn(toSquare, type,
-            color); //Calls the function to handle the pawn promotion logic.
+            color,fromSquare); //Calls the function to handle the pawn promotion logic.
         Navigator.of(context).pop(); // Close the dialog
         setState(
-                () {}); // Triggers a rebuild of the widget to reflect the updated board state.
+            () {}); // Triggers a rebuild of the widget to reflect the updated board state.
       },
     );
   }
-
-
 
 // Description: Generates the label for a row on the chessboard.
   String _getRowLabel(int index) {
@@ -170,12 +185,6 @@ class _ChessBoardState extends State<ChessBoard>
     return String.fromCharCode(97 + index); // ASCII 'a' starts at 97
   }
 
-  // Description: Updates the PGN notation for the game.
-  // Parameters:
-  //   - pieceType: The type of piece moved.
-  //   - from: The starting square of the move.
-  //   - to: The ending square of the move.
-  //   - isCapture: Indicates if the move is a capture.
   void updatePGNNotation(
       chess.PieceType pieceType, String from, String to, bool isCapture) {
     // final piece = game.get(from);
@@ -245,7 +254,7 @@ class _ChessBoardState extends State<ChessBoard>
     firebaseServices = FirebaseServices(widget.gameId);
     _startTimer(); // Start the game timer.
     isGameEnded =
-    false; // Set the game-ended flag to false, indicating that the game is currently ongoing.
+        false; // Set the game-ended flag to false, indicating that the game is currently ongoing.
     game = chess.Chess(); // Initialize the chess game logic.
     currentUserUID = FirebaseAuth.instance.currentUser?.uid ??
         ''; // Fetch and store the current user's UID (Unique Identifier) from Firebase Auth.
@@ -271,7 +280,7 @@ class _ChessBoardState extends State<ChessBoard>
       }
 
       var newFen = gameData[
-      'currentBoardState']; // Extract the current board state in Forsyth-Edwards Notation (FEN) from the game data.
+          'currentBoardState']; // Extract the current board state in Forsyth-Edwards Notation (FEN) from the game data.
       // Update the current turn and player UIDs from the game data.
       currentTurnUID = gameData['currentTurn'];
 
@@ -304,9 +313,9 @@ class _ChessBoardState extends State<ChessBoard>
             isCurrentUserBlack; // Flip the board if the current user is playing as black.
         // Update the lists of captured pieces for both players.
         whiteCapturedPieces =
-        List<String>.from(gameData['whiteCapturedPieces'] ?? []);
+            List<String>.from(gameData['whiteCapturedPieces'] ?? []);
         blackCapturedPieces =
-        List<String>.from(gameData['blackCapturedPieces'] ?? []);
+            List<String>.from(gameData['blackCapturedPieces'] ?? []);
 
         pgnNotation = newPgnNotation; // Update the PGN notation for the game.
 
@@ -341,13 +350,12 @@ class _ChessBoardState extends State<ChessBoard>
   }
 
   Future<void> fetchPlayerDetails() async {
-    print("inside fetch player details");
     // Fetch Player 1's document from Firestore.
     var player1Doc = await FirebaseFirestore.instance
         .collection('users')
         .doc(player1UID)
         .get();
-    print("player1 docsss$player1Doc");
+
     // Check if Player 1's document exists.
     if (player1Doc.exists) {
       // Extract data from Player 1's document.
@@ -356,10 +364,9 @@ class _ChessBoardState extends State<ChessBoard>
       setState(() {
         player1Name = player1Data?['name'] ??
             'Unknown'; // Set name, default to 'Unknown' if not found.
-        print("player 1 name$player1Name");
-        player1AvatarUrl = player1Data?['avatar'] ??
-            'assets/avatar-default.png'; // Set avatar URL, default to a placeholder image.
-        print("player1 avatar$player1AvatarUrl");
+        // player1AvatarUrl = player1Data?['avatar'] ?? 'assets/avatar-default.png'; // Set avatar URL, default to a placeholder image.
+        player1AvatarUrl = player1Doc.data()?['avatarUrl'] ??
+            'assets/avatars/avatar-default.png';
       });
     }
 
@@ -368,15 +375,13 @@ class _ChessBoardState extends State<ChessBoard>
         .collection('users')
         .doc(player2UID)
         .get();
-    print("playe2 docsss$player2Doc");
     if (player2Doc.exists) {
       var player2Data = player2Doc.data();
       setState(() {
         player2Name = player2Data?['name'] ?? 'Unknown';
-        print("player2name $player2Name");
-        player2AvatarUrl =
-            player2Data?['avatar'] ?? 'assets/avatar-default.png';
-        print("player2 avatar $player2AvatarUrl");
+        //  player2AvatarUrl = player2Data?['avatar'] ?? 'assets/avatar-default.png';
+        player2AvatarUrl = player2Doc.data()?['avatarUrl'] ??
+            'assets/avatars/avatar-default.png';
       });
     }
   }
@@ -397,7 +402,7 @@ class _ChessBoardState extends State<ChessBoard>
         ),
         // Dialog title.
         title:
-        const Text('Draw Offered', style: TextStyle(color: Colors.white)),
+            const Text('Draw Offered', style: TextStyle(color: Colors.white)),
         // Dialog content.
         content: const Text(
             'Your opponent has offered a draw. Do you agree to a draw?',
@@ -426,7 +431,7 @@ class _ChessBoardState extends State<ChessBoard>
             onPressed: () {
               // Handle the decline of the draw.
               DatabaseReference gameRef =
-              FirebaseDatabase.instance.ref('games/${widget.gameId}');
+                  FirebaseDatabase.instance.ref('games/${widget.gameId}');
               gameRef.update(
                   {'drawOffer': null}); // Clear the draw offer in the database
               Navigator.of(context).pop(); // Close the dialog
@@ -443,12 +448,12 @@ class _ChessBoardState extends State<ChessBoard>
     required String userId1, //   - userId1: UID of the first player.
     required String userId2, //   - userId2: UID of the second player.
     required String
-    result, //   - result: The result of the match ('win', 'lose', or 'draw').
+        result, //   - result: The result of the match ('win', 'lose', or 'draw').
     required double bet, //   - bet: The bet amount for the match.
   }) {
     if (!isGameEnded) {
       isGameEnded =
-      true; // Mark the game as ended to prevent duplicate updates.
+          true; // Mark the game as ended to prevent duplicate updates.
 
       // Determine the winner and loser based on the match result.
       String winnerUID = (result == 'win') ? userId1 : userId2;
@@ -479,7 +484,7 @@ class _ChessBoardState extends State<ChessBoard>
   void _updateGameStatus(String newStatus) {
     // Reference to the game's data in the Firebase Realtime Database.
     DatabaseReference gameRef =
-    FirebaseDatabase.instance.ref('games/${widget.gameId}');
+        FirebaseDatabase.instance.ref('games/${widget.gameId}');
 
     // Update the game status and clear any existing draw offers in the database.
     gameRef.update({
@@ -504,7 +509,7 @@ class _ChessBoardState extends State<ChessBoard>
   void fetchInitialTimerValue() async {
     // Reference to the timer value in the Firebase Realtime Database.
     DatabaseReference timerRef =
-    FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue');
+        FirebaseDatabase.instance.ref('games/${widget.gameId}/localTimerValue');
 
     // Fetch the timer value once from the database.
     DatabaseEvent timerEvent = await timerRef.once();
@@ -559,7 +564,7 @@ class _ChessBoardState extends State<ChessBoard>
             Text(
               'Game Over',
               style:
-              TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
             ),
           ],
         ),
@@ -721,51 +726,51 @@ class _ChessBoardState extends State<ChessBoard>
   Future<bool> _onBackPressed() async {
     // Show a confirmation dialog when the back button is pressed.
     return await showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: Colors.brown.shade300,
-        // Chessboard-themed background color.
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15), // Rounded shape.
-          side: BorderSide(color: Colors.black, width: 2), // Black border.
-        ),
-        title: const Text('Confirm', style: TextStyle(color: Colors.white)),
-        // Dialog title.
-        content: const Text('Choose an option:',
-            style: TextStyle(color: Colors.white)),
-        // Dialog content.
-        actions: <Widget>[
-          // Button to continue the game.
-          TextButton(
-            style: TextButton.styleFrom(
-              primary: Colors.black, // Text color.
-              backgroundColor: Colors.white, // Button color.
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.brown.shade300,
+            // Chessboard-themed background color.
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15), // Rounded shape.
+              side: BorderSide(color: Colors.black, width: 2), // Black border.
             ),
-            onPressed: () => Navigator.of(context).pop(false),
-            // Close dialog and continue game.
-            child: const Text('Continue Game'),
+            title: const Text('Confirm', style: TextStyle(color: Colors.white)),
+            // Dialog title.
+            content: const Text('Choose an option:',
+                style: TextStyle(color: Colors.white)),
+            // Dialog content.
+            actions: <Widget>[
+              // Button to continue the game.
+              TextButton(
+                style: TextButton.styleFrom(
+                  primary: Colors.black, // Text color.
+                  backgroundColor: Colors.white, // Button color.
+                ),
+                onPressed: () => Navigator.of(context).pop(false),
+                // Close dialog and continue game.
+                child: const Text('Continue Game'),
+              ),
+              // Button to resign from the game.
+              TextButton(
+                style: TextButton.styleFrom(
+                  primary: Colors.white, // Text color.
+                  backgroundColor: Colors.black, // Button color.
+                ),
+                onPressed: _handleUserResignation, // Handle game resignation.
+                child: const Text('Resign'),
+              ),
+              // Button to offer a draw.
+              TextButton(
+                style: TextButton.styleFrom(
+                  primary: Colors.black, // Text color.
+                  backgroundColor: Colors.white, // Button color.
+                ),
+                onPressed: _handleOfferDraw, // Handle offering a draw.
+                child: const Text('Offer Draw'),
+              ),
+            ],
           ),
-          // Button to resign from the game.
-          TextButton(
-            style: TextButton.styleFrom(
-              primary: Colors.white, // Text color.
-              backgroundColor: Colors.black, // Button color.
-            ),
-            onPressed: _handleUserResignation, // Handle game resignation.
-            child: const Text('Resign'),
-          ),
-          // Button to offer a draw.
-          TextButton(
-            style: TextButton.styleFrom(
-              primary: Colors.black, // Text color.
-              backgroundColor: Colors.white, // Button color.
-            ),
-            onPressed: _handleOfferDraw, // Handle offering a draw.
-            child: const Text('Offer Draw'),
-          ),
-        ],
-      ),
-    ) ??
+        ) ??
         false; // Return false if the dialog is dismissed (e.g., by tapping outside it).
   }
 
@@ -773,7 +778,7 @@ class _ChessBoardState extends State<ChessBoard>
   void _handleOfferDraw() {
     // Reference to the current game in Firebase Realtime Database.
     DatabaseReference gameRef =
-    FirebaseDatabase.instance.ref('games/${widget.gameId}');
+        FirebaseDatabase.instance.ref('games/${widget.gameId}');
 
     // Update the game's data in Firebase to indicate that the current user has offered a draw.
     gameRef.update({
@@ -789,7 +794,7 @@ class _ChessBoardState extends State<ChessBoard>
   void _handleUserResignation() {
     String statusMessage; // Variable to store the status message of the game.
     String
-    result; // Variable to store the result of the game ('win' or 'lose').
+        result; // Variable to store the result of the game ('win' or 'lose').
 
     // Determine the winner based on who is resigning.
     if (currentUserUID == player1UID) {
@@ -820,6 +825,15 @@ class _ChessBoardState extends State<ChessBoard>
     }
   }
 
+  Widget buildAvatar(String avatarUrl) {
+    if (avatarUrl.isNotEmpty &&
+        avatarUrl != 'assets/avatars/avatar-default.png') {
+      return Image.network(avatarUrl);
+    } else {
+      return Image.asset('assets/avatars/avatar-default.png');
+    }
+  }
+
 // Override the build method to create the UI of the ChessBoard widget.
   @override
   Widget build(BuildContext context) {
@@ -835,6 +849,25 @@ class _ChessBoardState extends State<ChessBoard>
       boardSize =
           screenSize.height * 0.6; // Adjust based on height in landscape mode.
     }
+
+    CircleAvatar(
+      backgroundImage: NetworkImage(player1AvatarUrl),
+      onBackgroundImageError: (_, __) {
+        setState(() {
+          player1AvatarUrl =
+              'assets/avatars/avatar-default.png'; // Fallback to default avatar
+        });
+      },
+    );
+    CircleAvatar(
+      backgroundImage: NetworkImage(player2AvatarUrl),
+      onBackgroundImageError: (_, __) {
+        setState(() {
+          player2AvatarUrl =
+              'assets/avatars/avatar-default.png'; // Fallback to default avatar
+        });
+      },
+    );
 
     // Main scaffold widget of the app.
     return WillPopScope(
@@ -884,22 +917,21 @@ class _ChessBoardState extends State<ChessBoard>
                 height: 50,
                 child: isBoardFlipped
                     ? ChessBoardUI.buildPlayerArea(
-                    whiteCapturedPieces,
-                    false,
-                    player2Name,
-                    player2AvatarUrl,
-                    _whiteTimerActive,
-                    _whiteTimeRemaining,
-                    fetchPlayerDetails: fetchPlayerDetails)
-
+                        whiteCapturedPieces,
+                        false,
+                        player2Name,
+                        player2AvatarUrl,
+                        _whiteTimerActive,
+                        _whiteTimeRemaining,
+                        fetchPlayerDetails: fetchPlayerDetails)
                     : ChessBoardUI.buildPlayerArea(
-                    blackCapturedPieces,
-                    true,
-                    player1Name,
-                    player1AvatarUrl,
-                    _blackTimerActive,
-                    _blackTimeRemaining,
-                    fetchPlayerDetails: fetchPlayerDetails),
+                        blackCapturedPieces,
+                        true,
+                        player1Name,
+                        player1AvatarUrl,
+                        _blackTimerActive,
+                        _blackTimeRemaining,
+                        fetchPlayerDetails: fetchPlayerDetails),
               ),
 
               const SizedBox(height: 20), // Spacer.
@@ -912,7 +944,7 @@ class _ChessBoardState extends State<ChessBoard>
                   child: Container(
                     child: GridView.builder(
                       gridDelegate:
-                      const SliverGridDelegateWithFixedCrossAxisCount(
+                          const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 8, // 8 squares per row.
                       ),
                       itemCount: 64, // Total squares on the chessboard.
@@ -936,24 +968,24 @@ class _ChessBoardState extends State<ChessBoard>
 
                         // Set colors for the chessboard squares.
                         Color colorA =
-                        const Color(0xFFCCDEFC); // Light square color.
+                            const Color(0xFFCCDEFC); // Light square color.
                         Color colorB =
-                        const Color(0xFF8BA1B9); // Dark square color.
+                            const Color(0xFF8BA1B9); // Dark square color.
 
                         // Determine the color of each square.
                         var squareColor =
-                        (file + rank) % 2 == 0 ? colorA : colorB;
+                            (file + rank) % 2 == 0 ? colorA : colorB;
 
                         // Determine the label color (opposite of the square color).
                         Color labelColor =
-                        squareColor == colorA ? colorB : colorA;
+                            squareColor == colorA ? colorB : colorA;
 
                         // Define a border variable (not currently used).
                         Border? border;
 
                         // Check if the current square is a legal move.
                         bool isLegalMove =
-                        legalMovesForSelected.contains(squareName);
+                            legalMovesForSelected.contains(squareName);
 
                         // GestureDetector to handle taps on each square.
                         return GestureDetector(
@@ -971,17 +1003,17 @@ class _ChessBoardState extends State<ChessBoard>
                                 selectedSquare =
                                     squareName; // Mark this square as selected.
                                 print("in setstate if");
-                                print(selectedSquare);
+                                print("selected square $selectedSquare");
                                 // Generate all possible moves for the current game state.
                                 var moves = game.generate_moves();
 
                                 // Filter the moves to find only those that start from the selected square.
                                 legalMovesForSelected = moves
                                     .where((move) =>
-                                move.fromAlgebraic == selectedSquare)
+                                        move.fromAlgebraic == selectedSquare)
                                     .map((move) => move.toAlgebraic)
                                     .toList();
-                                print(legalMovesForSelected);
+                                print("legalmovess $legalMovesForSelected");
 
                                 // Deselect the piece if there are no legal moves from the selected square.
                                 if (legalMovesForSelected.isEmpty) {
@@ -994,12 +1026,12 @@ class _ChessBoardState extends State<ChessBoard>
                                 print("in setstate elseif");
                                 print(selectedSquare);
                                 // Identify the square from which the piece is being moved.
-                                final String fromSquare = selectedSquare!;
+                                String fromSquare = selectedSquare!;
                                 // Identify the square to which the piece is being moved.
-                                final String toSquare = squareName;
+                                String toSquare = squareName;
                                 // Check if there is a piece on the destination square.
                                 chess.Piece? pieceBeforeMove =
-                                game.get(toSquare);
+                                    game.get(toSquare);
 
                                 // Check if the move is a capture.
                                 bool isCapture = pieceBeforeMove != null &&
@@ -1028,14 +1060,16 @@ class _ChessBoardState extends State<ChessBoard>
                                       .update({
                                     'currentBoardState': game.fen,
                                     'currentTurn':
-                                    game.turn == chess.Color.WHITE
-                                        ? player2UID
-                                        : player1UID,
+                                        game.turn == chess.Color.WHITE
+                                            ? player2UID
+                                            : player1UID,
                                   });
-                                  selectedSquare =
-                                  null; // Deselect the square after the move.
-                                  print(
-                                      "New position of the piece after move: ${game.get(toSquare)}");
+
+                                  //new changes
+                                  // selectedSquare =
+                                  //     null; // Deselect the square after the move.
+                                  // print(
+                                  //     "New position of the piece after move: ${game.get(toSquare)}");
                                 }
 
                                 // Handle the update of captured pieces, checkmate, stalemate, etc.
@@ -1045,24 +1079,24 @@ class _ChessBoardState extends State<ChessBoard>
                                         game.get(selectedSquare!)?.color) {
                                   // Get the asset for the captured piece.
                                   final capturedPiece =
-                                  ChessBoardUI.getPieceAsset(
-                                      pieceBeforeMove.type,
-                                      pieceBeforeMove.color);
+                                      ChessBoardUI.getPieceAsset(
+                                          pieceBeforeMove.type,
+                                          pieceBeforeMove.color);
                                   // Check which player made the capture and update the captured pieces list.
                                   if (game.turn == chess.Color.BLACK) {
                                     // If it's black's turn, add the captured piece to white's list.
                                     whiteCapturedPieces.add(capturedPiece);
                                     firebaseServices
                                         .updateCapturedPiecesInRealTimeDatabase(
-                                        whiteCapturedPieces,
-                                        blackCapturedPieces); // Update captured pieces in the database.
+                                            whiteCapturedPieces,
+                                            blackCapturedPieces); // Update captured pieces in the database.
                                   } else {
                                     // If it's white's turn, add the captured piece to black's list.
                                     blackCapturedPieces.add(capturedPiece);
                                     firebaseServices
                                         .updateCapturedPiecesInRealTimeDatabase(
-                                        whiteCapturedPieces,
-                                        blackCapturedPieces); // Update captured pieces in the database.
+                                            whiteCapturedPieces,
+                                            blackCapturedPieces); // Update captured pieces in the database.
                                   }
                                 }
 
@@ -1089,26 +1123,26 @@ class _ChessBoardState extends State<ChessBoard>
                                   } else if (game.in_stalemate) {
                                     status = 'Draw by stalemate!';
                                     result =
-                                    'draw'; // Set result to draw for stalemate.
+                                        'draw'; // Set result to draw for stalemate.
                                     updateGameStatus(
                                         status); // Update the game status.
                                   } else if (game.in_threefold_repetition) {
                                     status = 'Draw by threefold repetition!';
                                     result =
-                                    'draw'; // Set result to draw for threefold repetition.
+                                        'draw'; // Set result to draw for threefold repetition.
                                     updateGameStatus(
                                         status); // Update the game status.
                                   } else if (game.insufficient_material) {
                                     status =
-                                    'Draw due to insufficient material!';
+                                        'Draw due to insufficient material!';
                                     result =
-                                    'draw'; // Set result to draw for insufficient material.
+                                        'draw'; // Set result to draw for insufficient material.
                                     updateGameStatus(
                                         status); // Update the game status.
                                   } else {
                                     status = 'Unexpected game status';
                                     result =
-                                    'draw'; // Default to draw for any unexpected status.
+                                        'draw'; // Default to draw for any unexpected status.
                                     updateGameStatus(
                                         status); // Update the game status.
                                   }
@@ -1117,17 +1151,17 @@ class _ChessBoardState extends State<ChessBoard>
                                   String winnerUID = result == 'win'
                                       ? currentUserUID
                                       : (result == 'lose'
-                                      ? (currentUserUID == player1UID
-                                      ? player2UID
-                                      : player1UID)
-                                      : "");
+                                          ? (currentUserUID == player1UID
+                                              ? player2UID
+                                              : player1UID)
+                                          : "");
                                   String loserUID = result == 'lose'
                                       ? currentUserUID
                                       : (result == 'win'
-                                      ? (currentUserUID == player1UID
-                                      ? player2UID
-                                      : player1UID)
-                                      : "");
+                                          ? (currentUserUID == player1UID
+                                              ? player2UID
+                                              : player1UID)
+                                          : "");
 
                                   // Update match history if the result is not a draw.
                                   if (result != 'draw') {
@@ -1136,7 +1170,7 @@ class _ChessBoardState extends State<ChessBoard>
                                       userId2: loserUID,
                                       result: result,
                                       bet:
-                                      betAmount, // Use the actual bet amount if applicable.
+                                          betAmount, // Use the actual bet amount if applicable.
                                     );
                                   } else {
                                     _switchTimer(); // Switch the timer to the next player if it's a draw.
@@ -1153,13 +1187,13 @@ class _ChessBoardState extends State<ChessBoard>
                                   var moves = game.generate_moves();
                                   legalMovesForSelected = moves
                                       .where((move) =>
-                                  move.fromAlgebraic == selectedSquare)
+                                          move.fromAlgebraic == selectedSquare)
                                       .map((move) => move.toAlgebraic)
                                       .toList();
                                 }
 
                                 final chess.Piece? movedPiece =
-                                game.get(toSquare);
+                                    game.get(toSquare);
                                 print("Moved piece: $movedPiece");
                                 String rank;
 
@@ -1167,36 +1201,38 @@ class _ChessBoardState extends State<ChessBoard>
                                 if (toSquare.length == 3) {
                                   // If the square notation has an extra character at the beginning.
                                   rank =
-                                  toSquare[2]; // Extracts '8' from 'xh8'.
+                                      toSquare[2]; // Extracts '8' from 'xh8'.
                                 } else {
                                   // Standard square notation.
                                   rank = toSquare[1]; // Extracts '8' from 'h8'.
                                 }
+                                print("squareName is $squareName");
 
-                                // print("Piece moving: Type=${piece?.type}, Color=${piece?.color}");
-                                // print("Piece on destination before move: Type=${pieceBeforeMove?.type}, Color=${pieceBeforeMove?.color}");
-                                pieceBeforeMove = game.get(toSquare);
+                                if (selectedSquare != null &&
+                                    legalMovesForSelected.contains(squareName)) {
+                                  String fromSquare = selectedSquare!;
+                                  String toSquare = squareName;
+                                  print("fromsquare is $fromSquare and tosquareis $toSquare");
 
-                                pieceBeforeMove = game.get(toSquare);
-                                print("toSqueare iss$toSquare");
+                                  // Check if the move is a pawn reaching the 8th or 1st rank (promotion)
+                                  bool isPawnPromotion = game.get(fromSquare)?.type == chess.PieceType.PAWN &&
+                                      (toSquare.endsWith('8') || toSquare.endsWith('1'));
+                                  print("ispawnpromotion $isPawnPromotion");
 
-                                bool isPawnPromotion =
-                                    piece?.type == chess.PieceType.PAWN &&
-                                        (toSquare.endsWith('8') ||
-                                            toSquare.endsWith('1'));
+                                  if (isPawnPromotion) {
+                                    // Perform the move
+                                    game.move({
+                                      "from": fromSquare,
+                                      "to": toSquare,
+                                      "promotion": 'q' // Assuming queen promotion for simplicity
+                                    });
+                                    showPromotionDialog(game.get(toSquare)!, toSquare, fromSquare);
+                                  } else {
+                                  }
 
-                                isCapture = pieceBeforeMove != null &&
-                                    pieceBeforeMove.color != piece?.color;
-                                print("piece before move is $pieceBeforeMove");
-                                print("piece is $piece");
-                                if (isPawnPromotion ||
-                                    (isCapture &&
-                                        piece?.type == chess.PieceType.PAWN)) {
-                                  // Trigger the promotion dialog
-                                  showPromotionDialog(piece!, toSquare);
-                                  print("is captured$isCapture");
-                                  print("Pawn promotion dialog is called");
-                                  print("new print for clarity");
+                                  // Reset selected square and legal moves
+                                  selectedSquare = null;
+                                  legalMovesForSelected = [];
                                 }
                               }
                             });
@@ -1209,7 +1245,7 @@ class _ChessBoardState extends State<ChessBoard>
                             decoration: BoxDecoration(
                               color: selectedSquare == squareName
                                   ? Colors
-                                  .blue // Highlight color for the selected square.
+                                      .blue // Highlight color for the selected square.
                                   : squareColor,
                               // Regular color for non-selected squares.
                               border: border, // Border for the square (if any).
@@ -1269,21 +1305,21 @@ class _ChessBoardState extends State<ChessBoard>
                 height: 50,
                 child: isBoardFlipped
                     ? ChessBoardUI.buildPlayerArea(
-                    blackCapturedPieces,
-                    true,
-                    player1Name,
-                    player1AvatarUrl,
-                    _blackTimerActive,
-                    _blackTimeRemaining,
-                    fetchPlayerDetails: fetchPlayerDetails)
+                        blackCapturedPieces,
+                        true,
+                        player1Name,
+                        player1AvatarUrl,
+                        _blackTimerActive,
+                        _blackTimeRemaining,
+                        fetchPlayerDetails: fetchPlayerDetails)
                     : ChessBoardUI.buildPlayerArea(
-                    whiteCapturedPieces,
-                    false,
-                    player2Name,
-                    player2AvatarUrl,
-                    _whiteTimerActive,
-                    _whiteTimeRemaining,
-                    fetchPlayerDetails: fetchPlayerDetails),
+                        whiteCapturedPieces,
+                        false,
+                        player2Name,
+                        player2AvatarUrl,
+                        _whiteTimerActive,
+                        _whiteTimeRemaining,
+                        fetchPlayerDetails: fetchPlayerDetails),
               )
             ],
           ),

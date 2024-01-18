@@ -338,6 +338,8 @@
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final match = snapshot.data![index];
+
+                      print('Match Result: ${match.result}, Bet: ${match.bet}');
                       return FutureBuilder<Map<String, dynamic>>(
                         future: getOpponentDetails(match.opponentUid),
                         builder: (context, opponentSnapshot) {
