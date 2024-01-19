@@ -15,12 +15,13 @@ import 'firebase_service.dart'; // Import utilities from the parent directory.
 class ChessBoard extends StatefulWidget {
   // each game has its own chessboard
   final String gameId;
+  final bool isSpectator;
 
   // final bool isSpectator;
   // ChessBoard({Key? key, required this.gameId, this.isSpectator = false}) : super(key: key);
 
   // this is possibly the class constructor
-  ChessBoard({Key? key, required this.gameId}) : super(key: key);
+  ChessBoard({Key? key, required this.gameId, this.isSpectator = false}) : super(key: key);
 
   // createState creates the state for the current class based on a stateClass that we create
   // current class is ChessBoard and stateClass is _ChessBoardState
@@ -266,6 +267,7 @@ class _ChessBoardState extends State<ChessBoard>
       setState(() {
         betAmount = value; // Update the bet amount in the state.
       });
+      print("betAmount is sss$betAmount");
     });
     // Set up a subscription to listen for real-time updates from Firebase for the current game.
     gameSubscription = FirebaseDatabase.instance
@@ -450,7 +452,8 @@ class _ChessBoardState extends State<ChessBoard>
     required String
         result, //   - result: The result of the match ('win', 'lose', or 'draw').
     required double bet, //   - bet: The bet amount for the match.
-  }) {
+  })
+  {
     if (!isGameEnded) {
       isGameEnded =
           true; // Mark the game as ended to prevent duplicate updates.
@@ -466,6 +469,7 @@ class _ChessBoardState extends State<ChessBoard>
         result: result,
         bet: bet,
       );
+
 
       // Update the chess coins balance for both players, except in case of a draw.
       if (result != 'draw') {
@@ -725,6 +729,10 @@ class _ChessBoardState extends State<ChessBoard>
 // Method to handle the back press action in the app.
   Future<bool> _onBackPressed() async {
     // Show a confirmation dialog when the back button is pressed.
+    if (widget.isSpectator) {
+      Navigator.of(context).pop(); // Pop the current page off the stack.
+      return true; // Indicate that the back button press has been handled.
+    }
     return await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -995,6 +1003,10 @@ class _ChessBoardState extends State<ChessBoard>
                             if (currentUserUID != currentTurnUID) {
                               print("Not your turn");
                               return; // Exit the function if it's not the current user's turn.
+                            }
+                            if (widget.isSpectator) {
+                              print("Spectators cannot interact with the game.");
+                              return;
                             }
                             setState(() {
                               // Check if there is a piece on the tapped square and if it's the turn of that piece's color.

@@ -553,12 +553,19 @@ class UserHomePageState extends State<UserHomePage>
           String gameId = challengeData[
           'gameId']; // Assuming the game ID is stored in the challenge data
           print("challenger$gameId");
+
+          String player1Id = challengeData['challengerId']; // Example
+          String player2Id = challengeData['opponentId']; // Example
+          String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+          bool userIsSpectator = currentUserId != player1Id && currentUserId != player2Id;
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) =>
               // ChessBoard(gameId: gameId, isSpectator: true),
-              ChessBoard(gameId: gameId),
+              ChessBoard(gameId: gameId,
+                isSpectator: userIsSpectator,),
             ),
           ).then((_) {
             // User has left the Chessboard, update the inGame status
@@ -1001,7 +1008,8 @@ class UserHomePageState extends State<UserHomePage>
                             MaterialPageRoute(
                               builder: (context) =>
                               // ChessBoard(gameId: currentGameId, isSpectator: true),
-                              ChessBoard(gameId: currentGameId),
+                              ChessBoard(gameId: currentGameId,
+                                  isSpectator: true),
                             ),
                           );
                         }
@@ -1423,32 +1431,5 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

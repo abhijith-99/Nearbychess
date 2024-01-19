@@ -19,6 +19,11 @@
 
     factory MatchRecord.fromFirestore(DocumentSnapshot matchDoc) {
       Map<String, dynamic> data = matchDoc.data() as Map<String, dynamic>;
+
+      print("Firestore Data: $data");
+      double betValue = (data['bet'] ?? 0).toDouble();
+      print("Parsed Bet Value: $betValue");
+
       return MatchRecord(
         opponentUid: data['opponentUid'] ?? '',
         result: data['result'] ?? '',
@@ -101,7 +106,7 @@
           .doc(userId)
           .collection('matches')
           .get();
-
+      print("Fetched ${matchesQuerySnapshot.docs.length} matches");
       return matchesQuerySnapshot.docs
           .map((doc) => MatchRecord.fromFirestore(doc))
           .toList()

@@ -39,6 +39,7 @@ class FirebaseServices {
     required double bet, // Bet amount for the match.
   }) async {
     bet = betAmount; // Assign the bet amount to the local variable.
+    print("betamount from updatematch history $bet");
     CollectionReference users = FirebaseFirestore.instance.collection('users');
     // Generate a new document ID for the match.
     String matchId = FirebaseFirestore.instance

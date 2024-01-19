@@ -93,7 +93,25 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: null,
+      appBar: PreferredSize(
+        preferredSize: Size.fromHeight(kToolbarHeight),
+        child: Padding(
+          padding: const EdgeInsets.only(top: 20.0, right: 20.0), // Adjust padding as needed
+          child: AppBar(
+            title: Text('User Profile'), // Title for your AppBar
+            elevation: 0, // Optional: Removes shadow from AppBar
+            actions: <Widget>[
+              IconButton(
+                icon: Icon(Icons.home),
+                onPressed: () {
+                  // Navigate to the home page or pop until the first route
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
       body: FutureBuilder<Map<String, dynamic>?>(
         future: fetchUserProfile(),
         builder: (context, snapshot) {

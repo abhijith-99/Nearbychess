@@ -52,7 +52,6 @@ class ChessBoardUI {
       {required Future<void> Function() fetchPlayerDetails}) {
     fetchPlayerDetails();
 
-    // String avatarUrl = isTop ? player1AvatarUrl : player2AvatarUrl;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
