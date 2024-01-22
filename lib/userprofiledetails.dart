@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:mychessapp/pages/UserDetails.dart';
 import 'package:share_plus/share_plus.dart';
+
+// Include the StatisticText and MatchRecord classes from your UserDetailsPage
 
 class UserProfileDetailsPage extends StatefulWidget {
   const UserProfileDetailsPage({Key? key}) : super(key: key);
@@ -11,17 +15,199 @@ class UserProfileDetailsPage extends StatefulWidget {
 }
 
 class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
-  // ... existing variables and functions
+  // ... existing variables and functions from your UserProfileDetailsPage
+  Future<Map<String, dynamic>> fetchMatchStatistics(String userId) async {
+    var matchesQuerySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('matches')
+        .get();
 
-  // List of avatar URLs or asset paths
-  final List<String> avatarImages = [
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar1.png?alt=media&token=7fc8ed85-7d37-43b7-bd46-a11f6d80ae7e",
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar2.png?alt=media&token=7d77108b-91a3-451a-b633-da1e03df1ea8",
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar3.png?alt=media&token=0d97a0c5-0a10-41f1-a972-3c2941a87c52",
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar4.png?alt=media&token=5b398b84-8aa8-465b-8db1-111f2195e6fb",
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar5.png?alt=media&token=b82e2b51-cbec-421b-a436-2ee2be88d0c2",
-    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar6.png?alt=media&token=2612629f-0dca-4e65-951d-b7f878a6b463"
-  ];
+    int totalMatches = matchesQuerySnapshot.docs.length;
+    int wins = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'win').length;
+    int losses = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'lose').length;
+    int draws = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'draw').length;
+
+    double winPercentage = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
+    double lossPercentage = totalMatches > 0 ? (losses / totalMatches) * 100 : 0;
+    double drawPercentage = totalMatches > 0 ? (draws / totalMatches) * 100 : 0;
+
+    return {
+      'totalMatches': totalMatches,
+      'wins': wins,
+      'losses': losses,
+      'draws': draws,
+      'winPercentage': winPercentage,
+      'lossPercentage': lossPercentage,
+      'drawPercentage': drawPercentage,
+    };
+  }
+  // Include the fetchMatchStatistics method (adapted from UserDetailsPage)
+
+
+
+
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('User Profile'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: signOut,
+          ),
+        ],
+      ),
+      body: FutureBuilder<Map<String, dynamic>?>(
+        future: fetchUserProfile(),
+        builder: (context, profileSnapshot) {
+          if (profileSnapshot.connectionState == ConnectionState.done) {
+            if (profileSnapshot.hasData) {
+              var userData = profileSnapshot.data!;
+              return SingleChildScrollView(
+                child: Column(
+                  children: [
+                    // User Avatar and Name
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        CircleAvatar(
+                          radius: 60,
+                          backgroundImage: NetworkImage(userData['avatar'] ?? 'default_avatar_url'),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: showAvatarSelection,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      userData['name'] ?? 'Username',
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+
+                    // User Statistics
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: fetchMatchStatistics(FirebaseAuth.instance.currentUser!.uid),
+                      builder: (context, statsSnapshot) {
+                        if (!statsSnapshot.hasData) return const CircularProgressIndicator();
+                        var stats = statsSnapshot.data!;
+                        return Column(
+                          children: [
+                            // Games Played
+                            Text(
+                              'Games Played: ${stats['totalMatches']}',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+                            // Win / Draw / Lost Statistics
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                StatisticText(
+                                  label: '${stats['wins']} Won',
+                                  value: stats['winPercentage'].toStringAsFixed(1) + '%',
+                                  color: Colors.green,
+                                ),
+                                StatisticText(
+                                  label: '${stats['draws']} Drawn',
+                                  value: stats['drawPercentage'].toStringAsFixed(1) + '%',
+                                  color: Colors.grey,
+                                ),
+                                StatisticText(
+                                  label: '${stats['losses']} Lost',
+                                  value: stats['lossPercentage'].toStringAsFixed(1) + '%',
+                                  color: Colors.red,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 20),
+                          ],
+                        );
+                      },
+                    ),
+
+                    // Match History Cards
+                    FutureBuilder<List<MatchRecord>>(
+                      future: fetchUserMatches(FirebaseAuth.instance.currentUser!.uid),
+                      builder: (context, matchSnapshot) {
+                        if (!matchSnapshot.hasData) return const CircularProgressIndicator();
+                        if (matchSnapshot.data!.isEmpty) return const Text('No match history available');
+
+                        return ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: matchSnapshot.data!.length,
+                          itemBuilder: (context, index) {
+                            MatchRecord match = matchSnapshot.data![index];
+                            return Card(
+                              child: FutureBuilder<Map<String, dynamic>>(
+                                future: getOpponentDetails(match.opponentUid),
+                                builder: (context, opponentSnapshot) {
+                                  if (!opponentSnapshot.hasData) {
+                                    return ListTile(
+                                      leading: CircleAvatar(child: Icon(Icons.person)),
+                                      title: Text('Loading...'),
+                                    );
+                                  }
+                                  var opponentData = opponentSnapshot.data!;
+                                  return ListTile(
+                                    leading: CircleAvatar(
+                                      backgroundImage: NetworkImage(opponentData['avatar'] ?? 'default_avatar_url'),
+                                    ),
+                                    title: Text(opponentData['name'] ?? 'Unknown'),
+                                    subtitle: Text("Played on ${DateFormat('dd/MM/yyyy').format(match.time)}"),
+                                    trailing: Text(
+                                      match.result,
+                                      style: TextStyle(
+                                        color: match.result == 'win' ? Colors.green :
+                                        match.result == 'lose' ? Colors.red :
+                                        Colors.grey,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              );
+            } else {
+              return const Text('No user data available.');
+            }
+          } else {
+            return const Center(child: CircularProgressIndicator());
+          }
+        },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: shareReferralCode,
+        label: const Text('Share And Win 100'),
+        icon: const Icon(Icons.share),
+        backgroundColor: Colors.blue,
+      ),
+    );
+  }
+
+
+
+
+
+// ... existing methods like signOut, fetchUserProfile, updateAvatar, showAvatarSelection, shareReferralCode
+
+
 
   Future<void> signOut() async {
     try {
@@ -70,6 +256,14 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
       },
     );
   }
+  final List<String> avatarImages = [
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar1.png?alt=media&token=7fc8ed85-7d37-43b7-bd46-a11f6d80ae7e",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar2.png?alt=media&token=7d77108b-91a3-451a-b633-da1e03df1ea8",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar3.png?alt=media&token=0d97a0c5-0a10-41f1-a972-3c2941a87c52",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar4.png?alt=media&token=5b398b84-8aa8-465b-8db1-111f2195e6fb",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar5.png?alt=media&token=b82e2b51-cbec-421b-a436-2ee2be88d0c2",
+    "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar6.png?alt=media&token=2612629f-0dca-4e65-951d-b7f878a6b463"
+  ];
 
 
   Future<void> shareReferralCode() async {
@@ -88,98 +282,26 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
       print('Failed to share: $error');
     }
   }
+}
 
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: PreferredSize(
-        preferredSize: Size.fromHeight(kToolbarHeight),
-        child: Padding(
-          padding: const EdgeInsets.only(top: 20.0, right: 20.0), // Adjust padding as needed
-          child: AppBar(
-            title: Text('User Profile'), // Title for your AppBar
-            elevation: 0, // Optional: Removes shadow from AppBar
-            actions: <Widget>[
-              IconButton(
-                icon: Icon(Icons.home),
-                onPressed: () {
-                  // Navigate to the home page or pop until the first route
-                  Navigator.popUntil(context, (route) => route.isFirst);
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-      body: FutureBuilder<Map<String, dynamic>?>(
-        future: fetchUserProfile(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.done && snapshot.hasData) {
-            var userData = snapshot.data!;
-            String avatarUrl = userData['avatar'];
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        CircleAvatar(
-                          radius: 60,
-                          backgroundImage: NetworkImage(avatarUrl),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: showAvatarSelection,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      userData['name'] ?? 'Username',
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                    SizedBox(
-                      width: MediaQuery.of(context).size.width * 0.3,
-                      child: ElevatedButton(
-                        onPressed: signOut,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(18.0),
-                          ),
-                          textStyle: const TextStyle(
-                            fontFamily: 'Poppins',
-                          ),
-                        ),
-                        child: const Text('Sign Out'),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          } else {
-            return const Center(child: CircularProgressIndicator());
-          }
-        },
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: shareReferralCode,
-        label: const Text('Share And Win 100'),
-        icon: const Icon(Icons.share),
-        backgroundColor: Colors.blue,
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-    );
+Future<List<MatchRecord>> fetchUserMatches(String userId) async {
+  var matchesQuerySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(userId)
+      .collection('matches')
+      .get();
+  print("Fetched ${matchesQuerySnapshot.docs.length} matches");
+  return matchesQuerySnapshot.docs
+      .map((doc) => MatchRecord.fromFirestore(doc))
+      .toList()
+    ..sort((a, b) => b.time.compareTo(a.time));
+}
+
+Future<Map<String, dynamic>> getOpponentDetails(String opponentUid) async {
+  var opponentDoc = await FirebaseFirestore.instance.collection('users').doc(opponentUid).get();
+  if (opponentDoc.exists) {
+    return opponentDoc.data() as Map<String, dynamic>;
   }
+  return {'name': 'Unknown', 'avatar': 'assets/avatars/default.png', 'location': 'Unknown Location'};
 }

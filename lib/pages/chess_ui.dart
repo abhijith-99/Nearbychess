@@ -43,15 +43,21 @@ class ChessBoardUI {
   }
 
   static Widget buildPlayerArea(
-      List<String> capturedPieces,
-      bool isTop,
-      String playerName,
-      String playerAvatarUrl,
-      bool timerActive,
-      int timeRemaining,
-      {required Future<void> Function() fetchPlayerDetails}) {
-    fetchPlayerDetails();
-
+    List<String> capturedPieces,
+    bool isTop,
+    String playerName,
+    String playerAvatarUrl,
+    bool timerActive,
+    int timeRemaining,
+  ) {
+    // Use NetworkImage for playerAvatarUrl and provide error handling
+    ImageProvider imageProvider;
+    try {
+      imageProvider = NetworkImage(playerAvatarUrl);
+    } catch (e) {
+      // Fallback to a default asset image in case of error
+      imageProvider = AssetImage('assets/avatar/avatar-default.png');
+    }
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15.0),
@@ -66,7 +72,7 @@ class ChessBoardUI {
               height: 50,
               decoration: BoxDecoration(
                 image: DecorationImage(
-                  image: AssetImage(playerAvatarUrl),
+                  image: imageProvider,
                   fit: BoxFit.cover,
                 ),
                 borderRadius: BorderRadius.all(Radius.circular(5)),

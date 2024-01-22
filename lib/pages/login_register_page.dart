@@ -447,7 +447,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                                 ],
                               ),
                             ),
-
                           if (showOtpInput)
                             Padding(
                               padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),

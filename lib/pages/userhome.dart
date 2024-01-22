@@ -55,6 +55,8 @@ class UserHomePageState extends State<UserHomePage>
   loc.Location location = loc.Location();
 
   String? get locationName => null;
+  List<Map<String, dynamic>> fetchedUserProfiles = []; // To store fetched user profiles
+  List<Map<String, dynamic>> searchUserProfiles = []; // To store search results
 
   Future<Uint8List> createCustomMarker(
       String userName, double zoomLevel) async {
@@ -241,6 +243,7 @@ class UserHomePageState extends State<UserHomePage>
     listenToChallengeRequests();
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
+    fetchInitialUserProfiles();
 
     _loadMapStyle();
     _determinePosition().then((_) {
@@ -793,15 +796,70 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
+  // void _onSearchChanged(String query) {
+  //   if (_debounce?.isActive ?? false) _debounce?.cancel();
+  //   _debounce = Timer(const Duration(milliseconds: 500), () {
+  //     setState(() {
+  //       searchText = query;
+  //       // onlineUsersStream = fetchOnlineUsers(userLat, userLon);
+  //     });
+  //   });
+  // }
+
+
+
+
+  void fetchInitialUserProfiles() async {
+    var querySnapshot = await FirebaseFirestore.instance.collection('users').get();
+    var allProfiles = querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+
+    setState(() {
+      fetchedUserProfiles = allProfiles;
+      searchUserProfiles = allProfiles; // Initially, search results show all users
+    });
+  }
+
+
+
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
+      var filteredProfiles = query.isEmpty
+          ? fetchedUserProfiles
+          : fetchedUserProfiles.where((user) {
+        String name = user['name'].toLowerCase();
+        return name.contains(query.toLowerCase());
+      }).toList();
+
       setState(() {
-        searchText = query;
-        // onlineUsersStream = fetchOnlineUsers(userLat, userLon);
+        searchUserProfiles = filteredProfiles;
       });
     });
   }
+
+
+
+  Future<List<Map<String, dynamic>>> fetchUsersByName(String searchName) async {
+    // Perform a case-insensitive search
+    String searchKey = searchName.toLowerCase();
+
+    // Query Firestore for users whose names start with the search term
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('name_lowercase', isGreaterThanOrEqualTo: searchKey)
+        .where('name_lowercase', isLessThanOrEqualTo: searchKey + '\uf8ff')
+        .get();
+
+    // Map the documents to a List of Maps
+    List<Map<String, dynamic>> userProfiles = querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    return userProfiles;
+  }
+
+
+
 
   Future<int> getUserChessCoins(String userId) async {
     DocumentSnapshot userDoc =
@@ -1154,7 +1212,7 @@ class UserHomePageState extends State<UserHomePage>
                 if (currentUser != null)
                   UserProfileHeader(userId: currentUser.uid),
                 Expanded(
-                  flex: 4, // 75% of the screen
+                  flex: 2, // 75% of the screen
                   child: GoogleMap(
                     onMapCreated: _onMapCreated,
                     initialCameraPosition: const CameraPosition(
@@ -1167,7 +1225,7 @@ class UserHomePageState extends State<UserHomePage>
 
                 Padding(
                   padding:
-                  const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                  const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                   child: TextField(
                     onChanged: _onSearchChanged,
                     decoration: InputDecoration(
@@ -1220,14 +1278,14 @@ class UserHomePageState extends State<UserHomePage>
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
+                          crossAxisCount: 4,
                           crossAxisSpacing: 16,
                           mainAxisSpacing: 16,
                           childAspectRatio: 1,
                         ),
-                        itemCount: users.length,
+                        itemCount: searchUserProfiles.length,
                         itemBuilder: (context, index) {
-                          var userData = users[index];
+                          var userData = searchUserProfiles[index];
                           String avatarUrl = userData['avatar'];
                           bool isOnline = userData['isOnline'] ?? false;
                           String userId = userData[
@@ -1369,6 +1427,8 @@ class UserHomePageState extends State<UserHomePage>
     );
   }
 }
+
+
 
 class UserProfileHeader extends StatelessWidget {
   final String userId;

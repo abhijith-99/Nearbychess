@@ -17,13 +17,9 @@ class ChessBoard extends StatefulWidget {
   final String gameId;
   final bool isSpectator;
 
-  // final bool isSpectator;
-  // ChessBoard({Key? key, required this.gameId, this.isSpectator = false}) : super(key: key);
-
   // this is possibly the class constructor
   ChessBoard({Key? key, required this.gameId, this.isSpectator = false}) : super(key: key);
 
-  // createState creates the state for the current class based on a stateClass that we create
   // current class is ChessBoard and stateClass is _ChessBoardState
   @override
   _ChessBoardState createState() => _ChessBoardState();
@@ -143,7 +139,7 @@ class _ChessBoardState extends State<ChessBoard>
     }
 
 
-    game.remove(fromSquare); // Remove the pawn
+    // game.remove(fromSquare); // Remove the pawn
     game.put(chess.Piece(type, color), toSquare); // Place the promoted piece
 
     game.turn = (game.turn == chess.Color.WHITE)
@@ -288,6 +284,7 @@ class _ChessBoardState extends State<ChessBoard>
 
       player1UID = gameData['player1UID'] ?? '';
       player2UID = gameData['player2UID'] ?? '';
+      fetchPlayerDetails();
 
       bool isCurrentUserBlack = currentUserUID ==
           player1UID; // Determine if the current user is playing as black.
@@ -351,6 +348,7 @@ class _ChessBoardState extends State<ChessBoard>
     });
   }
 
+
   Future<void> fetchPlayerDetails() async {
     // Fetch Player 1's document from Firestore.
     var player1Doc = await FirebaseFirestore.instance
@@ -363,12 +361,12 @@ class _ChessBoardState extends State<ChessBoard>
       // Extract data from Player 1's document.
       var player1Data = player1Doc.data();
       // Update the state with Player 1's name and avatar URL.
+      print("player1 datasss $player1Data");
       setState(() {
         player1Name = player1Data?['name'] ??
             'Unknown'; // Set name, default to 'Unknown' if not found.
-        // player1AvatarUrl = player1Data?['avatar'] ?? 'assets/avatar-default.png'; // Set avatar URL, default to a placeholder image.
-        player1AvatarUrl = player1Doc.data()?['avatarUrl'] ??
-            'assets/avatars/avatar-default.png';
+        player1AvatarUrl = player1Data?['avatar'] ?? 'assets/avatar/avatar-default.png'; // Set avatar URL, default to a placeholder image.
+        print("the url of avatart $player1AvatarUrl");
       });
     }
 
@@ -379,14 +377,18 @@ class _ChessBoardState extends State<ChessBoard>
         .get();
     if (player2Doc.exists) {
       var player2Data = player2Doc.data();
+      print("player2 datasss $player2Data");
       setState(() {
         player2Name = player2Data?['name'] ?? 'Unknown';
-        //  player2AvatarUrl = player2Data?['avatar'] ?? 'assets/avatar-default.png';
-        player2AvatarUrl = player2Doc.data()?['avatarUrl'] ??
-            'assets/avatars/avatar-default.png';
+         player2AvatarUrl = player2Data?['avatar'] ?? 'assets/avatar/avatar-default.png';
+        print("the url of avatar of player 2 $player2AvatarUrl");
       });
     }
   }
+
+
+
+
 
 // Description: Displays a dialog when a draw offer has been made by the opponent.
   void _showDrawOfferDialog() {
@@ -798,6 +800,8 @@ class _ChessBoardState extends State<ChessBoard>
     Navigator.of(context).pop(false);
   }
 
+
+
 // Method to handle the action when a user decides to resign from the game.
   void _handleUserResignation() {
     String statusMessage; // Variable to store the status message of the game.
@@ -833,14 +837,6 @@ class _ChessBoardState extends State<ChessBoard>
     }
   }
 
-  Widget buildAvatar(String avatarUrl) {
-    if (avatarUrl.isNotEmpty &&
-        avatarUrl != 'assets/avatars/avatar-default.png') {
-      return Image.network(avatarUrl);
-    } else {
-      return Image.asset('assets/avatars/avatar-default.png');
-    }
-  }
 
 // Override the build method to create the UI of the ChessBoard widget.
   @override
@@ -858,24 +854,7 @@ class _ChessBoardState extends State<ChessBoard>
           screenSize.height * 0.6; // Adjust based on height in landscape mode.
     }
 
-    CircleAvatar(
-      backgroundImage: NetworkImage(player1AvatarUrl),
-      onBackgroundImageError: (_, __) {
-        setState(() {
-          player1AvatarUrl =
-              'assets/avatars/avatar-default.png'; // Fallback to default avatar
-        });
-      },
-    );
-    CircleAvatar(
-      backgroundImage: NetworkImage(player2AvatarUrl),
-      onBackgroundImageError: (_, __) {
-        setState(() {
-          player2AvatarUrl =
-              'assets/avatars/avatar-default.png'; // Fallback to default avatar
-        });
-      },
-    );
+
 
     // Main scaffold widget of the app.
     return WillPopScope(
@@ -889,6 +868,13 @@ class _ChessBoardState extends State<ChessBoard>
           centerTitle: true,
           // Center the title.
           backgroundColor: Color(0xFF3c3d3e),
+          actions: [
+            IconButton(
+              icon: Icon(Icons.exit_to_app, color: Colors.red),
+              onPressed: _onBackPressed,
+              iconSize: 30.0, // Increase the icon size
+            ),
+          ],
           // AppBar background color.
           automaticallyImplyLeading: false,
           // No back button.
@@ -930,16 +916,16 @@ class _ChessBoardState extends State<ChessBoard>
                         player2Name,
                         player2AvatarUrl,
                         _whiteTimerActive,
-                        _whiteTimeRemaining,
-                        fetchPlayerDetails: fetchPlayerDetails)
+                        _whiteTimeRemaining)
+                        // fetchPlayerDetails: fetchPlayerDetails)
                     : ChessBoardUI.buildPlayerArea(
                         blackCapturedPieces,
                         true,
                         player1Name,
                         player1AvatarUrl,
                         _blackTimerActive,
-                        _blackTimeRemaining,
-                        fetchPlayerDetails: fetchPlayerDetails),
+                        _blackTimeRemaining)
+                        // fetchPlayerDetails: fetchPlayerDetails),
               ),
 
               const SizedBox(height: 20), // Spacer.
@@ -1323,7 +1309,8 @@ class _ChessBoardState extends State<ChessBoard>
                         player1AvatarUrl,
                         _blackTimerActive,
                         _blackTimeRemaining,
-                        fetchPlayerDetails: fetchPlayerDetails)
+                        // fetchPlayerDetails: fetchPlayerDetails
+                    )
                     : ChessBoardUI.buildPlayerArea(
                         whiteCapturedPieces,
                         false,
@@ -1331,7 +1318,8 @@ class _ChessBoardState extends State<ChessBoard>
                         player2AvatarUrl,
                         _whiteTimerActive,
                         _whiteTimeRemaining,
-                        fetchPlayerDetails: fetchPlayerDetails),
+                        // fetchPlayerDetails: fetchPlayerDetails),
+              )
               )
             ],
           ),
