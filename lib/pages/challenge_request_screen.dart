@@ -129,12 +129,15 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChessBoard(gameId: newGameId),
+                      builder: (context) => ChessBoard(gameId: newGameId, opponentUID: widget.opponentUID,),
+
                     ),
                   ).then((_) {
                     // User has left the Chessboard, update the inGame status
                     updateInGameState(false);
                   });
+                  print("Navigating to ChessBoard with opponent UIDfrom challenge request: ${widget.opponentUID}");
+
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, // Background color

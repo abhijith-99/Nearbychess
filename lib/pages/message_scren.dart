@@ -18,6 +18,8 @@ class _MessageScreenState extends State<MessageScreen> {
   String myUserId = '';
   late String chatId;
 
+  List<String> predefinedMessages = ["hi", "oops", "GG"];
+
   @override
   void initState() {
     super.initState();
@@ -46,7 +48,6 @@ class _MessageScreenState extends State<MessageScreen> {
     return sortedIds.join('_');
   }
 
-  // ... Existing methods ...
 
   Future<int> getCurrentUserBalance(String userId) async {
     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -190,14 +191,15 @@ class _MessageScreenState extends State<MessageScreen> {
           stream: FirebaseFirestore.instance.collection('users').doc(myUserId).snapshots(),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('Loading...');
+              return const Text('');
             }
             if (!snapshot.hasData || !snapshot.data!.exists) {
               return const Text('Balance: -');
             }
             final userData = snapshot.data!.data() as Map<String, dynamic>?;
             final chessCoins = userData?['chessCoins'] ?? 0;
-            return Text('Balance: $chessCoins');
+            // return Text('Balance: $chessCoins');
+            return Text('');
           },
         ),
       ),
@@ -376,18 +378,4 @@ class _MessageScreenState extends State<MessageScreen> {
     _messageController.dispose();
     super.dispose();
   }
-
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
