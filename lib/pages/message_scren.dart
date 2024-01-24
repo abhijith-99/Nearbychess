@@ -1,12 +1,14 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MessageScreen extends StatefulWidget {
   final String opponentUId;
+  final bool showBackButton;
 
-  MessageScreen({Key? key, required this.opponentUId}) : super(key: key);
+  MessageScreen({Key? key, required this.opponentUId,
+    this.showBackButton = true,}) : super(key: key);
 
   @override
   _MessageScreenState createState() => _MessageScreenState();
@@ -17,8 +19,7 @@ class _MessageScreenState extends State<MessageScreen> {
   late final Stream<List<DocumentSnapshot>> _messagesStream;
   String myUserId = '';
   late String chatId;
-
-  List<String> predefinedMessages = ["hi", "oops", "GG"];
+  List<String> predefinedMessages = ["hi", "oops","Nice", "GG", "No"];
 
   @override
   void initState() {
@@ -49,6 +50,9 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
+
+
+
   Future<int> getCurrentUserBalance(String userId) async {
     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {
@@ -62,10 +66,6 @@ class _MessageScreenState extends State<MessageScreen> {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     int myCurrentBalance = await getCurrentUserBalance(myUserId);
     int? selectedAmount;
-
-
-
-
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -181,12 +181,19 @@ class _MessageScreenState extends State<MessageScreen> {
       }
     }, SetOptions(merge: true));
   }
-
+  // ... Other methods ...
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+
+
+        leading: widget.showBackButton ? IconButton( // Check the flag
+          icon: Icon(Icons.arrow_back),
+          onPressed: () => Navigator.of(context).pop(),
+        ) : null,// Only show if showBackButton is true
+
         title: StreamBuilder<DocumentSnapshot>(
           stream: FirebaseFirestore.instance.collection('users').doc(myUserId).snapshots(),
           builder: (context, snapshot) {
@@ -194,11 +201,10 @@ class _MessageScreenState extends State<MessageScreen> {
               return const Text('');
             }
             if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Text('Balance: -');
+              return const Text('');
             }
             final userData = snapshot.data!.data() as Map<String, dynamic>?;
             final chessCoins = userData?['chessCoins'] ?? 0;
-            // return Text('Balance: $chessCoins');
             return Text('');
           },
         ),
@@ -243,17 +249,39 @@ class _MessageScreenState extends State<MessageScreen> {
                     );
                   },
                 );
-
-
-
-                // ... Existing message stream builder ...
               },
             ),
           ),
+
+
+          Container(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: predefinedMessages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      sendMessage(predefinedMessages[index]);
+                    },
+                    child: Text(predefinedMessages[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+
+
+
+
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
+
                 Container(
                   width: 60,
                   height: 50,
@@ -265,13 +293,14 @@ class _MessageScreenState extends State<MessageScreen> {
                     onPressed: () => showGiftModal(context),
                   ),
                 ),
+
                 Expanded(
                   child: Container(
-                    height: 45, // Adjust the height as needed
+                    height: 45,
                     child: TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        labelText: 'Say hi',
+                        labelText: 'Type your message',
                         labelStyle: TextStyle(
                           color: Colors.black.withOpacity(0.3),
                         ),
@@ -295,7 +324,6 @@ class _MessageScreenState extends State<MessageScreen> {
                     sendMessage(_messageController.text);
                   },
                 ),
-
               ],
             ),
           ),
@@ -303,6 +331,9 @@ class _MessageScreenState extends State<MessageScreen> {
       ),
     );
   }
+
+
+
 
 
 
@@ -373,9 +404,15 @@ class _MessageScreenState extends State<MessageScreen> {
     }
   }
 
+
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
   }
+
 }
+
+
+
+

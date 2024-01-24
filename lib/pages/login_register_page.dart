@@ -1,13 +1,9 @@
 import 'dart:ui';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'dart:math';
-// import 'dart:html' as html;
-
 
 
 void main() {
@@ -107,36 +103,44 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     );
   }
 
+
   void signInWithOTP() async {
+    setState(() {
+      _isSigningIn = true; // Activate blur effect
+    });
+
     try {
       final AuthCredential credential = PhoneAuthProvider.credential(
         verificationId: _verificationId,
         smsCode: otpController.text,
       );
-      await _auth.signInWithCredential(credential);
-      // Navigate to the home page on manual verification success
-    } catch (e) {
+
+      UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+      // Check if the user exists in your Firestore database
+      DocumentSnapshot userProfile = await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).get();
+
+      // Navigate based on whether the user has a profile
+      if (userProfile.exists) {
+        // User exists, so they are a returning user. Navigate them to the home page.
+        navigateToHome();
+      } else {
+        // User doesn't exist, so they are new. Navigate them to the profile creation page.
+        navigateToProfileCreation();
+      }
+
+    } catch (error) {
       setState(() {
-        errorMessage = e.toString();
+        errorMessage = error.toString();
+      });
+    } finally {
+      setState(() {
+        _isSigningIn = false; // Deactivate blur effect
       });
     }
   }
 
 
-  // Widget mobileNumberButton() {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 16.0), // Adjust the padding as needed
-  //     child: ElevatedButton(
-  //       onPressed: () {
-  //         setState(() {
-  //           showPhoneNumberInput = true;
-  //         });
-  //       },
-  //       style: sharedButtonStyle,
-  //       child: Text(isSignUp ? "Sign up with OTP" : "Sign in with OTP"),
-  //     ),
-  //   );
-  // }
 
   Widget mobileNumberButton() {
     return Padding(
@@ -161,23 +165,23 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Widget submitButton(String text, VoidCallback onPressed) {
     return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
 
-    child: ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color.fromARGB(255, 63, 102, 105), // Standard height
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color.fromARGB(255, 63, 102, 105), // Standard height
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(30),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          minimumSize: Size(double.infinity, buttonHeight * 0.8),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-        minimumSize: Size(double.infinity, buttonHeight * 0.8),
+        child: Text(
+          text,
+          style: const TextStyle(color: Colors.white),
+        ),
       ),
-      child: Text(
-        text,
-        style: const TextStyle(color: Colors.white),
-      ),
-    ),
     );
 
   }
@@ -246,11 +250,11 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Future<void> signInWithGoogle() async {
 
-      setState(() {
-        _isSigningIn = true; // Activate blur effect
-      });
+    setState(() {
+      _isSigningIn = true; // Activate blur effect
+    });
 
-      try {
+    try {
       final GoogleSignInAccount? googleUser = await GoogleSignIn().signIn();
 
       if (googleUser == null) {
@@ -371,132 +375,132 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       home: Scaffold(
         body: Stack(
           children: [
-        Positioned.fill(
-        child: Image.asset(
-          "assets/background_knight.jpg",
-          fit: BoxFit.cover,
-        ),
-      ),
-      Positioned.fill(
-        child: Container(
-          color: Colors.black.withOpacity(0.7),
-        ),
-      ),
-      Row(
-        children: [
-          Expanded(
-            flex: 1, // Empty space
-            child: Container(), // Empty container
-          ),
-          Expanded(
-              flex: 1, // Content space
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppBar(
-                    backgroundColor: Colors.transparent,
-                  ),
-                  Expanded(
-                    child: SafeArea(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Image.asset(
-                              'assets/logo1.png',
-                              height: 300,
-                            ),
-                            const SizedBox(height: 60),
-                          if (!showPhoneNumberInput && !showOtpInput)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                              child: mobileNumberButton(),
-                            ),
-                          if (showPhoneNumberInput)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    // Expanded widget for the text field
-                                    child: entryField('Enter phone number', phoneController),
+            Positioned.fill(
+              child: Image.asset(
+                "assets/background_knight.jpg",
+                fit: BoxFit.cover,
+              ),
+            ),
+            Positioned.fill(
+              child: Container(
+                color: Colors.black.withOpacity(0.7),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  flex: 1, // Empty space
+                  child: Container(), // Empty container
+                ),
+                Expanded(
+                  flex: 1, // Content space
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppBar(
+                        backgroundColor: Colors.transparent,
+                      ),
+                      Expanded(
+                        child: SafeArea(
+                          child: SingleChildScrollView(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Image.asset(
+                                  'assets/logo1.png',
+                                  height: 300,
+                                ),
+                                const SizedBox(height: 60),
+                                if (!showPhoneNumberInput && !showOtpInput)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
+                                    child: mobileNumberButton(),
                                   ),
-                                  const SizedBox(width: 1), // Spacing between the input field and the button
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      verifyPhoneNumber();
-                                      setState(() {
-                                        showPhoneNumberInput = false;
-                                        showOtpInput = true;
-                                      });
-                                    },
-                                    style: ElevatedButton.styleFrom(
-                                      primary: Colors.transparent, // Transparent background for the button
-                                      onPrimary: Colors.white, // Icon color
-                                      shape: const CircleBorder(
-                                        side: BorderSide(color: Colors.white), // White border for the circular button
-                                      ),
-                                      padding: EdgeInsets.all(12), // Padding to make the button a circle
-                                      elevation: 2, // Remove shadow
+                                if (showPhoneNumberInput)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                    child: Row(
+                                      children: [
+                                        Expanded(
+                                          // Expanded widget for the text field
+                                          child: entryField('Enter phone number', phoneController),
+                                        ),
+                                        const SizedBox(width: 1), // Spacing between the input field and the button
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            verifyPhoneNumber();
+                                            setState(() {
+                                              showPhoneNumberInput = false;
+                                              showOtpInput = true;
+                                            });
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            primary: Colors.transparent, // Transparent background for the button
+                                            onPrimary: Colors.white, // Icon color
+                                            shape: const CircleBorder(
+                                              side: BorderSide(color: Colors.white), // White border for the circular button
+                                            ),
+                                            padding: EdgeInsets.all(12), // Padding to make the button a circle
+                                            elevation: 2, // Remove shadow
+                                          ),
+                                          child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20), // SVG icon
+                                        ),
+                                      ],
                                     ),
-                                    child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20), // SVG icon
                                   ),
-                                ],
-                              ),
+                                if (showOtpInput)
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
+                                    child: entryField('Enter OTP', otpController),
+                                  ),
+
+                                if (_verificationId.isNotEmpty)
+
+                                  submitButton('Verify OTP', signInWithOTP),
+
+                                const SizedBox(height: 10),
+                                customDividerWithText(), // Add the custom divider here
+                                const SizedBox(height: 10),
+                                Padding(
+                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                                  child: googleSignInButton(),
+                                ),
+                                const SizedBox(height: 10),
+                                toggleSignUpSignInText(),
+                                if (errorMessage.isNotEmpty)
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 20),
+                                    child: Text(
+                                      errorMessage,
+                                      style: const TextStyle(color: Colors.red),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                              ],
                             ),
-                          if (showOtpInput)
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                              child: entryField('Enter OTP', otpController),
-                            ),
-
-                          if (_verificationId.isNotEmpty)
-
-                            submitButton('Verify OTP', signInWithOTP),
-
-                          const SizedBox(height: 10),
-                          customDividerWithText(), // Add the custom divider here
-                          const SizedBox(height: 10),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                            child: googleSignInButton(),
                           ),
-                          const SizedBox(height: 10),
-                          toggleSignUpSignInText(),
-                          if (errorMessage.isNotEmpty)
-                            Padding(
-                              padding: const EdgeInsets.only(top: 20),
-                              child: Text(
-                                errorMessage,
-                                style: const TextStyle(color: Colors.red),
-                                textAlign: TextAlign.center,
-                              ),
-                            ),
-                        ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (_isSigningIn)
+                  Positioned.fill(
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                      child: Container(
+                        color: Colors.black.withOpacity(0.5),
                       ),
                     ),
                   ),
-                ),
               ],
             ),
-          ),
-
-            if (_isSigningIn)
-              Positioned.fill(
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                  child: Container(
-                    color: Colors.black.withOpacity(0.5),
-                  ),
-                ),
-              ),
           ],
         ),
-      ],
-    ),
       ),
     );
   }

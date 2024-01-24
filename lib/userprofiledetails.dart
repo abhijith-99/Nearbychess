@@ -203,12 +203,6 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
 
 
 
-
-
-// ... existing methods like signOut, fetchUserProfile, updateAvatar, showAvatarSelection, shareReferralCode
-
-
-
   Future<void> signOut() async {
     try {
       await FirebaseAuth.instance.signOut();

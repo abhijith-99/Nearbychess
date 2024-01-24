@@ -1366,7 +1366,8 @@ class _ChessBoardState extends State<ChessBoard>
                       ),
 
                       Expanded(
-                        child: MessageScreen(opponentUId: actualOpponentUID)
+                        child: MessageScreen(opponentUId: actualOpponentUID,
+                          showBackButton: false,)
                       ),
                     ],
                   ),
