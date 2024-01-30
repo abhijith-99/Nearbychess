@@ -5,9 +5,6 @@
 
   import 'message_scren.dart'; // Make sure this import is correct
 
-  // ... (MatchRecord class and StatisticText class as defined earlier)
-
-
   // Define the MatchRecord class
   class MatchRecord {
     final String opponentUid;
@@ -255,6 +252,7 @@
                               StatisticText(
                                 label: '${stats['wins']} Won',
                                 value: stats['winPercentage'].toStringAsFixed(1) + '%',
+
                                 color: Colors.green,
                               ),
                               StatisticText(
@@ -356,24 +354,6 @@
                             return const Card(child: ListTile(title: Text('Opponent not found')));
                           }
                           var opponentData = opponentSnapshot.data!;
-                          String betDisplay;
-                          Color betColor;
-
-                          switch (match.result) {
-                            case 'win':
-                              betDisplay = '+ ₹${match.bet.toStringAsFixed(2)}';
-                              betColor = Colors.green;
-                              break;
-                            case 'lose':
-                              betDisplay = '- ₹${match.bet.toStringAsFixed(2)}';
-                              betColor = Colors.red;
-                              break;
-                            default: // For 'draw' or any other result
-                              betDisplay = '₹0.00';
-                              betColor = Colors.grey;
-                              break;
-                          }
-
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
@@ -404,7 +384,7 @@
                                     ),
                                     const SizedBox(width: 8.0),
                                     Text(
-                                      match.result == 'win' ? '+ ₹${match.bet.toStringAsFixed(2)}' : match.result == 'lose' ? '- ₹${match.bet.toStringAsFixed(2)}' : '₹0.00',
+                                      match.result == 'win' ? '+ ${match.bet.toStringAsFixed(2)} NBC' : match.result == 'lose' ? '- ${match.bet.toStringAsFixed(2)} NBC' : '₹0.00 NBC',
                                       style: TextStyle(
                                           color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
                                           fontWeight: FontWeight.bold

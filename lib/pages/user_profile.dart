@@ -147,6 +147,10 @@ class _UserProfilePageState extends State<UserProfilePage> {
             'referralCode': referralCode,
             'appliedReferralCode': _referralCodeController.text.trim(),
           });
+          // Check if a referral code was applied and is valid
+          if (_referralCodeController.text.trim().isNotEmpty && isReferralCodeValid) {
+            await applyReferralBonus(userId, _referralCodeController.text.trim());
+          }
 
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (context) => const UserHomePage()),
@@ -235,7 +239,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
     "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar4.png?alt=media&token=5b398b84-8aa8-465b-8db1-111f2195e6fb",
     "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar5.png?alt=media&token=b82e2b51-cbec-421b-a436-2ee2be88d0c2",
     "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar6.png?alt=media&token=2612629f-0dca-4e65-951d-b7f878a6b463"
-    // ... (rest of the URLs)
   ];
 
   Widget buildAvatarSelector() {
@@ -575,22 +578,3 @@ class _UserProfilePageState extends State<UserProfilePage> {
     );
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

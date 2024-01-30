@@ -224,7 +224,6 @@ class UserHomePageState extends State<UserHomePage>
 
       setState(() {
         userLocation = cityName;
-
         onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
       });
     } catch (e) {
@@ -245,6 +244,8 @@ class UserHomePageState extends State<UserHomePage>
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
     fetchInitialUserProfiles();
+    fetchedUserProfiles;
+
 
     _loadMapStyle();
     _determinePosition().then((_) {
@@ -594,57 +595,38 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
+
   void setupUserListener() {
-    var user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      userSubscription = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .snapshots()
-          .listen((snapshot) async {
-        if (snapshot.exists) {
-          var userData = snapshot.data() as Map<String, dynamic>;
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-          double userLat = userData['latitude'];
-          double userLon = userData['longitude'];
+    FirebaseFirestore.instance.collection('users').snapshots().listen((snapshot) {
+      List<Map<String, dynamic>> updatedUserProfiles = [];
 
-          // Reverse geocode the user's coordinates to get the nearest placemark
-          List<Placemark> placemarks =
-              await placemarkFromCoordinates(userLat, userLon);
-
-          // Assuming we take the first placemark as the major point
-          Placemark majorPoint = placemarks.first;
-
-          // Retrieve the city name using coordinates
-          String city = await getLocationName(userLat, userLon);
-
-          // Update Firestore with the major point name
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .update({'location': majorPoint.name, 'city': city});
-          setState(() {
-            userLocation = city;
-            city = userData['city'] ?? 'Unknownarea';
-            onlineUsersStream = fetchOnlineUsersWithLocationName(city);
-            currentUserChessCoins = userData['chessCoins'] ?? 0;
-            onlineUsersStream.listen((userDocs) {
-              List<DocumentSnapshot> validUsers = userDocs.where((doc) {
-                var userData = doc.data() as Map<String, dynamic>;
-                return userData['latitude'] != null &&
-                    userData['longitude'] != null;
-              }).toList();
-
-              if (validUsers.isNotEmpty) {
-                // Update your UI with this list
-                updateMarkers(validUsers);
-              }
-            });
-          });
+      for (var change in snapshot.docChanges) {
+        var userData = change.doc.data() as Map<String, dynamic>;
+        if (userData['uid'] == currentUserId) {
+          continue; // Skip the current user's data
         }
+        if (change.type == DocumentChangeType.added ||
+            change.type == DocumentChangeType.modified) {
+          int index = updatedUserProfiles.indexWhere((user) => user['uid'] == userData['uid']);
+          if (index >= 0) {
+            updatedUserProfiles[index] = userData; // Update existing user
+          } else {
+            updatedUserProfiles.add(userData); // Add new user
+          }
+        }
+      }
+
+      setState(() {
+        fetchedUserProfiles = updatedUserProfiles;
+        searchUserProfiles = List.from(updatedUserProfiles); // Update searchUserProfiles with filtered data
       });
-    }
+    });
   }
+
+
+
 
   void navigateToUserDetails(BuildContext context, String userId) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -697,16 +679,24 @@ class UserHomePageState extends State<UserHomePage>
 
   Stream<List<DocumentSnapshot>> fetchNearbyOpponents(
       double userLat, double userLon, double radiusInKm) {
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    print("current userod from fetchnearby $currentUserId");
     return FirebaseFirestore.instance
         .collection('users')
         .where('isOnline', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.where((doc) {
-        var userData = doc.data() as Map<String, dynamic>;
-        var distance = calculateDistance(
-            userLat, userLon, userData['latitude'], userData['longitude']);
+
+        // var userData = doc.data();
+        var userData = doc.data();
+        if (userData['uid'] == currentUserId) {
+          return false;
+        }
+
+        var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
         return distance <= radiusInKm;
+
       }).toList();
     });
   }
@@ -722,45 +712,31 @@ class UserHomePageState extends State<UserHomePage>
         fetchNearbyOpponents(
                 userLat, userLon, 10.0) // Adjust the radius as needed
             .listen((userDocs) {
-          // updateMarkers(userDocs); // Update the map markers
-          // Update any other UI components that list the nearby users
           updateMarkers(userDocs);
         });
       }
     });
   }
 
-  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
-    // Assuming currentLocation is not null and contains the correct data
-    final double userLat = currentLocation!.latitude!;
-    final double userLon = currentLocation!.longitude!;
-    const double distanceThreshold = 10.0; // 10 km radius for nearby users
 
+  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
     return FirebaseFirestore.instance
         .collection('users')
-        .where('city', isEqualTo: city) // Filter by city name
-        .where('isOnline', isEqualTo: true) // Ensure the user is online
+        .where('city', isEqualTo: city)
         .snapshots()
-        .map((snapshot) => snapshot.docs.where((doc) {
-              var userData = doc.data() as Map<String, dynamic>;
-              var distance = calculateDistance(
-                userLat,
-                userLon,
-                userData['latitude'],
-                userData['longitude'],
-              );
-              return distance <=
-                  distanceThreshold; // Check if within the distance threshold
-            }).toList());
+        .map((snapshot) => snapshot.docs); // Keep it as DocumentSnapshot
   }
 
   double _currentZoomLevel = 30.0; // Starting with a default zoom level
 
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     for (var doc in userDocs) {
       var userData = doc.data() as Map<String, dynamic>;
+      if (userData['uid'] == currentUserId) continue;
+
       double? lat = userData['latitude'] as double?;
       double? lon = userData['longitude'] as double?;
 
@@ -798,31 +774,38 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-
-
   void fetchInitialUserProfiles() async {
-    var querySnapshot =
-        await FirebaseFirestore.instance.collection('users').get();
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    print("current userid from initialuser $currentUserId");
+    var querySnapshot = await FirebaseFirestore.instance.collection('users').get();
     var allProfiles = querySnapshot.docs
-        .map((doc) => doc.data() as Map<String, dynamic>)
+        .where((doc) => doc.data()['uid'] != currentUserId)
+        .map((doc) => doc.data())
         .toList();
 
     setState(() {
       fetchedUserProfiles = allProfiles;
-      searchUserProfiles =
-          allProfiles; // Initially, search results show all users
+      searchUserProfiles = allProfiles;
     });
   }
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      var filteredProfiles = query.isEmpty
-          ? fetchedUserProfiles
-          : fetchedUserProfiles.where((user) {
-              String name = user['name'].toLowerCase();
-              return name.contains(query.toLowerCase());
-            }).toList();
+      // var filteredProfiles = query.isEmpty
+      //     ? fetchedUserProfiles
+      //     : fetchedUserProfiles.where((user) {
+      //         String name = user['name'].toLowerCase();
+      //         return name.contains(query.toLowerCase());
+      //       }).toList();
+
+
+      var filteredProfiles = fetchedUserProfiles.where((user) {
+        String name = user['name'].toLowerCase();
+        String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        return user['uid'] != currentUserId && name.contains(query.toLowerCase());
+      }).toList();
+
 
       setState(() {
         searchUserProfiles = filteredProfiles;
@@ -1185,6 +1168,30 @@ class UserHomePageState extends State<UserHomePage>
     return sortedIds.join('_');
   }
 
+
+  void _initiateDataStreams() {
+    setupUserListener();
+    listenToChallengeRequests();
+    fetchCurrentUserChessCoins();
+    if (kIsWeb) {
+      getUserLocationForWeb();
+    } else {
+      _determinePosition().then((_) {
+        setupOpponentsListener();
+      });
+    }
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      // Cancel existing stream subscriptions
+      userSubscription.cancel();
+      challengeRequestsSubscription.cancel();
+      // Re-initiate the data streams
+      _initiateDataStreams();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final FirebaseAuth auth = FirebaseAuth.instance;
@@ -1192,8 +1199,10 @@ class UserHomePageState extends State<UserHomePage>
     final String userId = currentUser?.uid ?? '';
 
     return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
       backgroundColor: const Color.fromARGB(255, 223, 225, 237),
-      body: SafeArea(
+      child: SafeArea(
         child: Stack(
           // Use Stack to overlay widgets
           children: [
@@ -1202,25 +1211,25 @@ class UserHomePageState extends State<UserHomePage>
               children: [
                 // Left section - Google Map (60% width)
                 Expanded(
-                  flex: 6,
-                  child: Container(
-                    margin:
-                        const EdgeInsets.all(8), // Optional margin for styling
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey), // Optional border
-                      borderRadius:
-                          BorderRadius.circular(80), // Rounded corners
-                    ),
-                    child: GoogleMap(
-                      onMapCreated: _onMapCreated,
-                      initialCameraPosition: const CameraPosition(
-                        target: LatLng(0, 0),
-                        zoom: 45,
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          left: 13.0, top: 13.0, bottom: 13.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                            40), // Adjust the radius as needed
+                        child: GoogleMap(
+                          // Your GoogleMap properties here
+                          // padding: const EdgeInsets.all(20),
+                          onMapCreated: _onMapCreated,
+                          initialCameraPosition: const CameraPosition(
+                            target: LatLng(0, 0),
+                            zoom: 45,
+                          ),
+                          markers: markers,
+                        ),
                       ),
-                      markers: markers,
-                    ),
-                  ),
-                ),
+                    )),
 
                 // Right section - User Avatar, Search, and List (40% width)
                 Expanded(
@@ -1235,7 +1244,8 @@ class UserHomePageState extends State<UserHomePage>
                         child: TextField(
                           onChanged: _onSearchChanged,
                           decoration: InputDecoration(
-                            labelText: 'Search Players in $userLocation',
+                            // labelText: 'Search Players in $userLocation',
+                            // labelText: 'Search Players in ',
                             hintText: 'Enter player name...',
                             prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(
@@ -1258,43 +1268,34 @@ class UserHomePageState extends State<UserHomePage>
                           fontWeight: FontWeight.bold,
                         ),
                       ),
+
+
                       Expanded(
                         child: StreamBuilder<List<DocumentSnapshot>>(
                           stream: onlineUsersStream,
                           builder: (context, snapshot) {
                             if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return const Center(
-                                  child: Text('No players Here'));
+                              return const Center(child: Text('No players here.'));
                             }
-                            var users = snapshot.data!
-                                .where((doc) =>
-                                    currentUser == null ||
-                                    doc.id != currentUser.uid)
-                                .map(
-                                    (doc) => doc.data() as Map<String, dynamic>)
+
+                            // Filter out the current user's profile from the list
+                            List<Map<String, dynamic>> users = snapshot.data!
+                                .map((doc) => doc.data() as Map<String, dynamic>)
+                                .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid) // Filter out current user
                                 .toList();
 
-                            // Sorting users based on 'isOnline' status
-                            users.sort((a, b) {
-                              bool isOnlineA = a['isOnline'] ?? false;
-                              bool isOnlineB = b['isOnline'] ?? false;
-                              return isOnlineA == isOnlineB
-                                  ? 0
-                                  : isOnlineA
-                                      ? -1
-                                      : 1;
-                            });
+                            // Update searchUserProfiles here, excluding the current user
+                            searchUserProfiles = users;
 
                             return GridView.builder(
                               padding: const EdgeInsets.all(16),
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount:
-                                    3, // Adjust the number of columns here
-                                crossAxisSpacing: 16,
-                                mainAxisSpacing: 16,
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 5,
+                                mainAxisSpacing: 5,
                                 childAspectRatio: 1,
                               ),
+                              // GridView.builder properties...
                               itemCount: searchUserProfiles.length,
                               itemBuilder: (context, index) {
                                 var userData = searchUserProfiles[index];
@@ -1304,11 +1305,15 @@ class UserHomePageState extends State<UserHomePage>
                           },
                         ),
                       ),
+
+
                     ],
                   ),
                 ),
               ],
             ),
+
+
             Positioned(
               top: 10,
               right: 10,
@@ -1369,6 +1374,7 @@ class UserHomePageState extends State<UserHomePage>
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -1376,6 +1382,12 @@ class UserHomePageState extends State<UserHomePage>
     String avatarUrl = userData['avatar'];
     bool isOnline = userData['isOnline'] ?? false;
     String userId = userData['uid']; // Assuming each user has a unique 'uid'
+
+    // Check if the tile is for the current user
+    if (userData['uid'] == FirebaseAuth.instance.currentUser?.uid) {
+      // Return an empty container or some other appropriate widget
+      return Container();
+    }
 
     return GestureDetector(
       onTap: () => _showChallengeModal(context, userData),
@@ -1435,9 +1447,9 @@ class UserHomePageState extends State<UserHomePage>
           const SizedBox(height: 6),
           Text(
             userData['name'] ?? 'Username',
-            style: const TextStyle(
+            style: TextStyle(
               fontFamily: 'Poppins',
-              color: Color.fromARGB(255, 12, 6, 6),
+              color: isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),

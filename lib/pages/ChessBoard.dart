@@ -458,14 +458,12 @@ class _ChessBoardState extends State<ChessBoard>
   void updateMatchHistoryIfNeeded({
     required String userId1, //   - userId1: UID of the first player.
     required String userId2, //   - userId2: UID of the second player.
-    required String
-        result, //   - result: The result of the match ('win', 'lose', or 'draw').
+    required String result, //   se', or 'draw').
     required double bet, //   - bet: The bet amount for the match.
   })
   {
     if (!isGameEnded) {
-      isGameEnded =
-          true; // Mark the game as ended to prevent duplicate updates.
+      isGameEnded = true; // Mark the game as ended to prevent
 
       // Determine the winner and loser based on the match result.
       String winnerUID = (result == 'win') ? userId1 : userId2;
@@ -504,7 +502,6 @@ class _ChessBoardState extends State<ChessBoard>
       'gameStatus': newStatus,
       'drawOffer': null, // Clearing the draw offer field.
     });
-
     // Special handling in case the new status is 'draw'.
     if (newStatus == 'draw') {
       // Update the match history to record the draw result.
@@ -817,8 +814,7 @@ class _ChessBoardState extends State<ChessBoard>
 // Method to handle the action when a user decides to resign from the game.
   void _handleUserResignation() {
     String statusMessage; // Variable to store the status message of the game.
-    String
-        result; // Variable to store the result of the game ('win' or 'lose').
+    String result; // Variable to store the result
 
     // Determine the winner based on who is resigning.
     if (currentUserUID == player1UID) {
@@ -832,6 +828,7 @@ class _ChessBoardState extends State<ChessBoard>
         result: result,
         bet: betAmount,
       );
+      print("betamount from chess$betAmount");
       // Update the game status in the database with the resignation message.
       updateGameStatus(statusMessage);
     } else {
@@ -867,7 +864,6 @@ class _ChessBoardState extends State<ChessBoard>
       boardSize =
           screenSize.height * 0.6; // Adjust based on height in landscape mode.
     }
-
 
     // Main scaffold widget of the app.
     return WillPopScope(
@@ -1191,8 +1187,7 @@ class _ChessBoardState extends State<ChessBoard>
                                             userId1: winnerUID,
                                             userId2: loserUID,
                                             result: result,
-                                            bet:
-                                            betAmount, // Use the actual bet amount if applicable.
+                                            bet: betAmount, // Use the actual bet amount if applicable.
                                           );
                                         } else {
                                           _switchTimer(); // Switch the timer to the next player if it's a draw.
@@ -1352,26 +1347,56 @@ class _ChessBoardState extends State<ChessBoard>
             if (isMessageAreaOpen)
               Expanded(
                 flex: 1,
-                child: Container(
-                  color: Colors.grey, // Set background color as needed
-                  child: Column(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.close, color: Colors.white),
-                        onPressed: () {
-                          setState(() {
-                            isMessageAreaOpen = false;
-                          });
-                        },
-                      ),
+                // child: Container(
+                //   color: Colors.grey, // Set background color as needed
+                //   child: Column(
+                //     children: [
+                //       IconButton(
+                //         icon: const Icon(Icons.close, color: Colors.white),
+                //         onPressed: () {
+                //           setState(() {
+                //             isMessageAreaOpen = false;
+                //           });
+                //         },
+                //       ),
+                //
+                //       Expanded(
+                //         child: MessageScreen(opponentUId: actualOpponentUID,
+                //             fromChessBoard: true
+                //           )
+                //       ),
+                //     ],
+                //   ),
+                // ),
 
-                      Expanded(
-                        child: MessageScreen(opponentUId: actualOpponentUID,
-                          showBackButton: false,)
-                      ),
-                    ],
-                  ),
-                ),
+
+                  child :Container(
+                    color: Colors.white, // Set background color as needed
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.end, // Align children to the start of the cross axis
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end, // Align children to the start of the main axis
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close, color: Colors.black),
+                              onPressed: () {
+                                setState(() {
+                                  isMessageAreaOpen = false;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                        Expanded(
+                          child: MessageScreen(
+                            opponentUId: actualOpponentUID,
+                            fromChessBoard: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
               ),
           ],
         ),

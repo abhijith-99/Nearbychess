@@ -144,9 +144,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Widget mobileNumberButton() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0), // Ensure this matches other buttons
+      padding: const EdgeInsets.symmetric(horizontal: 22.0), // Ensure this matches other buttons
       child: Container(
-        width: 16, // Set the width of the button (adjust as needed)
+        width: 22, // Set the width of the button (adjust as needed)
         child: ElevatedButton(
           onPressed: () {
             setState(() {
@@ -426,7 +426,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                                       children: [
                                         Expanded(
                                           // Expanded widget for the text field
-                                          child: entryField('Enter phone number', phoneController),
+                                          child: entryField('Enter phone number with +91', phoneController),
                                         ),
                                         const SizedBox(width: 1), // Spacing between the input field and the button
                                         ElevatedButton(
