@@ -116,7 +116,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
     FirebaseFirestore.instance
         .collection('challengeRequests')
         .doc(challengeRequestId)
-        .update({'status': 'canceled'})
+        .update({'status': 'cancelled'})
         .then((_) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(

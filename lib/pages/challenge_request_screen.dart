@@ -41,7 +41,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
         .doc(widget.challengeId)
         .snapshots()
         .listen((snapshot) {
-      if (!snapshot.exists || snapshot.data()?['status'] == 'canceled') {
+      if (!snapshot.exists || snapshot.data()?['status'] == 'cancelled') {
         Navigator.of(context).pop();
         challengeRequestSubscription.cancel();
       }

@@ -1244,8 +1244,6 @@ class UserHomePageState extends State<UserHomePage>
                         child: TextField(
                           onChanged: _onSearchChanged,
                           decoration: InputDecoration(
-                            // labelText: 'Search Players in $userLocation',
-                            // labelText: 'Search Players in ',
                             hintText: 'Enter player name...',
                             prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(
