@@ -41,7 +41,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
         .doc(widget.challengeId)
         .snapshots()
         .listen((snapshot) {
-      if (!snapshot.exists || snapshot.data()?['status'] == 'canceled') {
+      if (!snapshot.exists || snapshot.data()?['status'] == 'cancelled') {
         Navigator.of(context).pop();
         challengeRequestSubscription.cancel();
       }
@@ -57,14 +57,20 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
   @override
   Widget build(BuildContext context) {
     print('Received Timer Value: ${widget.localTimerValue}');
-    // Rest of the build method goes here...
-    // Make sure to use `widget.` to access the properties of the StatefulWidget
+    double screenWidth = MediaQuery.of(context).size.width;
+    double dialogWidthFraction = 0.35; // 85% of the screen width
+    double dialogWidth = screenWidth * dialogWidthFraction;
+
+    // Define the dialog padding
+    double dialogPadding = (screenWidth - dialogWidth) / 2;
     return Dialog(
       // ... rest of the dialog UI code ...
       shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12.0)), // Makes dialog rounded
+          borderRadius: BorderRadius.circular(12.0)
+      ),
+      insetPadding: EdgeInsets.symmetric(horizontal: dialogPadding),
       child: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(20.0),
         child: Column(
           mainAxisSize: MainAxisSize.min, // To make the dialog compact
           children: [
@@ -78,7 +84,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
             const SizedBox(height: 20),
             CircleAvatar(
               backgroundImage:
-              AssetImage(widget.challengerImageUrl), // Use NetworkImage
+              NetworkImage(widget.challengerImageUrl), // Use NetworkImage
               radius: 40,
             ),
             const SizedBox(height: 10),
@@ -123,12 +129,15 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                   Navigator.pushReplacement(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ChessBoard(gameId: newGameId),
+                      builder: (context) => ChessBoard(gameId: newGameId, opponentUID: widget.opponentUID,),
+
                     ),
                   ).then((_) {
                     // User has left the Chessboard, update the inGame status
                     updateInGameState(false);
                   });
+                  print("Navigating to ChessBoard with opponent UIDfrom challenge request: ${widget.opponentUID}");
+
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, // Background color
@@ -149,6 +158,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                   0.7, // Adjust the width as needed
               child: ElevatedButton(
                 onPressed: () {
+                  // Reject the challenge
                   // Reject the challenge
                   Navigator.pop(context,
                       false); // Pass false to indicate the challenge is rejected
@@ -172,3 +182,10 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
     );
   }
 }
+
+
+
+
+
+
+

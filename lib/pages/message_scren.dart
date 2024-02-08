@@ -1,12 +1,15 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class MessageScreen extends StatefulWidget {
   final String opponentUId;
+  final bool fromChessBoard;
 
-  MessageScreen({Key? key, required this.opponentUId}) : super(key: key);
+  MessageScreen({Key? key, required this.opponentUId,
+  this.fromChessBoard = false}) : super(key: key);
 
   @override
   _MessageScreenState createState() => _MessageScreenState();
@@ -17,6 +20,7 @@ class _MessageScreenState extends State<MessageScreen> {
   late final Stream<List<DocumentSnapshot>> _messagesStream;
   String myUserId = '';
   late String chatId;
+  List<String> predefinedMessages = ["hi","hello","oops","Nice","Thanks","GG","No"];
 
   @override
   void initState() {
@@ -36,19 +40,18 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
   void resetUnreadCount() {
-    if (chatId.isNotEmpty) {
-      FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
-        chatId: {'unreadCount': 0},
-      }, SetOptions(merge: true));
-    }
+    FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+      chatId: {'unreadCount': 0},
+    }, SetOptions(merge: true));
   }
-
-
 
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
     return sortedIds.join('_');
   }
+
+
+
 
   Future<int> getCurrentUserBalance(String userId) async {
     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
@@ -58,11 +61,11 @@ class _MessageScreenState extends State<MessageScreen> {
     return 0;
   }
 
+
   void showGiftModal(BuildContext context) async {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     int myCurrentBalance = await getCurrentUserBalance(myUserId);
     int? selectedAmount;
-
     showModalBottomSheet(
       context: context,
       builder: (BuildContext context) {
@@ -162,6 +165,15 @@ class _MessageScreenState extends State<MessageScreen> {
     });
   }
 
+  Future<bool> _onBackPressed() async {
+    if (widget.fromChessBoard) {
+      return false;
+    } else {
+      // Allow the default behavior.
+      return true;
+    }
+  }
+
   void sendMessageToRecipient(String recipientUserId, String message, {bool isGiftMessage = false}) {
     var messageRef = FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').doc();
     messageRef.set({
@@ -182,10 +194,30 @@ class _MessageScreenState extends State<MessageScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+
+    return WillPopScope(
+        onWillPop: _onBackPressed,
+
+    child: Scaffold(
       appBar: AppBar(
-        title: Text('Message'),
+        leading: widget.fromChessBoard ? Container() : null,
+
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').doc(myUserId).snapshots(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Text('');
+            }
+            if (!snapshot.hasData || !snapshot.data!.exists) {
+              return const Text('');
+            }
+            final userData = snapshot.data!.data() as Map<String, dynamic>?;
+            final chessCoins = userData?['chessCoins'] ?? 0;
+            return const Text('');
+          },
+        ),
       ),
+
       body: Column(
         children: [
           Expanded(
@@ -210,6 +242,15 @@ class _MessageScreenState extends State<MessageScreen> {
                     bool isOwnMessage = messageData['fromId'] == myUserId;
                     bool isGiftMessage = messageData['isGiftMessage'] ?? false;
 
+                    DateTime timestamp;
+                    if (messageData['timestamp'] != null) {
+                      timestamp = (messageData['timestamp'] as Timestamp).toDate();
+                    } else {
+                      // Handle the case where timestamp is null
+                      // For example, use the current date and time:
+                      timestamp = DateTime.now();
+                    }
+
                     return Align(
                       alignment: isOwnMessage ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
@@ -220,8 +261,8 @@ class _MessageScreenState extends State<MessageScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: isGiftMessage
-                            ? buildGiftMessage(messageData['text'], isOwnMessage)
-                            : buildTextMessage(messageData['text']),
+                            ? buildGiftMessage(messageData['text'], isOwnMessage,timestamp)
+                            : buildTextMessage(messageData['text'], timestamp),
                       ),
                     );
                   },
@@ -229,10 +270,33 @@ class _MessageScreenState extends State<MessageScreen> {
               },
             ),
           ),
+
+
+          Container(
+            height: 50,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: predefinedMessages.length,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      sendMessage(predefinedMessages[index]);
+                    },
+                    child: Text(predefinedMessages[index]),
+                  ),
+                );
+              },
+            ),
+          ),
+
+
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
+
                 Container(
                   width: 60,
                   height: 50,
@@ -244,13 +308,14 @@ class _MessageScreenState extends State<MessageScreen> {
                     onPressed: () => showGiftModal(context),
                   ),
                 ),
+
                 Expanded(
                   child: Container(
-                    height: 45, // Adjust the height as needed
+                    height: 45,
                     child: TextField(
                       controller: _messageController,
                       decoration: InputDecoration(
-                        labelText: 'Say hi',
+                        labelText: 'Type your message',
                         labelStyle: TextStyle(
                           color: Colors.black.withOpacity(0.3),
                         ),
@@ -279,16 +344,18 @@ class _MessageScreenState extends State<MessageScreen> {
           ),
         ],
       ),
+    ),
     );
   }
 
-  Widget buildGiftMessage(String amount, bool isSender){
+
+  Widget buildGiftMessage(String amount, bool isSender, DateTime timestamp){
     return Container(
       padding: EdgeInsets.all(8), // Add padding inside the container
       width: 150, // Adjust the width as needed
       height: 150, // Adjust the height as needed
       decoration: BoxDecoration(
-        color: Colors.white, // Change color as needed
+        color: Colors.white,
         borderRadius: BorderRadius.circular(8),
 
       ),
@@ -318,33 +385,64 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
-  Widget buildTextMessage(String message) {
-    return Text(
-      message,
-      style: const TextStyle(fontSize: 16.0),
+  Widget buildTextMessage(String message, DateTime timestamp) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0, vertical: 2.0),
+      margin: const EdgeInsets.symmetric(vertical: 1.0, horizontal: 2.0),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      constraints: const BoxConstraints(
+        minWidth: 40,
+        maxWidth: 200,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min, // Use min to fit the content
+        children: [
+          Text(
+            message,
+            style: const TextStyle(fontSize: 16.0),
+          ),
+          // Use a SizedBox for deterministic spacing
+          const SizedBox(height: 4.0),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Text(
+              DateFormat('hh:mm a').format(timestamp),
+              style: const TextStyle(fontSize: 12.0, color: Colors.grey),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
 
-  void sendMessage(String message, {bool isGiftMessage = false}) {
+
+
+  void sendMessage(String message, {bool isGiftMessage = false}) async {
     if (message.trim().isNotEmpty) {
-      var messageRef = FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').doc();
-      messageRef.set({
-        'text': message,
-        'fromId': myUserId,
-        'toId': widget.opponentUId,
-        'timestamp': FieldValue.serverTimestamp(),
-        'isGiftMessage': isGiftMessage,
-      });
+      try {
+        var messageRef = FirebaseFirestore.instance.collection('chats').doc(chatId).collection('messages').doc();
+        await messageRef.set({
+          'text': message,
+          'fromId': myUserId,
+          'toId': widget.opponentUId,
+          'timestamp': FieldValue.serverTimestamp(),
+          'isGiftMessage': isGiftMessage,
+        });
 
-      // Create or update chat document
-      FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
-        chatId: {
-          'unreadCount': FieldValue.increment(1),
-        }
-      }, SetOptions(merge: true));
+        FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+          chatId: {
+            'unreadCount': FieldValue.increment(1),
+          }
+        }, SetOptions(merge: true));
 
-      _messageController.clear();
+        _messageController.clear();
+      } catch (e) {
+        print("An error occurred: $e");
+      }
     }
   }
 

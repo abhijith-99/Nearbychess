@@ -20,12 +20,7 @@ import 'dart:math' show asin, cos, max, sqrt;
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'geocoding_web.dart';
-
-
-
-
-
-import 'package:flutter_svg/flutter_svg.dart';
+import 'message_scren.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -33,7 +28,6 @@ class UserHomePage extends StatefulWidget {
   @override
   UserHomePageState createState() => UserHomePageState();
 }
-
 
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
@@ -50,6 +44,7 @@ class UserHomePageState extends State<UserHomePage>
   int currentUserChessCoins = 0;
 
   double? get userLat => null;
+
   double? get userLon => null;
 
   String _mapStyle = '';
@@ -59,144 +54,136 @@ class UserHomePageState extends State<UserHomePage>
   Set<Marker> markers = {};
   LocationData? currentLocation;
   loc.Location location = loc.Location();
+
   String? get locationName => null;
+  List<Map<String, dynamic>> fetchedUserProfiles =
+      []; // To store fetched user profiles
+  List<Map<String, dynamic>> searchUserProfiles = [];
 
+  get player1Id => null; // To store search results
+  get player2Id => null;
 
-  //
-  Future<Uint8List> createCustomMarker(String userName, double zoomLevel) async {
+  Future<Uint8List> createCustomMarker(
+      String userName, double zoomLevel) async {
     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
     final Canvas canvas = Canvas(pictureRecorder);
 
     // Adjust the size based on the zoom level
     final double iconSize = 50.0 * zoomLevel / 15.0; // Example scaling factor
-    final double fontSize = 35.0 * zoomLevel / 15.0; // Adjust font size based on zoom level
+    const double fontSize = 20.0; // Adjust font size based on zoom level
 
-    // Define paint for the circle
-    final Paint paintCircle = Paint()
-      ..color = Colors.red;
+    final double textMaxWidth = iconSize - 10.0;
 
-    // Define paint for the triangle
-    final Paint paintTriangle = Paint()
-      ..color = Colors.red
-      ..style = PaintingStyle.fill;
+    // Define paint for the pin
+    final Paint paintPin = Paint()..color = Colors.red;
 
-    // Draw the circle for location
-    final double circleRadius = iconSize / 4; // Radius of the circle
-    final Offset circleOffset = Offset(iconSize / 2, circleRadius); // Center of the circle
-    canvas.drawCircle(circleOffset, circleRadius, paintCircle);
-
-    // Draw the triangle for location
-    final Path trianglePath = Path()
-      ..moveTo(iconSize / 2, iconSize) // Bottom point of the triangle
-      ..lineTo(iconSize / 2 - circleRadius, circleRadius * 2) // Top left point
-      ..lineTo(iconSize / 2 + circleRadius, circleRadius * 2) // Top right point
+    // Draw the pin
+    final double pinWidth = iconSize / 2; // Width of the pin
+    final double pinHeight = iconSize; // Height of the pin
+    final Offset pinTip = Offset(iconSize / 2, iconSize); // Tip of the pin
+    final Path pinPath = Path()
+      ..moveTo(pinTip.dx, pinTip.dy) // Move to the tip of the pin
+      ..lineTo(pinTip.dx - pinWidth / 2, pinHeight / 2) // Left side of the pin
+      ..quadraticBezierTo(pinTip.dx, pinHeight / 4, pinTip.dx + pinWidth / 2,
+          pinHeight / 2) // Curve for the right side of the pin
       ..close();
-    canvas.drawPath(trianglePath, paintTriangle);
+    canvas.drawPath(pinPath, paintPin);
 
     // Calculate the total height of the canvas to fit the icon and the text
-    final double canvasHeight = iconSize + fontSize * 1.2; // Space for text
+    final double canvasHeight = iconSize + fontSize; // Space for text
 
     // Draw the text
     final TextPainter textPainter = TextPainter(
       text: TextSpan(
         text: userName,
         style: const TextStyle(
-          fontSize: 20.0,
-          color: Colors. yellow, // Text color
+          fontSize: 20,
+          color: Colors.yellowAccent, // Text color
           fontWeight: FontWeight.bold,
         ),
       ),
       textDirection: ui.TextDirection.ltr,
+      maxLines: 1, // Allow text to wrap to the second line
+      // ellipsis: '...', // Display ellipsis if text overflows
+      // textWidthBasis: TextWidthBasis.longestLine, // Wrap based on the longest line
     );
-    textPainter.layout();
-    final Offset textOffset = Offset((iconSize - textPainter.width) / 2, iconSize - (fontSize * 0.2));
+    textPainter.layout(
+        maxWidth: textMaxWidth); // Set the maximum width for text
+    final Offset textOffset =
+        Offset((iconSize - textPainter.width) / 2, iconSize);
     textPainter.paint(canvas, textOffset);
-
     // Convert canvas to image
-    final ui.Image markerAsImage = await pictureRecorder.endRecording().toImage(iconSize.toInt(), canvasHeight.toInt());
+    final ui.Image markerAsImage = await pictureRecorder
+        .endRecording()
+        .toImage(iconSize.toInt(), canvasHeight.toInt());
 
     // Convert image to bytes
-    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? byteData =
+        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
     final Uint8List uint8List = byteData!.buffer.asUint8List();
 
     return uint8List;
   }
 
 
-
-
-
-
-
-
-  void _onCameraMove(CameraPosition position) {
-    final double _currentZoomLevel = position.zoom;
-  }
-
-
-
-
-
   Future<void> _determinePosition() async {
-  bool serviceEnabled;
-  loc.PermissionStatus permissionGranted;
+    bool serviceEnabled;
+    loc.PermissionStatus permissionGranted;
 
-  // Check if location services are enabled.
-  serviceEnabled = await location.serviceEnabled();
-  if (!serviceEnabled) {
-    serviceEnabled = await location.requestService();
+    // Check if location services are enabled.
+    serviceEnabled = await location.serviceEnabled();
     if (!serviceEnabled) {
-      return;
+      serviceEnabled = await location.requestService();
+      if (!serviceEnabled) {
+        return;
+      }
     }
-  }
 
-  // Check for permission.
-  permissionGranted = await location.hasPermission();
-  if (permissionGranted == loc.PermissionStatus.denied) {
-    permissionGranted = await location.requestPermission();
-    if (permissionGranted != loc.PermissionStatus.granted) {
-      return;
+    // Check for permission.
+    permissionGranted = await location.hasPermission();
+    if (permissionGranted == loc.PermissionStatus.denied) {
+      permissionGranted = await location.requestPermission();
+      if (permissionGranted != loc.PermissionStatus.granted) {
+        return;
+      }
     }
-  }
 
-  // Get the current location.
-  currentLocation = await location.getLocation();
+    // Get the current location.
+    currentLocation = await location.getLocation();
 
-  String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-  DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-  String userName = userDoc['name']; // Replace 'name' with your Firestore field
+    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    String userName =
+        userDoc['name']; // Replace 'name' with your Firestore field
 
-  // Create the custom marker
-  final Uint8List markerIcon = await createCustomMarker(userName, _currentZoomLevel);
+    // Create the custom marker
+    final Uint8List markerIcon =
+        await createCustomMarker(userName, _currentZoomLevel);
 
-
-
-
-  // Update the location on the map.
-  mapController?.animateCamera(
-    CameraUpdate.newCameraPosition(
-      CameraPosition(
-        target: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-        zoom: 15.0,
-      ),
-    ),
-  );
-
-  // Place a marker on the current location.
-  setState(() {
-    markers.add(
-      Marker(
-        markerId: const MarkerId("current_location"),
-        position: LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-
-        // icon: BitmapDescriptor.defaultMarker,
-
-        icon: BitmapDescriptor.fromBytes(markerIcon),
+    // Update the location on the map.
+    mapController?.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target:
+              LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
+          zoom: 15.0,
+        ),
       ),
     );
-  });
-}
 
+    // Place a marker on the current location.
+    setState(() {
+      markers.add(
+        Marker(
+          markerId: const MarkerId("current_location"),
+          position:
+              LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
+          icon: BitmapDescriptor.fromBytes(markerIcon),
+        ),
+      );
+    });
+  }
 
   Future<void> getUserLocationForWeb() async {
     if (kDebugMode) {
@@ -228,21 +215,12 @@ class UserHomePageState extends State<UserHomePage>
       String cityName = await getPlaceFromCoordinates(
         _locationData.latitude!,
         _locationData.longitude!,
-
       );
 
       setState(() {
-        print("fetched cityname $cityName");
-
         userLocation = cityName;
-        print("dfjhskdjfhjkdfhdsjkfhsdin werbdsfs$userLocation");
         onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
-        print("whats up");
-
-
       });
-
-
     } catch (e) {
       print('Error getting location for web: $e');
       setState(() {
@@ -252,7 +230,6 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
   @override
   void initState() {
     super.initState();
@@ -261,6 +238,9 @@ class UserHomePageState extends State<UserHomePage>
     listenToChallengeRequests();
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
+    fetchInitialUserProfiles();
+    fetchedUserProfiles;
+
 
     _loadMapStyle();
     _determinePosition().then((_) {
@@ -269,20 +249,15 @@ class UserHomePageState extends State<UserHomePage>
 
     if (kIsWeb) {
       getUserLocationForWeb();
-      print("ldsjfldsflwebiskisne$userLocation");
-
     }
   }
 
-
-
-
   Future<void> _loadMapStyle() async {
-     _mapStyle = await rootBundle.loadString('assets/new_map.json');
+    _mapStyle = await rootBundle.loadString('assets/new_map.json');
 
     if (mapController != null) {
-       mapController!.setMapStyle(_mapStyle);
-     }
+      mapController!.setMapStyle(_mapStyle);
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       String userId = FirebaseAuth.instance.currentUser!.uid;
@@ -293,7 +268,6 @@ class UserHomePageState extends State<UserHomePage>
           showDailyBonusDialogIfNeeded(context, userId);
         }
       });
-
     });
     listenForReferralBonus();
   }
@@ -305,12 +279,16 @@ class UserHomePageState extends State<UserHomePage>
         .doc(myUserId)
         .snapshots()
         .listen((snapshot) {
-      if (snapshot.exists && snapshot.data()!.containsKey('referralBonusInfo')) {
+      if (snapshot.exists &&
+          snapshot.data()!.containsKey('referralBonusInfo')) {
         var bonusInfo = snapshot.data()!['referralBonusInfo'];
         if (bonusInfo != null) {
           showReferralBonusPopup(bonusInfo);
           // Optionally, remove the referral bonus info after showing the popup
-          FirebaseFirestore.instance.collection('users').doc(myUserId).update({'referralBonusInfo': FieldValue.delete()});
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(myUserId)
+              .update({'referralBonusInfo': FieldValue.delete()});
         }
       }
     });
@@ -328,8 +306,9 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          contentPadding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-          title: Center(
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          title: const Center(
             child: CircleAvatar(
               radius: 40,
               backgroundImage: AssetImage('assets/NBC-token.png'),
@@ -338,7 +317,7 @@ class UserHomePageState extends State<UserHomePage>
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: <Widget>[
-              Text(
+              const Text(
                 "100",
                 style: TextStyle(fontSize: 25, fontWeight: FontWeight.bold),
                 textAlign: TextAlign.center,
@@ -365,7 +344,8 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> checkAndUpdateDailyLoginBonus(String userId) async {
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('users').doc(userId);
 
     FirebaseFirestore.instance.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
@@ -382,10 +362,14 @@ class UserHomePageState extends State<UserHomePage>
       DateTime now = DateTime.now();
       DateTime today = DateTime(now.year, now.month, now.day);
       DateTime lastLogin = lastLoginDate?.toDate() ?? DateTime(1970);
-      DateTime lastLoginDay = DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
+      DateTime lastLoginDay =
+          DateTime(lastLogin.year, lastLogin.month, lastLogin.day);
 
       if (lastLoginDay.isBefore(today) && !bonusReadyToClaim) {
-        consecutiveLoginDays = lastLoginDay.add(Duration(days: 1)).isBefore(today) ? 1 : consecutiveLoginDays + 1;
+        consecutiveLoginDays =
+            lastLoginDay.add(Duration(days: 1)).isBefore(today)
+                ? 1
+                : consecutiveLoginDays + 1;
 
         transaction.update(userRef, {
           'consecutiveLoginDays': consecutiveLoginDays,
@@ -399,8 +383,10 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  Future<void> showDailyBonusDialogIfNeeded(BuildContext context, String userId) async {
-    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  Future<void> showDailyBonusDialogIfNeeded(
+      BuildContext context, String userId) async {
+    DocumentSnapshot userDoc =
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
     if (userDoc.exists) {
       var userData = userDoc.data() as Map<String, dynamic>;
@@ -415,7 +401,8 @@ class UserHomePageState extends State<UserHomePage>
           context: context,
           builder: (BuildContext context) {
             return AlertDialog(
-              contentPadding: EdgeInsets.symmetric(vertical: 10), // Adjust the vertical padding
+              contentPadding: EdgeInsets.symmetric(vertical: 10),
+              // Adjust the vertical padding
               title: Center(
                 child: Column(
                   children: [
@@ -423,29 +410,30 @@ class UserHomePageState extends State<UserHomePage>
                       "Daily Login Bonus",
                       style: TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    SizedBox(height: 5),
+                    const SizedBox(height: 5),
                     Text(
                       "Login Bonus Day $consecutiveLoginDays",
-                      style: TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
               ),
               content: Column(
-                mainAxisSize: MainAxisSize.min, // Set the mainAxisSize to MainAxisSize.min
+                mainAxisSize: MainAxisSize.min,
+                // Set the mainAxisSize to MainAxisSize.min
                 children: [
                   Container(
-                    child: CircleAvatar(
+                    child: const CircleAvatar(
                       radius: 80,
                       backgroundImage: AssetImage('assets/NBC-token.png'),
                     ),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   Text(
                     "$bonusAmount NBC",
-                    style: TextStyle(fontSize: 16),
+                    style: const TextStyle(fontSize: 16),
                   ),
-                  SizedBox(height: 5),
+                  const SizedBox(height: 5),
                   ElevatedButton(
                     child: const Text("Claim Bonus"),
                     onPressed: () {
@@ -467,7 +455,8 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> claimDailyBonus(String userId, int bonusAmount) async {
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+    DocumentReference userRef =
+        FirebaseFirestore.instance.collection('users').doc(userId);
     FirebaseFirestore.instance.runTransaction((transaction) async {
       DocumentSnapshot snapshot = await transaction.get(userRef);
       if (snapshot.exists) {
@@ -485,10 +474,7 @@ class UserHomePageState extends State<UserHomePage>
     String userId = FirebaseAuth.instance.currentUser!.uid;
     currentUserChessCoins = await getUserChessCoins(userId);
     setState(() {}); // Trigger a rebuild to update the UI
-
   }
-
-
 
   // This function remains unchanged
   void listenToChallengeRequests() {
@@ -566,14 +552,22 @@ class UserHomePageState extends State<UserHomePage>
           String gameId = challengeData[
               'gameId']; // Assuming the game ID is stored in the challenge data
           print("challenger$gameId");
+
+          String player1Id = challengeData['challengerId']; // Example
+          String player2Id = challengeData['opponentId']; // Example
+          String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+          bool userIsSpectator =
+              currentUserId != player1Id && currentUserId != player2Id;
           Navigator.push(
             context,
             MaterialPageRoute(
-              // builder: (context) => ChessBoard(gameId: gameId),
-
-
-
-      builder: (context) => ChessBoard(gameId: gameId,isSpectator: true),
+              builder: (context) =>
+                  // ChessBoard(gameId: gameId, isSpectator: true),
+                  ChessBoard(
+                      gameId: gameId,
+                      isSpectator: userIsSpectator,
+                      opponentUID: player2Id),
             ),
           ).then((_) {
             // User has left the Chessboard, update the inGame status
@@ -586,7 +580,8 @@ class UserHomePageState extends State<UserHomePage>
 
   // Function to get the human-readable location name from coordinates
   Future<String> getLocationName(double latitude, double longitude) async {
-    List<Placemark> placemarks = await placemarkFromCoordinates(latitude, longitude);
+    List<Placemark> placemarks =
+        await placemarkFromCoordinates(latitude, longitude);
     if (placemarks.isNotEmpty) {
       Placemark placemark = placemarks[0];
       return placemark.locality ?? placemark.name ?? 'Unknown Location';
@@ -597,63 +592,36 @@ class UserHomePageState extends State<UserHomePage>
 
 
   void setupUserListener() {
-    var user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      userSubscription = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .snapshots()
-          .listen((snapshot) async {
-        if (snapshot.exists) {
-          var userData = snapshot.data() as Map<String, dynamic>;
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-          double userLat = userData['latitude'];
-          double userLon = userData['longitude'];
+    FirebaseFirestore.instance.collection('users').snapshots().listen((snapshot) {
+      List<Map<String, dynamic>> updatedUserProfiles = [];
 
-          // Reverse geocode the user's coordinates to get the nearest placemark
-          List<Placemark> placemarks =
-              await placemarkFromCoordinates(userLat, userLon);
-
-          // Assuming we take the first placemark as the major point
-          Placemark majorPoint = placemarks.first;
-
-          // Retrieve the city name using coordinates
-          String city = await getLocationName(userLat, userLon);
-
-          // String userlocation = await getLocationName(userLat, userLon);
-
-          print("384902384329048city$city");
-
-          // Update Firestore with the major point name
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .update({'location': majorPoint.name, 'city': city});
-            setState(() {
-
-              userLocation = city;
-              city = userData['city'] ?? 'Unknownarea';
-              onlineUsersStream = fetchOnlineUsersWithLocationName(city);
-              currentUserChessCoins = userData['chessCoins'] ?? 0;
-              onlineUsersStream.listen((userDocs) {
-                print("Fetched Users: $userDocs");
-                List<DocumentSnapshot> validUsers = userDocs.where((doc) {
-                  var userData = doc.data() as Map<String, dynamic>;
-                  return userData['latitude'] != null && userData['longitude'] != null;
-                }).toList();
-
-                if (validUsers.isNotEmpty) {
-                  // Update your UI with this list
-                  updateMarkers(validUsers);
-                }
-              });
-
-            });
-
+      for (var change in snapshot.docChanges) {
+        var userData = change.doc.data() as Map<String, dynamic>;
+        if (userData['uid'] == currentUserId) {
+          continue; // Skip the current user's data
         }
+        if (change.type == DocumentChangeType.added ||
+            change.type == DocumentChangeType.modified) {
+          int index = updatedUserProfiles.indexWhere((user) => user['uid'] == userData['uid']);
+          if (index >= 0) {
+            updatedUserProfiles[index] = userData; // Update existing user
+          } else {
+            updatedUserProfiles.add(userData); // Add new user
+          }
+        }
+      }
+
+      setState(() {
+        fetchedUserProfiles = updatedUserProfiles;
+        searchUserProfiles = List.from(updatedUserProfiles); // Update searchUserProfiles with filtered data
       });
-    }
+    });
   }
+
+
+
 
   void navigateToUserDetails(BuildContext context, String userId) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -691,8 +659,6 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
-
-
     if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
       // handle null case, maybe return a default value or throw an exception
       return 0.0; // Example default value
@@ -706,16 +672,26 @@ class UserHomePageState extends State<UserHomePage>
     return 12742 * asin(sqrt(a));
   }
 
-  Stream<List<DocumentSnapshot>> fetchNearbyOpponents(double userLat, double userLon, double radiusInKm) {
+  Stream<List<DocumentSnapshot>> fetchNearbyOpponents(
+      double userLat, double userLon, double radiusInKm) {
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    print("current userod from fetchnearby $currentUserId");
     return FirebaseFirestore.instance
         .collection('users')
         .where('isOnline', isEqualTo: true)
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.where((doc) {
-        var userData = doc.data() as Map<String, dynamic>;
+
+        // var userData = doc.data();
+        var userData = doc.data();
+        if (userData['uid'] == currentUserId) {
+          return false;
+        }
+
         var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
         return distance <= radiusInKm;
+
       }).toList();
     });
   }
@@ -728,83 +704,41 @@ class UserHomePageState extends State<UserHomePage>
         double userLon = currentLocation!.longitude!;
 
         // Now call fetchNearbyOpponents with the actual latitude and longitude
-        fetchNearbyOpponents(userLat, userLon, 10.0) // Adjust the radius as needed
+        fetchNearbyOpponents(
+                userLat, userLon, 10.0) // Adjust the radius as needed
             .listen((userDocs) {
-          // updateMarkers(userDocs); // Update the map markers
-          // Update any other UI components that list the nearby users
           updateMarkers(userDocs);
         });
       }
     });
   }
 
-  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
-    // Assuming currentLocation is not null and contains the correct data
-    final double userLat = currentLocation!.latitude!;
-    final double userLon = currentLocation!.longitude!;
-    const double distanceThreshold = 10.0; // 10 km radius for nearby users
 
+  Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
     return FirebaseFirestore.instance
         .collection('users')
-        .where('city', isEqualTo: city) // Filter by city name
-        .where('isOnline', isEqualTo: true) // Ensure the user is online
+        .where('city', isEqualTo: city)
         .snapshots()
-        .map((snapshot) => snapshot.docs.where((doc) {
-      var userData = doc.data() as Map<String, dynamic>;
-      var distance = calculateDistance(
-        userLat,
-        userLon,
-        userData['latitude'],
-        userData['longitude'],
-      );
-      return distance <= distanceThreshold; // Check if within the distance threshold
-    }).toList());
+        .map((snapshot) => snapshot.docs); // Keep it as DocumentSnapshot
   }
-
-  // void updateMarkers(List<DocumentSnapshot> userDocs) async {
-  //   Set<Marker> newMarkers = {};
-  //
-  //   for (var doc in userDocs) {
-  //     var userData = doc.data() as Map<String, dynamic>;
-  //     double? lat = userData['latitude'] as double?;
-  //     double? lon = userData['longitude'] as double?;
-  //
-  //     if (lat != null && lon != null) {
-  //       final markerIcon = await createCustomMarker(userData['name']);
-  //
-  //       var userMarker = Marker(
-  //         markerId: MarkerId(doc.id),
-  //         position: LatLng(lat, lon),
-  //         icon: BitmapDescriptor.fromBytes(markerIcon),
-  //         onTap: () {
-  //           _showChallengeModal(context, userData);
-  //         },
-  //       );
-  //       newMarkers.add(userMarker);
-  //     }
-  //   }
-  //
-  //   setState(() {
-  //     markers.clear();
-  //     markers = newMarkers;
-  //   });
-  // }
-
-
 
   double _currentZoomLevel = 30.0; // Starting with a default zoom level
 
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     for (var doc in userDocs) {
       var userData = doc.data() as Map<String, dynamic>;
+      if (userData['uid'] == currentUserId) continue;
+
       double? lat = userData['latitude'] as double?;
       double? lon = userData['longitude'] as double?;
 
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
-        final Uint8List markerIcon = await createCustomMarker(userData['name'], _currentZoomLevel);
+        final Uint8List markerIcon =
+            await createCustomMarker(userData['name'], _currentZoomLevel);
 
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
@@ -824,56 +758,6 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-
-
-  //
-  // Future<void> updateMarkers(List<DocumentSnapshot> userDocs) async {
-  //   Set<Marker> newMarkers = {};
-  //
-  //   for (var doc in userDocs) {
-  //     var userData = doc.data() as Map<String, dynamic>;
-  //     double? lat = userData['latitude'] as double?;
-  //     double? lon = userData['longitude'] as double?;
-  //
-  //     if (lat != null && lon != null) {
-  //       // Use the current zoom level or a default value if you don't have one
-  //       double zoomLevel = _currentZoomLevel; // Make sure this variable is defined and updated based on the map zoom level
-  //       final Uint8List markerIcon = await createCustomMarker(userData['name'], zoomLevel);
-  //
-  //       var userMarker = Marker(
-  //         markerId: MarkerId(doc.id),
-  //         position: LatLng(lat, lon),
-  //         icon: BitmapDescriptor.fromBytes(markerIcon),
-  //         onTap: () {
-  //           // Your tap callback here
-  //           _showChallengeModal(context, userData);
-  //         },
-  //       );
-  //       newMarkers.add(userMarker);
-  //     }
-  //   }
-  //
-  //   // Using setState only if this code is within a StatefulWidget and you want to update the UI
-  //   setState(() {
-  //     markers.clear();
-  //     markers.addAll(newMarkers);
-  //   });
-  // }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
     if (userId == null) return;
@@ -885,20 +769,67 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
+  void fetchInitialUserProfiles() async {
+    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    print("current userid from initialuser $currentUserId");
+    var querySnapshot = await FirebaseFirestore.instance.collection('users').get();
+    var allProfiles = querySnapshot.docs
+        .where((doc) => doc.data()['uid'] != currentUserId)
+        .map((doc) => doc.data())
+        .toList();
+
+    setState(() {
+      fetchedUserProfiles = allProfiles;
+      searchUserProfiles = allProfiles;
+    });
+  }
+
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
+      // var filteredProfiles = query.isEmpty
+      //     ? fetchedUserProfiles
+      //     : fetchedUserProfiles.where((user) {
+      //         String name = user['name'].toLowerCase();
+      //         return name.contains(query.toLowerCase());
+      //       }).toList();
+
+
+      var filteredProfiles = fetchedUserProfiles.where((user) {
+        String name = user['name'].toLowerCase();
+        String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
+        return user['uid'] != currentUserId && name.contains(query.toLowerCase());
+      }).toList();
+
+
       setState(() {
-        searchText = query;
-        // onlineUsersStream = fetchOnlineUsers(userLat, userLon);
+        searchUserProfiles = filteredProfiles;
       });
     });
   }
 
+  Future<List<Map<String, dynamic>>> fetchUsersByName(String searchName) async {
+    // Perform a case-insensitive search
+    String searchKey = searchName.toLowerCase();
+
+    // Query Firestore for users whose names start with the search term
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .where('name_lowercase', isGreaterThanOrEqualTo: searchKey)
+        .where('name_lowercase', isLessThanOrEqualTo: searchKey + '\uf8ff')
+        .get();
+
+    // Map the documents to a List of Maps
+    List<Map<String, dynamic>> userProfiles = querySnapshot.docs
+        .map((doc) => doc.data() as Map<String, dynamic>)
+        .toList();
+
+    return userProfiles;
+  }
 
   Future<int> getUserChessCoins(String userId) async {
     DocumentSnapshot userDoc =
-    await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
 
     if (userDoc.exists) {
       // Cast the data to Map<String, dynamic> before accessing its properties
@@ -909,15 +840,11 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
-
-
-void _showChallengeModal(
+  void _showChallengeModal(
       BuildContext context, Map<String, dynamic> opponentData) {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
     // Add this check at the beginning of the method
     if (opponentData['uid'] == currentUserId) {
-      print("45367284975632-54578475-2745897457-89");
       return; // Exit the function if the user is trying to challenge themselves
     }
     int currentUserChessCoins = 0;
@@ -948,7 +875,8 @@ void _showChallengeModal(
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -962,14 +890,18 @@ void _showChallengeModal(
                         fontFamily: 'Poppins',
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         CircleAvatar(
-                          radius: 30,
-                          backgroundImage: AssetImage(opponentData['avatar']),
+                          radius: 40,
+                          backgroundImage: NetworkImage(opponentData['avatar']),
+                          onBackgroundImageError: (exception, stackTrace) {
+                            // // Handle the error, e.g., by setting a placeholder image
+                            // print("exception avatar $exception");
+                          },
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             opponentData['name'],
@@ -980,6 +912,21 @@ void _showChallengeModal(
                             ),
                           ),
                         ),
+
+                        // Message Icon Button
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          color: Colors.blue,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MessageScreen(opponentUId: opponentData['uid']),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
                         ElevatedButton(
                           onPressed: () {
                             String? userId = opponentData['uid'];
@@ -998,7 +945,7 @@ void _showChallengeModal(
                     ),
                     SizedBox(height: 20),
                     Container(
-                      padding: EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: Colors.grey[200],
                         borderRadius: BorderRadius.circular(12),
@@ -1055,6 +1002,7 @@ void _showChallengeModal(
                       ),
                     ),
                     SizedBox(height: 20),
+
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
@@ -1062,40 +1010,52 @@ void _showChallengeModal(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 30, vertical: 20),
                       ),
-                      onPressed: isOnline && (isChallengeable || currentGameId != null) && isButtonEnabled
+                      onPressed: isOnline &&
+                              (isChallengeable || currentGameId != null) &&
+                              (isChallengeable ? isButtonEnabled : true)
                           ? () async {
-                        int betAmountInt = int.parse(localBetAmount.replaceAll('\$', ''));
-                        await fetchAndUpdateChessCoins();
-                        if (currentUserChessCoins < betAmountInt) {
-                          showInsufficientFundsDialog("You do not have enough Chess Coins to place this bet.");
-                        } else if (opponentChessCoins < betAmountInt) {
-                          showInsufficientFundsDialog("Opponent does not have enough Chess Coins for this bet.");
-                        }
-                        else {
-                          if (isChallengeable) {
-                            setModalState(() =>
-                            challengeButtonCooldown[opponentId] = false);
-                            await _sendChallenge(
-                                opponentData['uid'], localBetAmount,
-                                localTimerValue);
-                            Navigator.pop(context);
-                            Timer(Duration(seconds: 30), () {
-                              setState(() =>
-                              challengeButtonCooldown[opponentId] = true);
-                            });
-                          } else if (currentGameId != null) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    ChessBoard(gameId: currentGameId, isSpectator: true),
-                                // ChessBoard(gameId: currentGameId),
-                              ),
-                            );
-                          }
-                        }
-                      }
-                          : null, // Disable the button if conditions are not met
+                              // Only perform the coin check if the user is challenging, not watching
+                              if (isChallengeable) {
+                                int betAmountInt = int.parse(
+                                    localBetAmount.replaceAll('\$', ''));
+                                await fetchAndUpdateChessCoins();
+                                if (currentUserChessCoins < betAmountInt) {
+                                  showInsufficientFundsDialog(
+                                      "You do not have enough Chess Coins to place this bet.");
+                                } else if (opponentChessCoins < betAmountInt) {
+                                  showInsufficientFundsDialog(
+                                      "Opponent does not have enough Chess Coins for this bet.");
+                                } else {
+                                  // Rest of the challenge logic
+                                  setModalState(() =>
+                                      challengeButtonCooldown[opponentId] =
+                                          false);
+                                  await _sendChallenge(opponentData['uid'],
+                                      localBetAmount, localTimerValue);
+                                  Navigator.pop(context);
+                                  Timer(Duration(seconds: 30), () {
+                                    setState(() =>
+                                        challengeButtonCooldown[opponentId] =
+                                            true);
+                                  });
+                                }
+                              } else if (currentGameId != null) {
+                                // Bypass the coin check for watching
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        // ChessBoard(gameId: currentGameId, isSpectator: true),
+                                        ChessBoard(
+                                            gameId: currentGameId,
+                                            isSpectator: true,
+                                            opponentUID: player1Id),
+                                  ),
+                                );
+                              }
+                            }
+                          : null,
+                      // Disable the button if conditions are not met
                       child: Text(isOnline
                           ? (isChallengeable ? 'Challenge' : 'Watch Game')
                           : 'Player Offline'),
@@ -1110,9 +1070,8 @@ void _showChallengeModal(
     );
   }
 
-
-  Future<void> _sendChallenge(String opponentId, String betAmount, String localTimerValue) async {
-
+  Future<void> _sendChallenge(
+      String opponentId, String betAmount, String localTimerValue) async {
     final currentUserId = FirebaseAuth.instance.currentUser?.uid;
     if (currentUserId != null) {
       try {
@@ -1191,14 +1150,11 @@ void _showChallengeModal(
     }
   }
 
-
   void _onMapCreated(GoogleMapController controller) {
     mapController = controller;
     _determinePosition();
     mapController?.setMapStyle(_mapStyle);
   }
-
-
 
   Stream<int> getUnreadMessageCountStream(String userId) {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
@@ -1217,215 +1173,297 @@ void _showChallengeModal(
     });
   }
 
-
-
-
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
     return sortedIds.join('_');
+  }
 
+
+  void _initiateDataStreams() {
+    setupUserListener();
+    listenToChallengeRequests();
+    fetchCurrentUserChessCoins();
+    if (kIsWeb) {
+      getUserLocationForWeb();
+    } else {
+      _determinePosition().then((_) {
+        setupOpponentsListener();
+      });
+    }
+  }
+
+  Future<void> _refreshData() async {
+    setState(() {
+      // Cancel existing stream subscriptions
+      userSubscription.cancel();
+      challengeRequestsSubscription.cancel();
+      // Re-initiate the data streams
+      _initiateDataStreams();
+    });
   }
 
   @override
-Widget build(BuildContext context) {
-  var currentUser = FirebaseAuth.instance.currentUser;
+  Widget build(BuildContext context) {
+    final FirebaseAuth auth = FirebaseAuth.instance;
+    final User? currentUser = auth.currentUser;
+    final String userId = currentUser?.uid ?? '';
 
-  return Scaffold(
-    backgroundColor: const Color.fromARGB(255, 223, 225, 237),
-    body: SafeArea(
-      child: Stack(
-        children: [
-          Column(
-            children: <Widget>[
-              Expanded(
-                flex: 3, // 75% of the screen
-                child: GoogleMap(
-                  onMapCreated: _onMapCreated,
-                  initialCameraPosition: const CameraPosition(
-                    target: LatLng(0, 0),
-                    zoom: 15,
-                  ),
-                  markers: markers,
-                ),
-              ),
-
-              if (currentUser != null) UserProfileHeader(userId: currentUser.uid),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                child: TextField(
-                  onChanged: _onSearchChanged,
-                  decoration: InputDecoration(
-                    labelText: 'Search Players in $userLocation',
-                    hintText: 'Enter player name...',
-                    prefixIcon: const Icon(Icons.search),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.blueGrey.shade800),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                  ),
-                ),
-              ),
-              Text(
-                'Players in $userLocation',
-                style: const TextStyle(
-                  fontFamily: 'Poppins',
-                  color: Color.fromARGB(255, 12, 4, 4),
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Expanded(
-                  child: StreamBuilder<List<DocumentSnapshot>>(
-                    stream: onlineUsersStream,
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                        return const Center(child: Text('No players Here'));
-                      }
-
-                      var currentUser = FirebaseAuth.instance.currentUser;
-                      var users = snapshot.data!
-                          .where((doc) => doc.id != currentUser!.uid)
-                          .map((doc) => doc.data() as Map<String, dynamic>)
-                          .toList();
-
-                      // Sorting users based on 'isOnline' status
-                      users.sort((a, b) {
-                        bool isOnlineA = a['isOnline'] ?? false;
-                        bool isOnlineB = b['isOnline'] ?? false;
-                        if (isOnlineA == isOnlineB) return 0;
-                        if (isOnlineA && !isOnlineB) return -1;
-                        return 1;
-                      });
-
-                      return GridView.builder(
-                        padding: const EdgeInsets.all(16),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          crossAxisSpacing: 16,
-                          mainAxisSpacing: 16,
-                          childAspectRatio: 1,
+    return Scaffold(
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+      backgroundColor: const Color.fromARGB(255, 223, 225, 237),
+      child: SafeArea(
+        child: Stack(
+          // Use Stack to overlay widgets
+          children: [
+            Row(
+              // Use Row to divide the screen into two sections
+              children: [
+                // Left section - Google Map (60% width)
+                Expanded(
+                    flex: 6,
+                    child: Padding(
+                      padding: const EdgeInsets.only(
+                          left: 13.0, top: 13.0, bottom: 13.0),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(
+                            40), // Adjust the radius as needed
+                        child: GoogleMap(
+                          // Your GoogleMap properties here
+                          // padding: const EdgeInsets.all(20),
+                          onMapCreated: _onMapCreated,
+                          initialCameraPosition: const CameraPosition(
+                            target: LatLng(0, 0),
+                            zoom: 45,
+                          ),
+                          markers: markers,
                         ),
-                        itemCount: users.length,
-                        itemBuilder: (context, index) {
-                          var userData = users[index];
-                          String avatarUrl = userData['avatar'];
-                          bool isOnline = userData['isOnline'] ?? false;
-                          String userId = userData['uid']; // Assuming each user has a unique 'uid'
+                      ),
+                    )),
 
-                          // Inside GridView.builder
-                          return StreamBuilder<int>(
-                            stream: getUnreadMessageCountStream(userId),
-                            builder: (context, snapshot) {
-                              int unreadCount = snapshot.data ?? 0;
-                              return GestureDetector(
-                                onTap: () => _showChallengeModal(context, userData),
-                                child: Column(
-                                  children: <Widget>[
-                                    Stack(
-                                      alignment: Alignment.topRight,
-                                      children: <Widget>[
-                                        CircleAvatar(
-                                          backgroundImage: AssetImage(avatarUrl),
-                                          radius: 36,
-                                          backgroundColor: Colors
-                                              .transparent, // Ensures the background is transparent
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              shape: BoxShape.circle,
-                                              image: DecorationImage(
-                                                image: AssetImage(avatarUrl),
-                                                fit: BoxFit.cover,
-                                                colorFilter: isOnline
-                                                    ? null
-                                                    : const ColorFilter.mode(
-                                                    Colors.grey,
-                                                    BlendMode
-                                                        .saturation), // Dim the avatar if offline
-                                              ),
-                                              border: Border.all(
-                                                color: isOnline
-                                                    ? Colors.green
-                                                    : Colors.grey
-                                                    .shade500, // Red border for offline users
-                                                width: 3,
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                // Right section - User Avatar, Search, and List (40% width)
+                Expanded(
+                  flex: 4,
+                  child: Column(
+                    children: [
+                      if (currentUser != null)
+                        UserProfileHeader(userId: currentUser.uid),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 20),
+                        child: TextField(
+                          onChanged: _onSearchChanged,
+                          decoration: InputDecoration(
+                            hintText: 'Enter player name...',
+                            prefixIcon: const Icon(Icons.search),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide:
+                                  BorderSide(color: Colors.blueGrey.shade800),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                                vertical: 10, horizontal: 10),
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                          ),
+                        ),
+                      ),
+                      Text(
+                        'Players in $userLocation',
+                        style: const TextStyle(
+                          fontFamily: 'Poppins',
+                          color: Color.fromARGB(255, 12, 4, 4),
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
-                                        // Unread count badge
-                                        if (unreadCount > 0)
-                                          Positioned(
-                                            right: 0,
-                                            child: Container(
-                                              padding: EdgeInsets.all(6),
-                                              decoration: const BoxDecoration(
-                                                color: Colors.red,
-                                                shape: BoxShape.circle,
-                                              ),
-                                              child: Text(
-                                                '$unreadCount',
-                                                style: TextStyle(color: Colors.white, fontSize: 12),
-                                              ),
-                                            ),
-                                          ),
-                                      ],
-                                    ),
-                                    const SizedBox(height: 6),
-                                    Text(
-                                      userData['name'] ?? 'Username',
-                                      style: const TextStyle(
-                                        fontFamily: 'Poppins',
-                                        color: Color.fromARGB(255, 12, 6, 6),
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                          );
 
-                        },
-                      );
-                    },
+                      Expanded(
+                        child: StreamBuilder<List<DocumentSnapshot>>(
+                          stream: onlineUsersStream,
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              return const Center(child: Text('No players here.'));
+                            }
+
+                            // Filter out the current user's profile from the list
+                            List<Map<String, dynamic>> users = snapshot.data!
+                                .map((doc) => doc.data() as Map<String, dynamic>)
+                                .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid) // Filter out current user
+                                .toList();
+
+                            // Update searchUserProfiles here, excluding the current user
+                            searchUserProfiles = users;
+
+                            return GridView.builder(
+                              padding: const EdgeInsets.all(16),
+                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 4,
+                                crossAxisSpacing: 5,
+                                mainAxisSpacing: 5,
+                                childAspectRatio: 1,
+                              ),
+                              // GridView.builder properties...
+                              itemCount: searchUserProfiles.length,
+                              itemBuilder: (context, index) {
+                                var userData = searchUserProfiles[index];
+                                return buildPlayerTile(userData, context);
+                              },
+                            );
+                          },
+                        ),
+                      ),
+
+                    ],
                   ),
                 ),
-              // ... The rest of your existing code for the user list ...
+              ],
+            ),
+
+
+            Positioned(
+              top: 10,
+              right: 10,
+              child: StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(userId)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const CircularProgressIndicator();
+                  }
+
+                  if (!snapshot.hasData || !snapshot.data!.exists) {
+                    return const Text('Loading...');
+                  }
+
+                  int chessCoins = (snapshot.data!.data()
+                          as Map<String, dynamic>)['chessCoins'] ??
+                      0;
+
+                  return Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.white, // Background color for the container
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.5),
+                          spreadRadius: 1,
+                          blurRadius: 1,
+                          offset: Offset(0, 1), // changes position of shadow
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '$chessCoins',
+                          style: const TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const CircleAvatar(
+                          backgroundImage: AssetImage('assets/NBC-token.png'),
+                          radius: 10,
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    ),
+    );
+  }
+
+  Widget buildPlayerTile(Map<String, dynamic> userData, BuildContext context) {
+    String avatarUrl = userData['avatar'];
+    bool isOnline = userData['isOnline'] ?? false;
+    String userId = userData['uid']; // Assuming each user has a unique 'uid'
+
+    // Check if the tile is for the current user
+    if (userData['uid'] == FirebaseAuth.instance.currentUser?.uid) {
+      // Return an empty container or some other appropriate widget
+      return Container();
+    }
+
+    return GestureDetector(
+      onTap: () => _showChallengeModal(context, userData),
+      child: Column(
+        children: <Widget>[
+          Stack(
+            alignment: Alignment.topRight,
+            children: <Widget>[
+              CircleAvatar(
+                backgroundImage: NetworkImage(avatarUrl),
+                radius: 36,
+                backgroundColor: Colors.transparent,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                      image: NetworkImage(avatarUrl),
+                      fit: BoxFit.cover,
+                      colorFilter: isOnline
+                          ? null
+                          : const ColorFilter.mode(
+                              Colors.grey, BlendMode.saturation),
+                    ),
+                    border: Border.all(
+                      color: isOnline ? Colors.green : Colors.grey.shade500,
+                      width: 3,
+                    ),
+                  ),
+                ),
+              ),
+              StreamBuilder<int>(
+                stream: getUnreadMessageCountStream(userId),
+                builder: (context, snapshot) {
+                  int unreadCount = snapshot.data ?? 0;
+                  if (unreadCount > 0) {
+                    return Positioned(
+                      right: 0,
+                      child: Container(
+                        padding: EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Text(
+                          '$unreadCount',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12),
+                        ),
+                      ),
+                    );
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
             ],
           ),
-          Positioned(
-            top: 20,
-            right: 5,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    '$currentUserChessCoins',
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const CircleAvatar(
-                    backgroundImage: AssetImage('assets/NBC-token.png'),
-                    radius: 10,
-                  ),
-                ],
-              ),
+          const SizedBox(height: 6),
+          Text(
+            userData['name'] ?? 'Username',
+            style: TextStyle(
+              fontFamily: 'Poppins',
+              color: isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
       ),
-    ),
-  );
-}
-
+    );
+  }
 }
 
 class UserProfileHeader extends StatelessWidget {
@@ -1451,7 +1489,7 @@ class UserProfileHeader extends StatelessWidget {
           String userName = snapshot.data!['name'] ?? 'Unknown User';
 
           return Padding(
-            padding: const EdgeInsets.only(top: 20.0, bottom: 10.0),
+            padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
             child: Column(
               children: [
                 GestureDetector(
@@ -1461,12 +1499,12 @@ class UserProfileHeader extends StatelessWidget {
                     ),
                   ),
                   child: CircleAvatar(
-                    radius: 60,
-                    backgroundImage: AssetImage(
+                    radius: 40,
+                    backgroundImage: NetworkImage(
                         avatarUrl), // Using NetworkImage for the avatar
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
                 Text(
                   userName,
                   style: const TextStyle(

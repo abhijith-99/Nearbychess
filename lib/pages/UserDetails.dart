@@ -5,9 +5,6 @@
 
   import 'message_scren.dart'; // Make sure this import is correct
 
-  // ... (MatchRecord class and StatisticText class as defined earlier)
-
-
   // Define the MatchRecord class
   class MatchRecord {
     final String opponentUid;
@@ -19,6 +16,11 @@
 
     factory MatchRecord.fromFirestore(DocumentSnapshot matchDoc) {
       Map<String, dynamic> data = matchDoc.data() as Map<String, dynamic>;
+
+      print("Firestore Data: $data");
+      double betValue = (data['bet'] ?? 0).toDouble();
+      print("Parsed Bet Value: $betValue");
+
       return MatchRecord(
         opponentUid: data['opponentUid'] ?? '',
         result: data['result'] ?? '',
@@ -101,7 +103,7 @@
           .doc(userId)
           .collection('matches')
           .get();
-
+      print("Fetched ${matchesQuerySnapshot.docs.length} matches");
       return matchesQuerySnapshot.docs
           .map((doc) => MatchRecord.fromFirestore(doc))
           .toList()
@@ -168,8 +170,8 @@
                         decoration: BoxDecoration(
                           image: DecorationImage(
                             image: userDetails != null && userDetails!['avatar'] != null
-                                ? AssetImage(userDetails!['avatar'])
-                                : const AssetImage('assets/avatars/default.png'),
+                                ? NetworkImage(userDetails!['avatar'])
+                                : const NetworkImage('assets/avatars/default.png'),
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -250,6 +252,7 @@
                               StatisticText(
                                 label: '${stats['wins']} Won',
                                 value: stats['winPercentage'].toStringAsFixed(1) + '%',
+
                                 color: Colors.green,
                               ),
                               StatisticText(
@@ -338,6 +341,8 @@
                     itemCount: snapshot.data!.length,
                     itemBuilder: (context, index) {
                       final match = snapshot.data![index];
+
+                      print('Match Result: ${match.result}, Bet: ${match.bet}');
                       return FutureBuilder<Map<String, dynamic>>(
                         future: getOpponentDetails(match.opponentUid),
                         builder: (context, opponentSnapshot) {
@@ -349,24 +354,6 @@
                             return const Card(child: ListTile(title: Text('Opponent not found')));
                           }
                           var opponentData = opponentSnapshot.data!;
-                          String betDisplay;
-                          Color betColor;
-
-                          switch (match.result) {
-                            case 'win':
-                              betDisplay = '+ ₹${match.bet.toStringAsFixed(2)}';
-                              betColor = Colors.green;
-                              break;
-                            case 'lose':
-                              betDisplay = '- ₹${match.bet.toStringAsFixed(2)}';
-                              betColor = Colors.red;
-                              break;
-                            default: // For 'draw' or any other result
-                              betDisplay = '₹0.00';
-                              betColor = Colors.grey;
-                              break;
-                          }
-
 
                           return Card(
                             margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 10.0),
@@ -377,7 +364,7 @@
                             child: ListTile(
                               contentPadding: const EdgeInsets.symmetric(vertical: 10.0, horizontal: 15.0),
                               leading: CircleAvatar(
-                                backgroundImage: AssetImage(opponentData['avatar']),
+                                backgroundImage: NetworkImage(opponentData['avatar']),
                                 radius: 20,
                               ),
                               title: Text(opponentData['name']),
@@ -397,7 +384,7 @@
                                     ),
                                     const SizedBox(width: 8.0),
                                     Text(
-                                      match.result == 'win' ? '+ ₹${match.bet.toStringAsFixed(2)}' : match.result == 'lose' ? '- ₹${match.bet.toStringAsFixed(2)}' : '₹0.00',
+                                      match.result == 'win' ? '+ ${match.bet.toStringAsFixed(2)} NBC' : match.result == 'lose' ? '- ${match.bet.toStringAsFixed(2)} NBC' : '₹0.00 NBC',
                                       style: TextStyle(
                                           color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
                                           fontWeight: FontWeight.bold

@@ -42,9 +42,43 @@
 <!--<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDKRk-x5UaAQlGA8OVR-0cN_tgRVfoGAPI"></script>-->
 
   <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDhyRxEwMSxSMVlD4oThcT2bT4e3k-cqhA"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script>
+  function onGAPILoad() {
+    gapi.load('client:auth2', {
+      callback: function() {
+        // Initialize the GAPI client
+        gapi.client.init({
+          apiKey: 'AIzaSyDhyRxEwMSxSMVlD4oThcT2bT4e3k-cqhA', // Replace with your API key
+          clientId: '820296910788-i6oe69qb6b8fni7uq4e73eu2bp2nm2kl.apps.googleusercontent.com', // Replace with your client ID
+          scope: 'https://www.googleapis.com/auth/plus.login', // Adjust scope according to your needs
+        }).then(function () {
+          console.log('GAPI client initialized.');
+          // Add additional initialization or sign-in code here if needed
+        }, function(error) {
+          console.error('Error initializing GAPI client:', error);
+        });
+      },
+      error: function() {
+        console.error('GAPI client failed to load!');
+      },
+      timeout: 5000, // 5 seconds.
+      timeout: function() {
+        console.error('GAPI client could not load in a timely manner!');
+      }
+    });
+  }
+</script>
+
 
   <script src="../assets/new_map.json" type="application/json"></script>
 
+
+  <!-- for web render run -->
+
+  <base href="$FLUTTER_BASE_HREF">
+  <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2"></script>
+  <script>window.flutterWebRenderer = 'html';</script>
 
   <!-- This script adds the flutter initialization JS code -->
   <script src="flutter.js" defer></script>

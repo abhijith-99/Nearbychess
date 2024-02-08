@@ -4,11 +4,14 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   cloud_firestore
+  emoji_picker_flutter
   firebase_auth
   firebase_core
   firebase_storage
   geolocator_windows
   permission_handler_windows
+  share_plus
+  url_launcher_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
