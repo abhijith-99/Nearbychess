@@ -20,6 +20,7 @@ import 'dart:math' show asin, cos, max, sqrt;
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'geocoding_web.dart';
+import 'message_scren.dart';
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -124,9 +125,6 @@ class UserHomePageState extends State<UserHomePage>
     return uint8List;
   }
 
-  void _onCameraMove(CameraPosition position) {
-    final double _currentZoomLevel = position.zoom;
-  }
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -181,9 +179,6 @@ class UserHomePageState extends State<UserHomePage>
           markerId: const MarkerId("current_location"),
           position:
               LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-
-          // icon: BitmapDescriptor.defaultMarker,
-
           icon: BitmapDescriptor.fromBytes(markerIcon),
         ),
       );
@@ -895,7 +890,7 @@ class UserHomePageState extends State<UserHomePage>
                         fontFamily: 'Poppins',
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 20),
                     Row(
                       children: [
                         CircleAvatar(
@@ -906,7 +901,7 @@ class UserHomePageState extends State<UserHomePage>
                             // print("exception avatar $exception");
                           },
                         ),
-                        SizedBox(width: 10),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             opponentData['name'],
@@ -917,6 +912,21 @@ class UserHomePageState extends State<UserHomePage>
                             ),
                           ),
                         ),
+
+                        // Message Icon Button
+                        IconButton(
+                          icon: const Icon(Icons.chat_bubble_outline),
+                          color: Colors.blue,
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MessageScreen(opponentUId: opponentData['uid']),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 8),
                         ElevatedButton(
                           onPressed: () {
                             String? userId = opponentData['uid'];
@@ -1303,7 +1313,6 @@ class UserHomePageState extends State<UserHomePage>
                           },
                         ),
                       ),
-
 
                     ],
                   ),

@@ -146,7 +146,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22.0), // Ensure this matches other buttons
       child: Container(
-        width: 22, // Set the width of the button (adjust as needed)
+        width: 30, // Set the width of the button (adjust as needed)
         child: ElevatedButton(
           onPressed: () {
             setState(() {
@@ -166,7 +166,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   Widget submitButton(String text, VoidCallback onPressed) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20.0),
-
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -183,7 +182,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
         ),
       ),
     );
-
   }
 
 
