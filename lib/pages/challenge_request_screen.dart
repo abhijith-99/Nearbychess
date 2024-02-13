@@ -136,7 +136,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                     // User has left the Chessboard, update the inGame status
                     updateInGameState(false);
                   });
-                  print("Navigating to ChessBoard with opponent UIDfrom challenge request: ${widget.opponentUID}");
+                  print("Navigating to ChessBoard with opponent UID from challenge request: ${widget.opponentUID}");
 
                 },
                 style: ElevatedButton.styleFrom(
@@ -158,7 +158,6 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                   0.7, // Adjust the width as needed
               child: ElevatedButton(
                 onPressed: () {
-                  // Reject the challenge
                   // Reject the challenge
                   Navigator.pop(context,
                       false); // Pass false to indicate the challenge is rejected

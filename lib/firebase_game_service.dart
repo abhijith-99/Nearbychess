@@ -19,7 +19,7 @@ class FirebaseGameService {
       'challengeId': challengeId,
       'betAmount': betAmount,
       'localTimerValue': localTimerValueStr, // Store as a string
-
+      'initialMovesCompleted': false
     });
 
     // If you still need to update Firestore with the Realtime Database key

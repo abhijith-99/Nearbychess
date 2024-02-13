@@ -1,7 +1,5 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:mychessapp/pages/ChessBoard.dart';
 
 // FirebaseServices: A class to encapsulate all Firebase-related operations for a chess game.
 class FirebaseServices {
@@ -20,8 +18,7 @@ class FirebaseServices {
         // Extract bet amount as a string, defaulting to '0' if not found.
         String betAmountString = gameData['betAmount']?.toString() ?? '0';
         // Parse the string to a double and return it.
-        return double.tryParse(
-            betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ??
+        return double.tryParse(betAmountString.replaceAll(RegExp(r'[^0-9.]'), '')) ??
             0.0;
       }
     } catch (e) {
@@ -30,6 +27,7 @@ class FirebaseServices {
     }
     return 0.0;
   }
+
 
   // Updates the match history for both players in Firestore.
   Future<void> updateMatchHistory({

@@ -126,15 +126,23 @@ class ChessBoardUI {
     );
   }
 
-  static String _formatTime(int totalSeconds) {
+  // static String _formatTime(int totalSeconds) {
+  //   double minutes = ((totalSeconds / 1000) / 60);
+  //   double seconds = ((totalSeconds / 1000) % 60);
+  //   return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  // }
+
+  static String _formatTime(int totalMilliseconds) {
+    int totalSeconds = totalMilliseconds ~/ 1000; // Convert milliseconds to seconds
     int minutes = totalSeconds ~/ 60;
     int seconds = totalSeconds % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+
   static Widget _buildTimer(bool isActive, String time) {
     return AnimatedContainer(
-      duration: Duration(milliseconds: 500),
+      duration: const Duration(seconds: 1),
       curve: Curves.easeInOut,
       width: 70,
       height: 35,
