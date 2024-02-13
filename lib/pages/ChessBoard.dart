@@ -419,7 +419,7 @@ class _ChessBoardState extends State<ChessBoard>
     final String localTimerValueString = timerValueSnapshot.value as String;
 
     // Assuming localTimerValue is in minutes; convert to milliseconds
-    final int localTimerValue = int.tryParse(localTimerValueString) ?? 10;
+    final int localTimerValue = int.tryParse(localTimerValueString) ?? 30;
 
     print("localimerdddddd$localTimerValue");
 
@@ -434,7 +434,6 @@ class _ChessBoardState extends State<ChessBoard>
 
     print("bltimeremaind$_blackTimeRemaining");
     print("dfdsatimervalieinmillief$timerValueInMilliseconds");
-
   }
 
   Future<void> fetchPlayerDetails() async {
