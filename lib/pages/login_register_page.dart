@@ -141,12 +141,11 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
 
-
   Widget mobileNumberButton() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 22.0), // Ensure this matches other buttons
       child: Container(
-        width: 30, // Set the width of the button (adjust as needed)
+        width: 10, // Set the width of the button (adjust as needed)
         child: ElevatedButton(
           onPressed: () {
             setState(() {
@@ -201,7 +200,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         SizedBox(
-          width: 320, // Adjust this width to control the starting point of the divider
+          width: 220, // Adjust this width to control the starting point of the divider
           child: Divider(color: Colors.grey, thickness: 1),
         ),
         Padding(
@@ -212,16 +211,12 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           ),
         ),
         SizedBox(
-          width: 320, // Adjust this width to control the ending point of the divider
+          width: 220, // Adjust this width to control the ending point of the divider
           child: Divider(color: Colors.grey, thickness: 1),
         ),
       ],
     );
   }
-
-
-
-
 
 
 
@@ -360,9 +355,11 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
 
-
   @override
   Widget build(BuildContext context) {
+    // Define a consistent width for buttons and input fields
+    double width = MediaQuery.of(context).size.width * 0.4; // 60% of screen width
+
     return MaterialApp(
       title: 'Account Creation',
       debugShowCheckedModeBanner: false,
@@ -384,122 +381,108 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                 color: Colors.black.withOpacity(0.7),
               ),
             ),
-            Row(
-              children: [
-                Expanded(
-                  flex: 1, // Empty space
-                  child: Container(), // Empty container
-                ),
-                Expanded(
-                  flex: 1, // Content space
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      AppBar(
-                        backgroundColor: Colors.transparent,
+            Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Image.asset(
+                      'assets/logo1.png',
+                      height: 300,
+                    ),
+                    const SizedBox(height: 60),
+                    if (!showPhoneNumberInput && !showOtpInput)
+                      SizedBox(
+                        width: width,
+                        child: mobileNumberButton(),
                       ),
-                      Expanded(
-                        child: SafeArea(
-                          child: SingleChildScrollView(
-                            padding: const EdgeInsets.all(16.0),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                Image.asset(
-                                  'assets/logo1.png',
-                                  height: 300,
-                                ),
-                                const SizedBox(height: 60),
-                                if (!showPhoneNumberInput && !showOtpInput)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 30.0),
-                                    child: mobileNumberButton(),
-                                  ),
-                                if (showPhoneNumberInput)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                    child: Row(
-                                      children: [
-                                        Expanded(
-                                          // Expanded widget for the text field
-                                          child: entryField('Enter phone number with +91', phoneController),
-                                        ),
-                                        const SizedBox(width: 1), // Spacing between the input field and the button
-                                        ElevatedButton(
-                                          onPressed: () {
-                                            verifyPhoneNumber();
-                                            setState(() {
-                                              showPhoneNumberInput = false;
-                                              showOtpInput = true;
-                                            });
-                                          },
-                                          style: ElevatedButton.styleFrom(
-                                            primary: Colors.transparent, // Transparent background for the button
-                                            onPrimary: Colors.white, // Icon color
-                                            shape: const CircleBorder(
-                                              side: BorderSide(color: Colors.white), // White border for the circular button
-                                            ),
-                                            padding: EdgeInsets.all(12), // Padding to make the button a circle
-                                            elevation: 2, // Remove shadow
-                                          ),
-                                          child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20), // SVG icon
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                if (showOtpInput)
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 10.0),
-                                    child: entryField('Enter OTP', otpController),
-                                  ),
-
-                                if (_verificationId.isNotEmpty)
-
-                                  submitButton('Verify OTP', signInWithOTP),
-
-                                const SizedBox(height: 10),
-                                customDividerWithText(), // Add the custom divider here
-                                const SizedBox(height: 10),
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 20.0),
-                                  child: googleSignInButton(),
-                                ),
-                                const SizedBox(height: 10),
-                                toggleSignUpSignInText(),
-                                if (errorMessage.isNotEmpty)
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 20),
-                                    child: Text(
-                                      errorMessage,
-                                      style: const TextStyle(color: Colors.red),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ),
-                              ],
+                    if (showPhoneNumberInput)
+                      SizedBox(
+                        width: width,
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: entryField('Enter phone number with +91', phoneController),
                             ),
-                          ),
+                            const SizedBox(width: 1),
+                            ElevatedButton(
+                              onPressed: () {
+                                verifyPhoneNumber();
+                                setState(() {
+                                  showPhoneNumberInput = false;
+                                  showOtpInput = true;
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary: Colors.transparent,
+                                onPrimary: Colors.white,
+                                shape: const CircleBorder(
+                                  side: BorderSide(color: Colors.white),
+                                ),
+                                padding: EdgeInsets.all(12),
+                                elevation: 2,
+                              ),
+                              child: SvgPicture.asset('assets/paper-plane-solid.svg', height: 20, width: 20),
+                            ),
+                          ],
                         ),
                       ),
-                    ],
+                    if (showOtpInput)
+                      Padding(
+                          padding: const EdgeInsets.only(bottom: 10.0), // Add top padding
+                      child:SizedBox(
+                        width: width,
+                        child: entryField('Enter OTP', otpController),
+                      ),
+                      ),
+                    if (_verificationId.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 10.0), // Optional: Added to ensure consistent spacing
+                        child: SizedBox(
+                          width: MediaQuery.of(context).size.width * 0.427, // Increased width to 70%
+                          child: submitButton('Verify OTP', signInWithOTP),
+                        ),
+                      ),
+                    const SizedBox(height: 10),
+                    customDividerWithText(),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: width,
+                      child: googleSignInButton(),
+                    ),
+                    const SizedBox(height: 10),
+                    toggleSignUpSignInText(),
+                    if (errorMessage.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 20),
+                        child: Text(
+                          errorMessage,
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+            if (_isSigningIn)
+              Positioned.fill(
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                  child: Container(
+                    color: Colors.black.withOpacity(0.5),
                   ),
                 ),
-
-                if (_isSigningIn)
-                  Positioned.fill(
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                      child: Container(
-                        color: Colors.black.withOpacity(0.5),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+              ),
           ],
         ),
       ),
     );
   }
+
+
+
+
 }

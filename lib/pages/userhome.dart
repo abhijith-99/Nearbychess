@@ -644,10 +644,12 @@ class UserHomePageState extends State<UserHomePage>
 
       setState(() {
         fetchedUserProfiles = updatedUserProfiles;
-        searchUserProfiles = List.from(updatedUserProfiles); // Update searchUserProfiles with filtered data
+        // searchUserProfiles = List.from(updatedUserProfiles);
       });
+
     });
   }
+
 
 
 
@@ -1019,7 +1021,7 @@ class UserHomePageState extends State<UserHomePage>
                           const SizedBox(height: 20),
                           DropdownButtonFormField<String>(
                             value: localTimerValue,
-                            items: ['5', '10', '15', '20'].map((String value) {
+                            items: ['5', '10', '15'].map((String value) {
                               return DropdownMenuItem<String>(
                                 value: value,
                                 child: Text('$value min'),
@@ -1384,7 +1386,7 @@ class UserHomePageState extends State<UserHomePage>
                     .snapshots(),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const CircularProgressIndicator();
+                    return Container();
                   }
 
                   if (!snapshot.hasData || !snapshot.data!.exists) {
@@ -1438,6 +1440,7 @@ class UserHomePageState extends State<UserHomePage>
     );
   }
 
+
   Widget buildPlayerTile(Map<String, dynamic> userData, BuildContext context) {
     String avatarUrl = userData['avatar'];
     bool isOnline = userData['isOnline'] ?? false;
@@ -1478,6 +1481,7 @@ class UserHomePageState extends State<UserHomePage>
                   ),
                 ),
               ),
+
               StreamBuilder<int>(
                 stream: getUnreadMessageCountStream(userId),
                 builder: (context, snapshot) {
@@ -1502,6 +1506,8 @@ class UserHomePageState extends State<UserHomePage>
                   return const SizedBox.shrink();
                 },
               ),
+
+
             ],
           ),
           const SizedBox(height: 6),
@@ -1571,11 +1577,7 @@ class UserProfileHeader extends StatelessWidget {
             ),
           );
         }
-        return const Padding(
-          padding: EdgeInsets.only(top: 20.0, bottom: 10.0),
-          child:
-              CircularProgressIndicator(), // Show loading indicator while fetching data
-        );
+        return Container();
       },
     );
   }

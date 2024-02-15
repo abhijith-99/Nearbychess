@@ -51,8 +51,6 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
-
-
   Future<int> getCurrentUserBalance(String userId) async {
     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
     if (userDoc.exists && userDoc.data() is Map<String, dynamic>) {

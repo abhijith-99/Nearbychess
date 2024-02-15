@@ -258,9 +258,9 @@ class _UserProfilePageState extends State<UserProfilePage> {
                 });
               },
               child: Container(
-                width: 50.0,
-                padding: EdgeInsets.all(2),
-                margin: EdgeInsets.symmetric(horizontal: 4),
+                width: 65.0,
+                padding: const EdgeInsets.all(2),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
                   border: Border.all(
                     color: _selectedAvatar == avatarUrls[index]
@@ -373,31 +373,79 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
+                            // GestureDetector(
+                            //   onTap: () {
+                            //     // Toggle the avatar selection view
+                            //     setState(() {
+                            //       isAvatarListVisible = !isAvatarListVisible;
+                            //     });
+                            //   },
+                            //   child: Container(
+                            //     padding: const EdgeInsets.all(2),
+                            //     // Space for the border
+                            //     decoration: BoxDecoration(
+                            //       shape: BoxShape.circle,
+                            //       border: Border.all(
+                            //         color: Colors.black, // Border color
+                            //         width: 1.0, // Border width
+                            //       ),
+                            //     ),
+                            //     child: CircleAvatar(
+                            //       backgroundImage: NetworkImage(_selectedAvatar!),
+                            //       radius: 22.0,
+                            //       // Adjust the size to fit your layout
+                            //       backgroundColor: Colors.white,
+                            //     ),
+                            //   ),
+                            // ),
+
+
+
+
+
+
+
                             GestureDetector(
                               onTap: () {
-                                // Toggle the avatar selection view
+                                // Handle your avatar selection or image picking logic here
                                 setState(() {
                                   isAvatarListVisible = !isAvatarListVisible;
                                 });
+
                               },
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                // Space for the border
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: Colors.black, // Border color
-                                    width: 1.0, // Border width
+                              child: Stack(
+                                alignment: Alignment.bottomRight, // Align the icon to the bottom right of the avatar
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(2), // Space for the border
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: Colors.black, // Border color
+                                        width: 1.0, // Border width
+                                      ),
+                                    ),
+                                    child: CircleAvatar(
+                                      backgroundImage: NetworkImage(_selectedAvatar!), // Assume _selectedAvatar is a valid URL
+                                      radius: 22.0, // Adjust the size to fit your layout
+                                      backgroundColor: Colors.white,
+                                    ),
                                   ),
-                                ),
-                                child: CircleAvatar(
-                                  backgroundImage: NetworkImage(_selectedAvatar!),
-                                  radius: 22.0,
-                                  // Adjust the size to fit your layout
-                                  backgroundColor: Colors.white,
-                                ),
+                                  Container(
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[300], // Background color for the icon container
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.camera_alt, // Pencil icon can be replaced with Icons.camera_alt for a camera icon
+                                      size: 17.0, // Adjust the size of the icon
+                                      color: Colors.black, // Icon color
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
+
                             const SizedBox(width: 10.0),
                             Expanded(
                               child: Container(

@@ -52,10 +52,25 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
       appBar: AppBar(
         title: const Text('User Profile'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: signOut,
+
+          Padding(
+            padding: const EdgeInsets.only(right: 16.0), // Adjust the value as needed
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.red, // Background color
+                borderRadius: BorderRadius.circular(4.0), // Rounded corners
+              ),
+              child: TextButton(
+                onPressed: signOut,
+                style: TextButton.styleFrom(
+                  primary: Colors.white, // Text color
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                ),
+                child: const Text('Logout'),
+              ),
+            ),
           ),
+
         ],
       ),
       body: FutureBuilder<Map<String, dynamic>?>(
@@ -76,33 +91,41 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                           backgroundImage: NetworkImage(userData['avatar'] ?? 'default_avatar_url'),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.edit),
+                          icon: const Icon(Icons.camera_alt),
                           onPressed: showAvatarSelection,
                         ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      userData['name'] ?? 'Username',
-                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+
+                    Row(
+                      mainAxisSize: MainAxisSize.min, // Use the minimum amount of space
+                      crossAxisAlignment: CrossAxisAlignment.center, // Center items vertically
+                      children: [
+                        Flexible(
+                          child: Text(
+                            userData['name'] ?? 'Username',
+                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis, // Add ellipsis for longer names
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit),
+                          onPressed: () => editUsername(userData['name'] ?? ''),
+                          // Optionally adjust padding if necessary
+                          padding: const EdgeInsets.symmetric(horizontal: 15), // Adjust the padding as needed
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.edit),
-                      onPressed: () => editUsername(userData['name'] ?? ''),
-                    ),
-
-
-
 
 
                     const SizedBox(height: 20),
-
 
                     // User Statistics
                     FutureBuilder<Map<String, dynamic>>(
                       future: fetchMatchStatistics(FirebaseAuth.instance.currentUser!.uid),
                       builder: (context, statsSnapshot) {
-                        if (!statsSnapshot.hasData) return const CircularProgressIndicator();
+                        if (!statsSnapshot.hasData) return Container();
                         var stats = statsSnapshot.data!;
                         return Column(
                           children: [
@@ -178,7 +201,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                     FutureBuilder<List<MatchRecord>>(
                       future: fetchUserMatches(FirebaseAuth.instance.currentUser!.uid),
                       builder: (context, matchSnapshot) {
-                        if (!matchSnapshot.hasData) return const CircularProgressIndicator();
+                        if (!matchSnapshot.hasData) return Container();
                         if (matchSnapshot.data!.isEmpty) return const Text('No match history available');
 
                         return ListView.builder(
@@ -247,7 +270,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
               return const Text('No user data available.');
             }
           } else {
-            return const Center(child: CircularProgressIndicator());
+            return Container();
           }
         },
       ),
@@ -337,11 +360,17 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
       context: context,
       barrierColor: Colors.black.withOpacity(0.5),
       builder: (BuildContext context) {
+
         return AlertDialog(
-          title: Text(
+          backgroundColor: Colors.brown.shade300, // Matching the chessboard-themed background color.
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15), // Rounded shape.
+            side: BorderSide(color: Colors.black, width: 2), // Black border for consistency.
+          ),
+          title: const Text(
             'Edit Username',
             style: TextStyle(
-              color: Theme.of(context).primaryColor,
+              color: Colors.white, // Text color changed to white for consistency.
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -351,9 +380,14 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
             decoration: InputDecoration(
               hintText: 'Enter new username',
               errorText: validateUsername(usernameController.text),
-              border: OutlineInputBorder(),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              border: const OutlineInputBorder(
+                borderSide: BorderSide(color: Colors.white), // Adjusted for theme consistency.
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)), // Hint text style for visibility.
             ),
+            style: const TextStyle(color: Colors.white), // Text input color for visibility.
+            cursorColor: Colors.white, // Cursor color for visibility.
             onChanged: (value) {
               // Trigger UI update for error message without using setState as it is a stateful builder
               (context as Element).markNeedsBuild();
@@ -361,20 +395,29 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
           ),
           actions: <Widget>[
             TextButton(
-              child: const Text('Cancel'),
+              style: TextButton.styleFrom(
+                primary: Colors.black, // Text color.
+                backgroundColor: Colors.white, // Button color for "Cancel".
+              ),
               onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
             ),
             TextButton(
-              child: const Text('Update'),
+              style: TextButton.styleFrom(
+                primary: Colors.white, // Text color for "Update".
+                backgroundColor: Colors.black, // Button color.
+              ),
               onPressed: () {
                 if (validateUsername(usernameController.text) == null) {
                   updateUsername(usernameController.text);
                   Navigator.of(context).pop();
                 }
               },
+              child: const Text('Update'),
             ),
           ],
         );
+
       },
     );
 
