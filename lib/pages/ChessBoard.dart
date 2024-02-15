@@ -33,6 +33,8 @@ class _ChessBoardState extends State<ChessBoard>
 {
 
   int lastMoveTimestamp = 0;
+  // Add this line to define a ScrollController
+  ScrollController _pgnScrollController = ScrollController();
 
   bool isMessageAreaOpen = false;
   late String? opponentUId = widget.opponentUID;
@@ -259,11 +261,19 @@ class _ChessBoardState extends State<ChessBoard>
 
     pgnNotation += '$move '; // Append the move to the game's PGN notation.
     firebaseServices.updatePGNNotationInRealTimeDatabase(pgnNotation); // Update the PGN notation in the Firebase Realtime Database.
-    setState(() {}); // Trigger UI update.
+    setState(() {
+    }); // Trigger UI update.
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pgnScrollController.hasClients) {
+        _pgnScrollController.animateTo(
+          _pgnScrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOut,
+        );
+      }
+    });
   }
-
-
-
 
 
   void updateTimerInFirebase(String gameId, String playerUID, int remainingTime) {
@@ -300,28 +310,21 @@ class _ChessBoardState extends State<ChessBoard>
     super.initState();
     print('Opponent UID from the init: ${widget.opponentUID}');
 
+
+
+    FirebaseDatabase.instance.ref('games/${widget.gameId}/lastMove').onValue.listen((event) {
+      final data = event.snapshot.value as Map<dynamic, dynamic>?;
+      if (data != null) {
+        setState(() {
+          lastMoveFrom = data['from'];
+          lastMoveTo = data['to'];
+        });
+      }
+    });
+
+
+
     firebaseServices = FirebaseServices(widget.gameId);
-
-    // if (widget.isSpectator) {
-    //   // Spectators only listen for timer updates, not start the timer themselves
-    //   listenForTimerUpdates(widget.gameId);
-    // } else {
-    //   // Players listen for the game to start before starting their timer
-    //   FirebaseDatabase.instance.ref('games/${widget.gameId}/initialMovesCompleted').onValue.listen((event) {
-    //     final gameStarted = event.snapshot.value as bool? ?? false;
-    //     if (gameStarted) {
-    //       // Ensure the timer is not already running to prevent restarting it
-    //       if (_timer == null) {
-    //         _startTimer();
-    //
-    //       }
-    //     }
-    //   });
-    // }
-
-
-
-
     fetchAndSetTimerValue().then((_) {
       // Existing listener for game start
       if (widget.isSpectator) {
@@ -760,7 +763,7 @@ class _ChessBoardState extends State<ChessBoard>
         // Chessboard-themed background color.
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(15), // Rounded shape.
-          side: BorderSide(color: Colors.black, width: 2), // Black border.
+          side: const BorderSide(color: Colors.black, width: 2), // Black border.
         ),
         title: const Text('Confirm', style: TextStyle(color: Colors.white)),
         // Dialog title.
@@ -874,7 +877,7 @@ class _ChessBoardState extends State<ChessBoard>
     boardSize = boardSize < 600 ? boardSize : 600; // Cap the board size at 600.
     // Adjust the board size for landscape mode if necessary.
     if (screenSize.height < screenSize.width) {
-      boardSize = screenSize.height * 0.6; // Adjust based on height in landscape mode.
+      boardSize = screenSize.height * 0.70; // Adjust based on height in landscape mode.
     }
 
     // Main scaffold widget of the app.
@@ -884,9 +887,6 @@ class _ChessBoardState extends State<ChessBoard>
         backgroundColor: const Color(0xffacacaf),
         // Background color of the app.
         appBar: AppBar(
-          title: const Text('NearbyChess'),
-          // Title of the app.
-          centerTitle: true,
           // Center the title.
           backgroundColor: Color(0xFF3c3d3e),
           actions: [
@@ -912,21 +912,36 @@ class _ChessBoardState extends State<ChessBoard>
             child: Container(
               color: const Color(0xFF595a5c),
               // Background color for the bottom strip of the AppBar.
-              width: double.infinity,
+              width: MediaQuery.of(context).size.width,
               // Full width.
+              // child: SingleChildScrollView(
+              //   scrollDirection: Axis.horizontal,
+              //   child: Padding(
+              //     padding: const EdgeInsets.all(4.0),
+              //     child: Text(
+              //       pgnNotation, // Display the PGN notation of the game.
+              //       style: const TextStyle(
+              //           fontSize: 14,
+              //           color: Color(0xFFc4c4c5),
+              //           fontWeight: FontWeight.bold),
+              //     ),
+              //   ),
+              // ),
+
+
+
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
+                controller: _pgnScrollController, // Assign the ScrollController here
                 child: Padding(
                   padding: const EdgeInsets.all(4.0),
                   child: Text(
                     pgnNotation, // Display the PGN notation of the game.
-                    style: const TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFFc4c4c5),
-                        fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 14, color: Color(0xFFc4c4c5), fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
+
             ),
           ),
         ),
@@ -972,7 +987,6 @@ class _ChessBoardState extends State<ChessBoard>
                             ),
                             itemCount: 64, // Total squares on the chessboard.
                             itemBuilder: (context, index) {
-                              // ... Existing chessboard square code ...
                               int rank, file;
                               if (isBoardFlipped) {
                                 // Flip calculation if the board is flipped.
@@ -1002,6 +1016,9 @@ class _ChessBoardState extends State<ChessBoard>
                               // Determine the label color (opposite of the square color).
                               Color labelColor =
                               squareColor == colorA ? colorB : colorA;
+                              if (squareName == lastMoveFrom || squareName == lastMoveTo) {
+                                squareColor = Colors.greenAccent; // Or any color that indicates a recent move
+                              }
 
                               // Define a border variable (not currently used).
                               Border? border;
@@ -1009,6 +1026,8 @@ class _ChessBoardState extends State<ChessBoard>
                               // Check if the current square is a legal move.
                               bool isLegalMove =
                               legalMovesForSelected.contains(squareName);
+
+
 
                               // GestureDetector to handle taps on each square.
                               return GestureDetector(
@@ -1073,6 +1092,14 @@ class _ChessBoardState extends State<ChessBoard>
                                         game.move({
                                           "from": selectedSquare!,
                                           "to": squareName
+                                        });
+
+
+                                        FirebaseDatabase.instance.ref('games/${widget.gameId}').update({
+                                          'lastMove': {
+                                            'from': selectedSquare,
+                                            'to': squareName,
+                                          },
                                         });
 
                                         // Update the PGN notation for the move.

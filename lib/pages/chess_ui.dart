@@ -126,11 +126,6 @@ class ChessBoardUI {
     );
   }
 
-  // static String _formatTime(int totalSeconds) {
-  //   double minutes = ((totalSeconds / 1000) / 60);
-  //   double seconds = ((totalSeconds / 1000) % 60);
-  //   return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
-  // }
 
   static String _formatTime(int totalMilliseconds) {
     int totalSeconds = totalMilliseconds ~/ 1000; // Convert milliseconds to seconds

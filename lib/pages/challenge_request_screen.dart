@@ -16,7 +16,7 @@ class ChallengeRequestScreen extends StatefulWidget {
   final String localTimerValue; // Timer value for the game
 
   const ChallengeRequestScreen({
-    Key? key,
+    super.key,
     required this.challengerName,
     required this.challengerUID,
     required this.opponentUID,
@@ -24,7 +24,7 @@ class ChallengeRequestScreen extends StatefulWidget {
     required this.localTimerValue,
     required this.challengeId,
     required this.challengerImageUrl,
-  }) : super(key: key);
+  });
 
   @override
   _ChallengeRequestScreenState createState() => _ChallengeRequestScreenState();

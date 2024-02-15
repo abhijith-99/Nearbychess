@@ -36,7 +36,7 @@ class UserHomePageState extends State<UserHomePage>
 
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
-  String betAmount = '5\$'; // Default value
+  String betAmount = '5'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
@@ -69,26 +69,47 @@ class UserHomePageState extends State<UserHomePage>
     final Canvas canvas = Canvas(pictureRecorder);
 
     // Adjust the size based on the zoom level
-    final double iconSize = 50.0 * zoomLevel / 15.0; // Example scaling factor
+    final double iconSize = 50.0 * zoomLevel / 20.0; // Example scaling factor
     const double fontSize = 20.0; // Adjust font size based on zoom level
 
     final double textMaxWidth = iconSize - 10.0;
 
     // Define paint for the pin
     final Paint paintPin = Paint()..color = Colors.red;
+    final double pinWidth = iconSize /2; // Width of the pin body
+    final double pinHeight = iconSize; // Total height of the pin
+    final double circleRadius = pinWidth / 2; // Radius of the circular head
 
-    // Draw the pin
-    final double pinWidth = iconSize / 2; // Width of the pin
-    final double pinHeight = iconSize; // Height of the pin
-    final Offset pinTip = Offset(iconSize / 2, iconSize); // Tip of the pin
+// Center of the circular head
+    final Offset circleCenter = Offset(iconSize / 2, circleRadius);
+// Tip of the pin
+    final Offset pinTip = Offset(iconSize / 2, iconSize);
+
     final Path pinPath = Path()
-      ..moveTo(pinTip.dx, pinTip.dy) // Move to the tip of the pin
-      ..lineTo(pinTip.dx - pinWidth / 2, pinHeight / 2) // Left side of the pin
-      ..quadraticBezierTo(pinTip.dx, pinHeight / 4, pinTip.dx + pinWidth / 2,
-          pinHeight / 2) // Curve for the right side of the pin
+    // Start at the center top of the circular head
+      ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius))
+    // Draw the smaller circle (hole of the pin)
+      ..addOval(Rect.fromCircle(
+          center: circleCenter, radius: circleRadius / 2))
+    // Move to the bottom of the circular head
+      ..moveTo(circleCenter.dx + circleRadius, circleCenter.dy)
+    // Draw the body of the pin down to the tip
+      ..lineTo(pinTip.dx, pinTip.dy)
+    // Draw the left side of the pin body up to the bottom of the head
+      ..lineTo(circleCenter.dx - circleRadius, circleCenter.dy)
       ..close();
+
+// Create a paint for the pin hole (same as the background)
+    final Paint paintHole = Paint()..color = Colors.white;
+
+// Draw the pin path
     canvas.drawPath(pinPath, paintPin);
 
+// Draw the hole path
+    final Path holePath = Path()
+      ..addOval(Rect.fromCircle(
+          center: circleCenter, radius: circleRadius / 2));
+    canvas.drawPath(holePath, paintHole);
     // Calculate the total height of the canvas to fit the icon and the text
     final double canvasHeight = iconSize + fontSize; // Space for text
 
@@ -104,8 +125,6 @@ class UserHomePageState extends State<UserHomePage>
       ),
       textDirection: ui.TextDirection.ltr,
       maxLines: 1, // Allow text to wrap to the second line
-      // ellipsis: '...', // Display ellipsis if text overflows
-      // textWidthBasis: TextWidthBasis.longestLine, // Wrap based on the longest line
     );
     textPainter.layout(
         maxWidth: textMaxWidth); // Set the maximum width for text
@@ -125,6 +144,15 @@ class UserHomePageState extends State<UserHomePage>
     return uint8List;
   }
 
+
+
+  Future<ui.Image> loadImage(Uint8List img) async {
+    final Completer<ui.Image> completer = new Completer();
+    ui.decodeImageFromList(img, (ui.Image img) {
+      return completer.complete(img);
+    });
+    return completer.future;
+  }
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -156,6 +184,7 @@ class UserHomePageState extends State<UserHomePage>
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
     String userName =
         userDoc['name']; // Replace 'name' with your Firestore field
+    String userAvatar = userDoc['avatar'];
 
     // Create the custom marker
     final Uint8List markerIcon =
@@ -224,7 +253,7 @@ class UserHomePageState extends State<UserHomePage>
     } catch (e) {
       print('Error getting location for web: $e');
       setState(() {
-        userLocation = 'Unknownsss';
+        userLocation = 'Unknown';
         print('Error getting location for web: ${e.toString()}');
       });
     }
@@ -640,6 +669,7 @@ class UserHomePageState extends State<UserHomePage>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.paused) {
       setUserOnlineStatus(false);
     } else if (state == AppLifecycleState.resumed) {
@@ -787,26 +817,22 @@ class UserHomePageState extends State<UserHomePage>
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      // var filteredProfiles = query.isEmpty
-      //     ? fetchedUserProfiles
-      //     : fetchedUserProfiles.where((user) {
-      //         String name = user['name'].toLowerCase();
-      //         return name.contains(query.toLowerCase());
-      //       }).toList();
+      var filteredProfiles = query.isEmpty
+          ? fetchedUserProfiles
+          : fetchedUserProfiles.where((user) {
+              String name = user['name'].toLowerCase();
+              return name.contains(query.toLowerCase());
+            }).toList();
 
-
-      var filteredProfiles = fetchedUserProfiles.where((user) {
-        String name = user['name'].toLowerCase();
-        String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-        return user['uid'] != currentUserId && name.contains(query.toLowerCase());
-      }).toList();
-
+      print('Query: $query');
+      print('Filtered Profiles Count: ${filteredProfiles.length}');
 
       setState(() {
         searchUserProfiles = filteredProfiles;
       });
     });
   }
+
 
   Future<List<Map<String, dynamic>>> fetchUsersByName(String searchName) async {
     // Perform a case-insensitive search
@@ -862,7 +888,6 @@ class UserHomePageState extends State<UserHomePage>
     challengeButtonCooldown[opponentId] ??= true;
     bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
 
-    // Function to fetch the current user's Chess Coins and update the state
     // Fetch and update the current user's and opponent's Chess Coins
     Future<void> fetchAndUpdateChessCoins() async {
       currentUserChessCoins = await getUserChessCoins(currentUserId);
@@ -890,18 +915,16 @@ class UserHomePageState extends State<UserHomePage>
                         fontFamily: 'Poppins',
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 1),
                     Row(
                       children: [
                         CircleAvatar(
                           radius: 40,
                           backgroundImage: NetworkImage(opponentData['avatar']),
                           onBackgroundImageError: (exception, stackTrace) {
-                            // // Handle the error, e.g., by setting a placeholder image
-                            // print("exception avatar $exception");
                           },
                         ),
-                        const SizedBox(width: 10),
+                        const SizedBox(width: 2),
                         Expanded(
                           child: Text(
                             opponentData['name'],
@@ -943,7 +966,7 @@ class UserHomePageState extends State<UserHomePage>
                         ),
                       ],
                     ),
-                    SizedBox(height: 20),
+                    SizedBox(height: 10),
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -953,29 +976,47 @@ class UserHomePageState extends State<UserHomePage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          DropdownButtonFormField<String>(
-                            value: localBetAmount,
-                            items: ['5\$', '10\$', '15\$'].map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text(value),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              if (newValue != null) {
-                                setModalState(() {
-                                  localBetAmount = newValue;
-                                });
-                              }
-                            },
-                            decoration: InputDecoration(
-                              labelText: 'Bet Amount',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+                          DropdownButtonHideUnderline(
+                            child: DropdownButtonFormField<String>(
+                              value: localBetAmount,
+                              items: [
+                                {'value': '5', 'image': 'assets/NBC-token.png'},
+                                {'value': '10', 'image': 'assets/NBC-token.png'},
+                                {'value': '15', 'image': 'assets/NBC-token.png'},
+                              ].map((Map<String, String> item) {
+                                return DropdownMenuItem<String>(
+                                  value: item['value'],
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text('${item['value']}'),
+                                      const SizedBox(width: 8),
+                                      Image.asset(item['image']!, width: 20, height: 20),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (newValue) {
+                                if (newValue != null) {
+                                  setModalState(() {
+                                    localBetAmount = newValue;
+                                  });
+                                }
+                              },
+                              decoration: InputDecoration(
+                                labelText: 'Bet Amount',
+                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: Colors.black54, width: 1.0),
+                                ),
                               ),
                             ),
                           ),
-                          SizedBox(height: 20),
+
+                          const SizedBox(height: 20),
                           DropdownButtonFormField<String>(
                             value: localTimerValue,
                             items: ['5', '10', '15', '20'].map((String value) {
@@ -993,11 +1034,24 @@ class UserHomePageState extends State<UserHomePage>
                             },
                             decoration: InputDecoration(
                               labelText: 'Timer',
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // Adjust padding as needed
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
                               ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.black54, width: 1.0), // Use a lighter color for the enabled border if you prefer
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(color: Colors.blue, width: 2.0), // Use a more prominent color when the field is focused
+                              ),
                             ),
                           ),
+
+
+
+
                         ],
                       ),
                     ),
@@ -1006,7 +1060,7 @@ class UserHomePageState extends State<UserHomePage>
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         foregroundColor: Colors.white,
-                        backgroundColor: Colors.green,
+                        backgroundColor: isChallengeable ? Colors.green : Colors.deepPurple,
                         padding: const EdgeInsets.symmetric(
                             horizontal: 30, vertical: 20),
                       ),
@@ -1296,6 +1350,7 @@ class UserHomePageState extends State<UserHomePage>
                             searchUserProfiles = users;
 
                             return GridView.builder(
+                              key: UniqueKey(),
                               padding: const EdgeInsets.all(16),
                               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: 4,
@@ -1313,13 +1368,11 @@ class UserHomePageState extends State<UserHomePage>
                           },
                         ),
                       ),
-
                     ],
                   ),
                 ),
               ],
             ),
-
 
             Positioned(
               top: 10,
@@ -1353,7 +1406,7 @@ class UserHomePageState extends State<UserHomePage>
                           color: Colors.grey.withOpacity(0.5),
                           spreadRadius: 1,
                           blurRadius: 1,
-                          offset: Offset(0, 1), // changes position of shadow
+                          offset: const Offset(0, 1), // changes position of shadow
                         ),
                       ],
                     ),
@@ -1433,7 +1486,7 @@ class UserHomePageState extends State<UserHomePage>
                     return Positioned(
                       right: 0,
                       child: Container(
-                        padding: EdgeInsets.all(6),
+                        padding: const EdgeInsets.all(6),
                         decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
