@@ -652,12 +652,15 @@ class UserHomePageState extends State<UserHomePage>
         }
       }
 
+
       setState(() {
         fetchedUserProfiles = updatedUserProfiles;
         searchUserProfiles = List.from(updatedUserProfiles);
+
       });
     });
   }
+
 
 
 
@@ -1344,6 +1347,19 @@ class UserHomePageState extends State<UserHomePage>
                                   .map((doc) => doc.data() as Map<String, dynamic>)
                                   .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid)
                                   .toList();
+
+                              fetchedUserProfiles.sort((a, b) {
+                                // Ensure we have valid booleans for comparison
+                                bool aIsOnline = a['isOnline'] as bool? ?? false;
+                                bool bIsOnline = b['isOnline'] as bool? ?? false;
+
+                                // Convert booleans to integers for comparison (true > false)
+                                int aInt = aIsOnline ? 1 : 0;
+                                int bInt = bIsOnline ? 1 : 0;
+
+                                // Compare the integer representations
+                                return bInt.compareTo(aInt);
+                              });
                             }
 
 
