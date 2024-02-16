@@ -36,6 +36,17 @@ class UserHomePageState extends State<UserHomePage>
 
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
+
+
+
+
+
+  List<Map<String, dynamic>> _filteredPlayers = [];
+  bool _isSearching = false;
+
+
+
+
   String betAmount = '5'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
@@ -267,7 +278,6 @@ class UserHomePageState extends State<UserHomePage>
     listenToChallengeRequests();
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
-    fetchInitialUserProfiles();
     fetchedUserProfiles;
 
 
@@ -644,13 +654,10 @@ class UserHomePageState extends State<UserHomePage>
 
       setState(() {
         fetchedUserProfiles = updatedUserProfiles;
-        // searchUserProfiles = List.from(updatedUserProfiles);
+        searchUserProfiles = List.from(updatedUserProfiles);
       });
-
     });
   }
-
-
 
 
 
@@ -801,39 +808,29 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-  void fetchInitialUserProfiles() async {
-    String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    print("current userid from initialuser $currentUserId");
-    var querySnapshot = await FirebaseFirestore.instance.collection('users').get();
-    var allProfiles = querySnapshot.docs
-        .where((doc) => doc.data()['uid'] != currentUserId)
-        .map((doc) => doc.data())
-        .toList();
 
-    setState(() {
-      fetchedUserProfiles = allProfiles;
-      searchUserProfiles = allProfiles;
-    });
-  }
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
-      var filteredProfiles = query.isEmpty
-          ? fetchedUserProfiles
-          : fetchedUserProfiles.where((user) {
-              String name = user['name'].toLowerCase();
-              return name.contains(query.toLowerCase());
-            }).toList();
+      if (query.isEmpty) {
+        setState(() {
+          _isSearching = false;
+        });
+      } else {
+        var filteredProfiles = fetchedUserProfiles.where((user) {
+          String name = user['name'].toLowerCase();
+          return name.contains(query.toLowerCase());
+        }).toList();
 
-      print('Query: $query');
-      print('Filtered Profiles Count: ${filteredProfiles.length}');
-
-      setState(() {
-        searchUserProfiles = filteredProfiles;
-      });
+        setState(() {
+          _filteredPlayers = filteredProfiles;
+          _isSearching = true;
+        });
+      }
     });
   }
+
 
 
   Future<List<Map<String, dynamic>>> fetchUsersByName(String searchName) async {
@@ -912,9 +909,9 @@ class UserHomePageState extends State<UserHomePage>
                     const Text(
                       "Set your Stake",
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
+                        // fontFamily: 'Poppins',
                       ),
                     ),
                     const SizedBox(height: 1),
@@ -1253,7 +1250,6 @@ class UserHomePageState extends State<UserHomePage>
       // Cancel existing stream subscriptions
       userSubscription.cancel();
       challengeRequestsSubscription.cancel();
-      // Re-initiate the data streams
       _initiateDataStreams();
     });
   }
@@ -1342,14 +1338,15 @@ class UserHomePageState extends State<UserHomePage>
                               return const Center(child: Text('No players here.'));
                             }
 
-                            // Filter out the current user's profile from the list
-                            List<Map<String, dynamic>> users = snapshot.data!
-                                .map((doc) => doc.data() as Map<String, dynamic>)
-                                .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid) // Filter out current user
-                                .toList();
+                            // Populate or update fetchedUserProfiles with snapshot data if not searching
+                            if (!_isSearching && snapshot.data!.isNotEmpty) {
+                              fetchedUserProfiles = snapshot.data!
+                                  .map((doc) => doc.data() as Map<String, dynamic>)
+                                  .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid)
+                                  .toList();
+                            }
+                            List<Map<String, dynamic>> usersToShow = _isSearching ? _filteredPlayers : fetchedUserProfiles;
 
-                            // Update searchUserProfiles here, excluding the current user
-                            searchUserProfiles = users;
 
                             return GridView.builder(
                               key: UniqueKey(),
@@ -1361,9 +1358,9 @@ class UserHomePageState extends State<UserHomePage>
                                 childAspectRatio: 1,
                               ),
                               // GridView.builder properties...
-                              itemCount: searchUserProfiles.length,
+                              itemCount: usersToShow.length,
                               itemBuilder: (context, index) {
-                                var userData = searchUserProfiles[index];
+                                var userData = usersToShow[index];
                                 return buildPlayerTile(userData, context);
                               },
                             );
@@ -1533,6 +1530,7 @@ class UserProfileHeader extends StatelessWidget {
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
         await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    print("insdide fetchcurretnt ddd");
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
