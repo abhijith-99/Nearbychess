@@ -1345,7 +1345,20 @@ class UserHomePageState extends State<UserHomePage>
                                   .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid)
                                   .toList();
                             }
+
+
                             List<Map<String, dynamic>> usersToShow = _isSearching ? _filteredPlayers : fetchedUserProfiles;
+
+                            // Update the logic to handle an empty list after filtering
+                            if (usersToShow.isEmpty) {
+                              // This condition checks if the list is empty after filtering
+                              return Center(
+                                child: Text(
+                                  _isSearching ? 'oops!  No players found with that name.' : 'oops!  No players found with that name..',
+                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
+                                ),
+                              );
+                            }
 
 
                             return GridView.builder(
@@ -1522,39 +1535,53 @@ class UserHomePageState extends State<UserHomePage>
   }
 }
 
-class UserProfileHeader extends StatelessWidget {
+class UserProfileHeader extends StatefulWidget {
   final String userId;
 
-  const UserProfileHeader({super.key, required this.userId});
+  const UserProfileHeader({Key? key, required this.userId}) : super(key: key);
+
+  @override
+  _UserProfileHeaderState createState() => _UserProfileHeaderState();
+}
+
+class _UserProfileHeaderState extends State<UserProfileHeader> {
+  Future<Map<String, dynamic>?>? _userProfileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _userProfileFuture = fetchCurrentUserProfile(widget.userId);
+  }
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    print("insdide fetchcurretnt ddd");
+    await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<Map<String, dynamic>?>(
-      future: fetchCurrentUserProfile(userId),
+      future: _userProfileFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData) {
           String avatarUrl = snapshot.data!['avatar'] ??
-              'path/to/default/avatar.png'; // Provide a default path if null
+              'path/to/default/avatar.png';
           String userName = snapshot.data!['name'] ?? 'Unknown User';
+
 
           return Padding(
             padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => const UserProfileDetailsPage(),
-                    ),
-                  ),
+                  onTap: () =>
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const UserProfileDetailsPage(),
+                        ),
+                      ),
                   child: CircleAvatar(
                     radius: 40,
                     backgroundImage: NetworkImage(
@@ -1575,7 +1602,7 @@ class UserProfileHeader extends StatelessWidget {
             ),
           );
         }
-        return Container();
+        return Container(); // Show a loading or empty container when data is not yet available
       },
     );
   }
