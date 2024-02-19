@@ -126,19 +126,22 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
                       .doc(widget.opponentUID)
                       .update({'inGame': true, 'currentGameId': newGameId});
 
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ChessBoard(gameId: newGameId, opponentUID: widget.opponentUID,),
-
                     ),
-                  ).then((_) {
+                  )
+                  .then((_) {
                     // User has left the Chessboard, update the inGame status
                     updateInGameState(false);
                   });
                   print("Navigating to ChessBoard with opponent UID from challenge request: ${widget.opponentUID}");
 
                 },
+
+
+
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green, // Background color
                   shape: RoundedRectangleBorder(
@@ -181,10 +184,3 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
     );
   }
 }
-
-
-
-
-
-
-

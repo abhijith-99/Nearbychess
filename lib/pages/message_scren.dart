@@ -197,24 +197,37 @@ class _MessageScreenState extends State<MessageScreen> {
         onWillPop: _onBackPressed,
 
     child: Scaffold(
-      appBar: AppBar(
-        leading: widget.fromChessBoard ? Container() : null,
 
-        title: StreamBuilder<DocumentSnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').doc(myUserId).snapshots(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Text('');
-            }
-            if (!snapshot.hasData || !snapshot.data!.exists) {
-              return const Text('');
-            }
-            final userData = snapshot.data!.data() as Map<String, dynamic>?;
-            final chessCoins = userData?['chessCoins'] ?? 0;
-            return const Text('');
-          },
-        ),
-      ),
+     appBar: AppBar(
+       leading: widget.fromChessBoard ? Container() : IconButton(
+         icon: Icon(Icons.arrow_back),
+         onPressed: () => Navigator.of(context).pop(),
+       ),
+       title: widget.fromChessBoard
+           ? const Text('') // Default title or keep it empty when accessed from chessboard
+           : FutureBuilder<String>(
+         future: getOpponentName(widget.opponentUId), // Call the method to get opponent's name
+         builder: (context, snapshot) {
+           if (snapshot.connectionState == ConnectionState.waiting) {
+             // Optionally, show a placeholder or just an empty Text widget while the name is loading
+             return const Text('', style: TextStyle(fontSize: 16));
+           }
+           if (snapshot.hasError) {
+             // Handle error state, for example, showing "Unknown" or any error message
+             return const Text('', style: TextStyle(fontSize: 16));
+           }
+           // Display the fetched name
+           return Text(
+             snapshot.data!, // The opponent's name
+             style: const TextStyle(fontSize: 20), // Adjust the style as needed
+           );
+         },
+       ),
+       // You can add more actions if needed
+     ),
+
+
+
 
       body: Column(
         children: [
@@ -417,8 +430,6 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
-
-
   void sendMessage(String message, {bool isGiftMessage = false}) async {
     if (message.trim().isNotEmpty) {
       try {
@@ -443,6 +454,16 @@ class _MessageScreenState extends State<MessageScreen> {
       }
     }
   }
+
+
+  Future<String> getOpponentName(String opponentUId) async {
+    var opponentDoc = await FirebaseFirestore.instance.collection('users').doc(opponentUId).get();
+    if (opponentDoc.exists && opponentDoc.data() is Map<String, dynamic>) {
+      return (opponentDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown'; // Replace 'name' with the actual field name for the opponent's name
+    }
+    return 'Unknown';
+  }
+
 
   @override
   void dispose() {

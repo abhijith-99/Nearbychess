@@ -37,21 +37,14 @@ class UserHomePageState extends State<UserHomePage>
   late StreamSubscription<DocumentSnapshot> userSubscription;
   late StreamSubscription<QuerySnapshot> challengeRequestsSubscription;
 
-
-
-
-
   List<Map<String, dynamic>> _filteredPlayers = [];
   bool _isSearching = false;
-
-
-
 
   String betAmount = '5'; // Default value
   Map<String, bool> challengeButtonCooldown = {};
   String searchText = '';
   Timer? _debounce;
-  String localTimerValue = '10';
+  String localTimerValue = '5';
   int currentUserChessCoins = 0;
 
   double? get userLat => null;
@@ -257,16 +250,21 @@ class UserHomePageState extends State<UserHomePage>
         _locationData.longitude!,
       );
 
-      setState(() {
-        userLocation = cityName;
-        onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
-      });
+      if (mounted) {
+        setState(() {
+          userLocation = cityName;
+          onlineUsersStream = fetchOnlineUsersWithLocationName(userLocation);
+        });
+      }
     } catch (e) {
       print('Error getting location for web: $e');
-      setState(() {
-        userLocation = 'Unknown';
-        print('Error getting location for web: ${e.toString()}');
-      });
+      if (mounted) {
+        setState(() {
+          userLocation = 'Unknown';
+          print('Error getting location for web: ${e.toString()}');
+        });
+      }
+
     }
   }
 
@@ -279,6 +277,8 @@ class UserHomePageState extends State<UserHomePage>
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
     fetchedUserProfiles;
+
+    print('UserHomePage: initState');
 
 
     _loadMapStyle();
@@ -512,7 +512,12 @@ class UserHomePageState extends State<UserHomePage>
   void fetchCurrentUserChessCoins() async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     currentUserChessCoins = await getUserChessCoins(userId);
-    setState(() {}); // Trigger a rebuild to update the UI
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    // Trigger a rebuild to update the UI
   }
 
   // This function remains unchanged
@@ -590,7 +595,6 @@ class UserHomePageState extends State<UserHomePage>
           // Challenge accepted, navigate to the ChessBoard
           String gameId = challengeData[
               'gameId']; // Assuming the game ID is stored in the challenge data
-          print("challenger$gameId");
 
           String player1Id = challengeData['challengerId']; // Example
           String player2Id = challengeData['opponentId']; // Example
@@ -652,16 +656,15 @@ class UserHomePageState extends State<UserHomePage>
         }
       }
 
+      if (mounted) {
+        setState(() {
+          fetchedUserProfiles = updatedUserProfiles;
+          searchUserProfiles = List.from(updatedUserProfiles);
+        });
+      }
 
-      setState(() {
-        fetchedUserProfiles = updatedUserProfiles;
-        searchUserProfiles = List.from(updatedUserProfiles);
-
-      });
     });
   }
-
-
 
 
   void navigateToUserDetails(BuildContext context, String userId) {
@@ -676,12 +679,14 @@ class UserHomePageState extends State<UserHomePage>
     challengeRequestsSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
+    print('UserHomePage: dispose');
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
+    print('UserHomePage: AppLifecycleState changed to $state');
     if (state == AppLifecycleState.paused) {
       setUserOnlineStatus(false);
     } else if (state == AppLifecycleState.resumed) {
@@ -717,7 +722,6 @@ class UserHomePageState extends State<UserHomePage>
   Stream<List<DocumentSnapshot>> fetchNearbyOpponents(
       double userLat, double userLon, double radiusInKm) {
     String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    print("current userod from fetchnearby $currentUserId");
     return FirebaseFirestore.instance
         .collection('users')
         .where('isOnline', isEqualTo: true)
@@ -725,7 +729,6 @@ class UserHomePageState extends State<UserHomePage>
         .map((snapshot) {
       return snapshot.docs.where((doc) {
 
-        // var userData = doc.data();
         var userData = doc.data();
         if (userData['uid'] == currentUserId) {
           return false;
@@ -793,11 +796,13 @@ class UserHomePageState extends State<UserHomePage>
         newMarkers.add(userMarker);
       }
     }
+    if (mounted) {
+      setState(() {
+        markers.clear();
+        markers = newMarkers;
+      });
+    }
 
-    setState(() {
-      markers.clear();
-      markers = newMarkers;
-    });
   }
 
   void updateUserLocation(LocationData location) async {
@@ -817,19 +822,26 @@ class UserHomePageState extends State<UserHomePage>
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (query.isEmpty) {
-        setState(() {
-          _isSearching = false;
-        });
+
+        if (mounted) {
+          setState(() {
+            _isSearching = false;
+          });
+        }
       } else {
         var filteredProfiles = fetchedUserProfiles.where((user) {
           String name = user['name'].toLowerCase();
           return name.contains(query.toLowerCase());
         }).toList();
 
-        setState(() {
-          _filteredPlayers = filteredProfiles;
-          _isSearching = true;
-        });
+
+        if (mounted) {
+          setState(() {
+            _filteredPlayers = filteredProfiles;
+            _isSearching = true;
+          });
+        }
+
       }
     });
   }
@@ -940,7 +952,7 @@ class UserHomePageState extends State<UserHomePage>
 
                         // Message Icon Button
                         IconButton(
-                          icon: const Icon(Icons.chat_bubble_outline),
+                          icon: const Icon(Icons.message),
                           color: Colors.blue,
                           onPressed: () {
                             Navigator.push(
@@ -1051,9 +1063,6 @@ class UserHomePageState extends State<UserHomePage>
                             ),
                           ),
 
-
-
-
                         ],
                       ),
                     ),
@@ -1089,10 +1098,10 @@ class UserHomePageState extends State<UserHomePage>
                                   await _sendChallenge(opponentData['uid'],
                                       localBetAmount, localTimerValue);
                                   Navigator.pop(context);
-                                  Timer(Duration(seconds: 30), () {
-                                    setState(() =>
-                                        challengeButtonCooldown[opponentId] =
-                                            true);
+                                  Timer(const Duration(seconds: 30), () {
+                                  if (mounted) {
+                                    setState(() => challengeButtonCooldown[opponentId] = true);
+                                   }
                                   });
                                 }
                               } else if (currentGameId != null) {
@@ -1134,7 +1143,6 @@ class UserHomePageState extends State<UserHomePage>
         String opponentName = await getUserName(opponentId);
         String currentUserName = await getUserName(currentUserId);
 
-        print('Creating challenge request...');
 
         DocumentReference challengeDocRef = await FirebaseFirestore.instance
             .collection('challengeRequests')
@@ -1147,7 +1155,6 @@ class UserHomePageState extends State<UserHomePage>
           'timestamp': FieldValue.serverTimestamp(),
         });
 
-        print('Challenge request created with ID: ${challengeDocRef.id}');
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.push(
@@ -1162,8 +1169,6 @@ class UserHomePageState extends State<UserHomePage>
             ),
           );
         });
-
-        print('Navigating to ChallengeWaitingScreen...');
 
         listenToMyChallenge(challengeDocRef.id);
       } catch (e) {
@@ -1249,12 +1254,14 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> _refreshData() async {
-    setState(() {
-      // Cancel existing stream subscriptions
-      userSubscription.cancel();
-      challengeRequestsSubscription.cancel();
-      _initiateDataStreams();
-    });
+    if (mounted) {
+      setState(() {
+        // Cancel existing stream subscriptions
+        userSubscription.cancel();
+        challengeRequestsSubscription.cancel();
+        _initiateDataStreams();
+      });
+    }
   }
 
   @override
@@ -1324,6 +1331,7 @@ class UserHomePageState extends State<UserHomePage>
                       ),
                       Text(
                         'Players in $userLocation',
+                        // 'Players in $cityName',
                         style: const TextStyle(
                           fontFamily: 'Poppins',
                           color: Color.fromARGB(255, 12, 4, 4),
@@ -1370,7 +1378,7 @@ class UserHomePageState extends State<UserHomePage>
                               // This condition checks if the list is empty after filtering
                               return Center(
                                 child: Text(
-                                  _isSearching ? 'oops!  No players found with that name.' : 'oops!  No players found with that name..',
+                                  _isSearching ? 'oops! there is no players.' : 'oops! there is no players.',
                                   style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                                 ),
                               );

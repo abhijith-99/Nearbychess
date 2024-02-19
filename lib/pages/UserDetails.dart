@@ -195,7 +195,7 @@
                       ),
                       // Chat icon button
                       IconButton(
-                        icon: const Icon(Icons.chat_bubble_outline),
+                        icon: const Icon(Icons.message),
                         color: Colors.blue,
                         onPressed: () {
                           Navigator.push(
