@@ -1,6 +1,5 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:flutter/cupertino.dart';
 
 // FirebaseServices: A class to encapsulate all Firebase-related operations for a chess game.
 class FirebaseServices {
@@ -8,7 +7,6 @@ class FirebaseServices {
   FirebaseServices(this.gameId);
   double betAmount = 0.0; // Variable to store the bet amount.
 
-  ScrollController _pgnScrollController = ScrollController();
 
   // Fetches the bet amount for the current game from Firebase Realtime Database.
   Future<double> fetchBetAmount() async {
@@ -96,14 +94,16 @@ class FirebaseServices {
 
   // Updates the list of captured pieces for both players in the Realtime Database.
   void updateCapturedPiecesInRealTimeDatabase(
-      List<String> whiteCapturedPieces, List<String> blackCapturedPieces) {
+      List<String> capturedPiecesWhite, List<String> capturedPiecesBlack) {
     FirebaseDatabase.instance.ref('games/$gameId').update({
-      'whiteCapturedPieces': whiteCapturedPieces,
-      'blackCapturedPieces': blackCapturedPieces,
+      'capturedPiecesBlack': capturedPiecesBlack,
+      'capturedPiecesWhite': capturedPiecesWhite,
     }).catchError((error) {
       print("Error updating captured pieces: $error");
     });
   }
+
+
 
   // Updates the last move made in the game in the Realtime Database.
   void updateLastMoveInRealTimeDatabase(String fromSquare, String toSquare) {

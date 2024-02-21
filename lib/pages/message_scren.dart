@@ -60,12 +60,14 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
+
   void showGiftModal(BuildContext context) async {
     String myUserId = FirebaseAuth.instance.currentUser!.uid;
     int myCurrentBalance = await getCurrentUserBalance(myUserId);
     int? selectedAmount;
     showModalBottomSheet(
       context: context,
+      backgroundColor: Color(0xFF33322F), // Set modal background color
       builder: (BuildContext context) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setState) {
@@ -81,7 +83,7 @@ class _MessageScreenState extends State<MessageScreen> {
                       children: [
                         Text(
                           'Balance: $myCurrentBalance ',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white), // Adjust text color for visibility
                         ),
                         CircleAvatar(
                           backgroundImage: AssetImage('assets/NBC-token.png'),
@@ -100,9 +102,9 @@ class _MessageScreenState extends State<MessageScreen> {
                         child: Container(
                           margin: EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: selectedAmount == amount ? Colors.brown : Colors.grey[200],
+                            color: selectedAmount == amount ? Color(0xFF33322F) : Color(0xFF33322F), // Adjusted gift option colors
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: selectedAmount == amount ? Colors.black : Colors.white),
+                            border: Border.all(color: selectedAmount == amount ? Color(0xFF40C759) : Colors.grey),
                           ),
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
@@ -115,7 +117,7 @@ class _MessageScreenState extends State<MessageScreen> {
                                 "$amount",
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: selectedAmount == amount ? Colors.white : Colors.black,
+                                  color: selectedAmount == amount ? Colors.white : Colors.white, // Adjusted text color for visibility
                                 ),
                               ),
                             ],
@@ -125,14 +127,25 @@ class _MessageScreenState extends State<MessageScreen> {
                     }).toList(),
                   ),
                   SizedBox(height: 20),
-                  ElevatedButton(
-                    child: const Text("Send Gift"),
-                    onPressed: (selectedAmount != null && selectedAmount! <= myCurrentBalance)
-                        ? () {
-                      handleGift(widget.opponentUId, selectedAmount!, myUserId, myCurrentBalance);
-                      Navigator.of(context).pop();
-                    }
-                        : null,
+                  SizedBox(
+                    width: double.infinity, // Make the button full width
+                    child: ElevatedButton(
+                      child: const Text("SEND GIFT"),
+                      style: ElevatedButton.styleFrom(
+                        primary: Color(0xFF40C759), // Adjust button color
+                          onPrimary: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8), // Make button edges square
+                        ),
+                        padding: EdgeInsets.symmetric(vertical: 12), // Adjust button padding
+                      ),
+                      onPressed: (selectedAmount != null && selectedAmount! <= myCurrentBalance)
+                          ? () {
+                        handleGift(widget.opponentUId, selectedAmount!, myUserId, myCurrentBalance);
+                        Navigator.of(context).pop();
+                      }
+                          : null,
+                    ),
                   ),
                 ],
               ),
@@ -142,6 +155,7 @@ class _MessageScreenState extends State<MessageScreen> {
       },
     );
   }
+
 
   void handleGift(String recipientUserId, int amount, String myUserId, int myCurrentBalance) async {
     if (amount > myCurrentBalance) {
@@ -197,41 +211,50 @@ class _MessageScreenState extends State<MessageScreen> {
         onWillPop: _onBackPressed,
 
     child: Scaffold(
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          leading: widget.fromChessBoard ? Container() : IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          title: FutureBuilder<Map<String, dynamic>>(
+            future: getOpponentInfo(widget.opponentUId),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const CircularProgressIndicator(color: Colors.white);
+              }
+              if (!snapshot.hasData || snapshot.data!['avatar'].isEmpty) {
+                return Text(snapshot.data?['name'] ?? 'Unknown', style: const TextStyle(color: Colors.white));
+              }
+              var data = snapshot.data!;
+              return Row(
+                children: [
+                  CircleAvatar(
+                    backgroundImage: NetworkImage(data['avatar']),
+                    onBackgroundImageError: (exception, stackTrace) {
+                      // Add debug print or error handling code here if the image fails to load
+                      print('Error loading avatar image.');
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                  Text(data['name'], style: const TextStyle(color: Colors.white)),
+                ],
+              );
+            },
+          ),
 
-     appBar: AppBar(
-       leading: widget.fromChessBoard ? Container() : IconButton(
-         icon: Icon(Icons.arrow_back),
-         onPressed: () => Navigator.of(context).pop(),
-       ),
-       title: widget.fromChessBoard
-           ? const Text('') // Default title or keep it empty when accessed from chessboard
-           : FutureBuilder<String>(
-         future: getOpponentName(widget.opponentUId), // Call the method to get opponent's name
-         builder: (context, snapshot) {
-           if (snapshot.connectionState == ConnectionState.waiting) {
-             // Optionally, show a placeholder or just an empty Text widget while the name is loading
-             return const Text('', style: TextStyle(fontSize: 16));
-           }
-           if (snapshot.hasError) {
-             // Handle error state, for example, showing "Unknown" or any error message
-             return const Text('', style: TextStyle(fontSize: 16));
-           }
-           // Display the fetched name
-           return Text(
-             snapshot.data!, // The opponent's name
-             style: const TextStyle(fontSize: 20), // Adjust the style as needed
-           );
-         },
-       ),
-       // You can add more actions if needed
-     ),
+        ),
+        
 
 
+        // body: Column(
+    body: Container(
+    color: const Color(0xFF272727), // Set main background color
+    child: Column(
+      children: [
 
 
-      body: Column(
-        children: [
-          Expanded(
+    Expanded(
             child: StreamBuilder<List<DocumentSnapshot>>(
               stream: _messagesStream,
               builder: (context, snapshot) {
@@ -242,7 +265,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
+                  return const Center(child: Text('No messages yet.',style: TextStyle(color: Colors.white)));
                 }
                 List<DocumentSnapshot> messages = snapshot.data!;
                 return ListView.builder(
@@ -257,8 +280,6 @@ class _MessageScreenState extends State<MessageScreen> {
                     if (messageData['timestamp'] != null) {
                       timestamp = (messageData['timestamp'] as Timestamp).toDate();
                     } else {
-                      // Handle the case where timestamp is null
-                      // For example, use the current date and time:
                       timestamp = DateTime.now();
                     }
 
@@ -309,11 +330,13 @@ class _MessageScreenState extends State<MessageScreen> {
               children: [
 
                 Container(
+
                   width: 60,
                   height: 50,
                   child: IconButton(
                     icon: const Icon(
                       CupertinoIcons.gift,
+                      color: Colors.white,
                       size: 38,
                     ),
                     onPressed: () => showGiftModal(context),
@@ -328,8 +351,10 @@ class _MessageScreenState extends State<MessageScreen> {
                       decoration: InputDecoration(
                         labelText: 'Type your message',
                         labelStyle: TextStyle(
-                          color: Colors.black.withOpacity(0.3),
+                          color: Colors.grey.withOpacity(1),
                         ),
+                        fillColor: Colors.white, // White background color
+                        filled: true,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -355,6 +380,12 @@ class _MessageScreenState extends State<MessageScreen> {
           ),
         ],
       ),
+
+
+    )
+
+
+
     ),
     );
   }
@@ -456,12 +487,16 @@ class _MessageScreenState extends State<MessageScreen> {
   }
 
 
-  Future<String> getOpponentName(String opponentUId) async {
+  Future<Map<String, dynamic>> getOpponentInfo(String opponentUId) async {
     var opponentDoc = await FirebaseFirestore.instance.collection('users').doc(opponentUId).get();
     if (opponentDoc.exists && opponentDoc.data() is Map<String, dynamic>) {
-      return (opponentDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown'; // Replace 'name' with the actual field name for the opponent's name
+      print("opponetn docss,$opponentDoc");
+      return {
+        'name': (opponentDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown',
+        'avatar': (opponentDoc.data() as Map<String, dynamic>)['avatar'] ?? '', // Default or placeholder URL
+      };
     }
-    return 'Unknown';
+    return {'name': 'Unknown', 'avatar': ''}; // Default or placeholder URL
   }
 
 

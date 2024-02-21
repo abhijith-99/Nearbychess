@@ -1,9 +1,7 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:chess/chess.dart' as chess;
 
-String player1AvatarUrl =
-    ''; // URL for player 1's avatar (default or user-set).
+String player1AvatarUrl = ''; // URL for player 1's avatar
 String player2AvatarUrl = '';
 
 class ChessBoardUI {
@@ -42,25 +40,26 @@ class ChessBoardUI {
     return Container();
   }
 
+
   static Widget buildPlayerArea(
-    List<String> capturedPieces,
-    bool isTop,
-    String playerName,
-    String playerAvatarUrl,
-    bool timerActive,
-    int timeRemaining,
-  ) {
+      Widget capturedPiecesWidget, // This now directly accepts a widget
+      bool isTop,
+      String playerName,
+      String playerAvatarUrl,
+      bool timerActive,
+      int timeRemaining,
+      ) {
     // Use NetworkImage for playerAvatarUrl and provide error handling
     ImageProvider imageProvider;
     try {
       imageProvider = NetworkImage(playerAvatarUrl);
     } catch (e) {
       // Fallback to a default asset image in case of error
-      imageProvider = AssetImage('assets/avatar/avatar-default.png');
+      imageProvider = const AssetImage('assets/avatar/avatar-default.png');
     }
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 15.0),
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
       child: Container(
         color: Colors.transparent,
         height: 50,
@@ -68,18 +67,18 @@ class ChessBoardUI {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             Container(
-              width: 50,
-              height: 50,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 image: DecorationImage(
                   image: imageProvider,
                   fit: BoxFit.cover,
                 ),
-                borderRadius: BorderRadius.all(Radius.circular(5)),
+                borderRadius: const BorderRadius.all(Radius.circular(5)),
                 border: Border.all(color: Colors.black, width: 1.0),
               ),
             ),
-            SizedBox(width: 8),
+            SizedBox(width: 6),
             Expanded(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -92,27 +91,12 @@ class ChessBoardUI {
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontFamily: 'Roboto',
-                        fontSize: 14,
+                        fontSize: 12,
                       ),
                     ),
                   ),
-                  Expanded(
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: capturedPieces.length,
-                      itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 0.0),
-                          child: Image.asset(
-                            capturedPieces[index],
-                            fit: BoxFit.contain,
-                            height: 20,
-                            width: 20,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                  // Here we directly use the capturedPiecesWidget
+                  capturedPiecesWidget,
                 ],
               ),
             ),
@@ -125,6 +109,7 @@ class ChessBoardUI {
       ),
     );
   }
+
 
 
   static String _formatTime(int totalMilliseconds) {
