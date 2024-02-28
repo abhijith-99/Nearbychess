@@ -3,6 +3,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 class ChallengeWaitingScreen extends StatelessWidget {
@@ -48,7 +49,11 @@ class ChallengeWaitingScreen extends StatelessWidget {
             Spacer(),
             _buildUserAvatar(currentUserId, currentUserName),
             SizedBox(height: 30),
-            const CircularProgressIndicator(),
+            // CircularProgressIndicator(),
+            CupertinoActivityIndicator(
+              radius: 15, // The size of the activity indicator.
+            ),
+
             SizedBox(height: 30),
             _buildUserAvatar(opponentId, opponentName),
             Spacer(),
@@ -85,7 +90,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
             ],
           );
         } else {
-          return CircularProgressIndicator();
+          return Container();
         }
       },
     );

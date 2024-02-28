@@ -196,7 +196,7 @@ class _MessageScreenState extends State<MessageScreen> {
       'isGiftMessage': isGiftMessage,
     });
 
-    FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+    FirebaseFirestore.instance.collection('userChats').doc(recipientUserId).set({
       chatId: {
         'unreadCount': FieldValue.increment(1),
       }
@@ -221,7 +221,7 @@ class _MessageScreenState extends State<MessageScreen> {
             future: getOpponentInfo(widget.opponentUId),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const CircularProgressIndicator(color: Colors.white);
+                return Container();
               }
               if (!snapshot.hasData || snapshot.data!['avatar'].isEmpty) {
                 return Text(snapshot.data?['name'] ?? 'Unknown', style: const TextStyle(color: Colors.white));
@@ -262,7 +262,7 @@ class _MessageScreenState extends State<MessageScreen> {
                   return Text('Error: ${snapshot.error}');
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return Container();
                 }
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
                   return const Center(child: Text('No messages yet.',style: TextStyle(color: Colors.white)));
@@ -473,7 +473,7 @@ class _MessageScreenState extends State<MessageScreen> {
           'isGiftMessage': isGiftMessage,
         });
 
-        FirebaseFirestore.instance.collection('userChats').doc(myUserId).set({
+        FirebaseFirestore.instance.collection('userChats').doc(widget.opponentUId).set({
           chatId: {
             'unreadCount': FieldValue.increment(1),
           }
@@ -490,7 +490,6 @@ class _MessageScreenState extends State<MessageScreen> {
   Future<Map<String, dynamic>> getOpponentInfo(String opponentUId) async {
     var opponentDoc = await FirebaseFirestore.instance.collection('users').doc(opponentUId).get();
     if (opponentDoc.exists && opponentDoc.data() is Map<String, dynamic>) {
-      print("opponetn docss,$opponentDoc");
       return {
         'name': (opponentDoc.data() as Map<String, dynamic>)['name'] ?? 'Unknown',
         'avatar': (opponentDoc.data() as Map<String, dynamic>)['avatar'] ?? '', // Default or placeholder URL

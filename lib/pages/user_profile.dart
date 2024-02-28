@@ -373,37 +373,6 @@ class _UserProfilePageState extends State<UserProfilePage> {
                         Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: <Widget>[
-                            // GestureDetector(
-                            //   onTap: () {
-                            //     // Toggle the avatar selection view
-                            //     setState(() {
-                            //       isAvatarListVisible = !isAvatarListVisible;
-                            //     });
-                            //   },
-                            //   child: Container(
-                            //     padding: const EdgeInsets.all(2),
-                            //     // Space for the border
-                            //     decoration: BoxDecoration(
-                            //       shape: BoxShape.circle,
-                            //       border: Border.all(
-                            //         color: Colors.black, // Border color
-                            //         width: 1.0, // Border width
-                            //       ),
-                            //     ),
-                            //     child: CircleAvatar(
-                            //       backgroundImage: NetworkImage(_selectedAvatar!),
-                            //       radius: 22.0,
-                            //       // Adjust the size to fit your layout
-                            //       backgroundColor: Colors.white,
-                            //     ),
-                            //   ),
-                            // ),
-
-
-
-
-
-
 
                             GestureDetector(
                               onTap: () {

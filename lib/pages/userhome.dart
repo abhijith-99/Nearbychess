@@ -67,96 +67,94 @@ class UserHomePageState extends State<UserHomePage>
   get player1Id => null; // To store search results
   get player2Id => null;
 
-  Future<Uint8List> createCustomMarker(
-      String userName, double zoomLevel) async {
-    final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-    final Canvas canvas = Canvas(pictureRecorder);
+//   Future<Uint8List> createCustomMarker(
+//       String userName, double zoomLevel) async {
+//     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
+//     final Canvas canvas = Canvas(pictureRecorder);
+//
+//     // Adjust the size based on the zoom level
+//     final double iconSize = 50.0 * zoomLevel / 20.0; // Example scaling factor
+//     const double fontSize = 20.0; // Adjust font size based on zoom level
+//
+//     final double textMaxWidth = iconSize - 10.0;
+//
+//     // Define paint for the pin
+//     final Paint paintPin = Paint()..color = Colors.red;
+//     final double pinWidth = iconSize / 2; // Width of the pin body
+//     final double pinHeight = iconSize; // Total height of the pin
+//     final double circleRadius = pinWidth / 2; // Radius of the circular head
+//
+// // Center of the circular head
+//     final Offset circleCenter = Offset(iconSize / 2, circleRadius);
+// // Tip of the pin
+//     final Offset pinTip = Offset(iconSize / 2, iconSize);
+//
+//     final Path pinPath = Path()
+//       // Start at the center top of the circular head
+//       ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius))
+//       // Draw the smaller circle (hole of the pin)
+//       ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius / 2))
+//       // Move to the bottom of the circular head
+//       ..moveTo(circleCenter.dx + circleRadius, circleCenter.dy)
+//       // Draw the body of the pin down to the tip
+//       ..lineTo(pinTip.dx, pinTip.dy)
+//       // Draw the left side of the pin body up to the bottom of the head
+//       ..lineTo(circleCenter.dx - circleRadius, circleCenter.dy)
+//       ..close();
+//
+// // Create a paint for the pin hole (same as the background)
+//     final Paint paintHole = Paint()..color = Colors.white;
+//
+// // Draw the pin path
+//     canvas.drawPath(pinPath, paintPin);
+//
+// // Draw the hole path
+//     final Path holePath = Path()
+//       ..addOval(
+//           Rect.fromCircle(center: circleCenter, radius: circleRadius / 2));
+//     canvas.drawPath(holePath, paintHole);
+//     // Calculate the total height of the canvas to fit the icon and the text
+//     final double canvasHeight = iconSize + fontSize; // Space for text
+//
+//     // Draw the text
+//     final TextPainter textPainter = TextPainter(
+//       text: TextSpan(
+//         text: userName,
+//         style: const TextStyle(
+//           fontSize: 20,
+//           color: Colors.yellowAccent, // Text color
+//           fontWeight: FontWeight.bold,
+//         ),
+//       ),
+//       textDirection: ui.TextDirection.ltr,
+//       maxLines: 1, // Allow text to wrap to the second line
+//     );
+//     textPainter.layout(
+//         maxWidth: textMaxWidth); // Set the maximum width for text
+//     final Offset textOffset =
+//         Offset((iconSize - textPainter.width) / 2, iconSize);
+//     textPainter.paint(canvas, textOffset);
+//     // Convert canvas to image
+//     final ui.Image markerAsImage = await pictureRecorder
+//         .endRecording()
+//         .toImage(iconSize.toInt(), canvasHeight.toInt());
+//
+//     // Convert image to bytes
+//     final ByteData? byteData =
+//         await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+//     final Uint8List uint8List = byteData!.buffer.asUint8List();
+//
+//     return uint8List;
+//   }
 
-    // Adjust the size based on the zoom level
-    final double iconSize = 50.0 * zoomLevel / 20.0; // Example scaling factor
-    const double fontSize = 20.0; // Adjust font size based on zoom level
-
-    final double textMaxWidth = iconSize - 10.0;
-
-    // Define paint for the pin
-    final Paint paintPin = Paint()..color = Colors.red;
-    final double pinWidth = iconSize /2; // Width of the pin body
-    final double pinHeight = iconSize; // Total height of the pin
-    final double circleRadius = pinWidth / 2; // Radius of the circular head
-
-// Center of the circular head
-    final Offset circleCenter = Offset(iconSize / 2, circleRadius);
-// Tip of the pin
-    final Offset pinTip = Offset(iconSize / 2, iconSize);
-
-    final Path pinPath = Path()
-    // Start at the center top of the circular head
-      ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius))
-    // Draw the smaller circle (hole of the pin)
-      ..addOval(Rect.fromCircle(
-          center: circleCenter, radius: circleRadius / 2))
-    // Move to the bottom of the circular head
-      ..moveTo(circleCenter.dx + circleRadius, circleCenter.dy)
-    // Draw the body of the pin down to the tip
-      ..lineTo(pinTip.dx, pinTip.dy)
-    // Draw the left side of the pin body up to the bottom of the head
-      ..lineTo(circleCenter.dx - circleRadius, circleCenter.dy)
-      ..close();
-
-// Create a paint for the pin hole (same as the background)
-    final Paint paintHole = Paint()..color = Colors.white;
-
-// Draw the pin path
-    canvas.drawPath(pinPath, paintPin);
-
-// Draw the hole path
-    final Path holePath = Path()
-      ..addOval(Rect.fromCircle(
-          center: circleCenter, radius: circleRadius / 2));
-    canvas.drawPath(holePath, paintHole);
-    // Calculate the total height of the canvas to fit the icon and the text
-    final double canvasHeight = iconSize + fontSize; // Space for text
-
-    // Draw the text
-    final TextPainter textPainter = TextPainter(
-      text: TextSpan(
-        text: userName,
-        style: const TextStyle(
-          fontSize: 20,
-          color: Colors.yellowAccent, // Text color
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-      textDirection: ui.TextDirection.ltr,
-      maxLines: 1, // Allow text to wrap to the second line
-    );
-    textPainter.layout(
-        maxWidth: textMaxWidth); // Set the maximum width for text
-    final Offset textOffset =
-        Offset((iconSize - textPainter.width) / 2, iconSize);
-    textPainter.paint(canvas, textOffset);
-    // Convert canvas to image
-    final ui.Image markerAsImage = await pictureRecorder
-        .endRecording()
-        .toImage(iconSize.toInt(), canvasHeight.toInt());
-
-    // Convert image to bytes
-    final ByteData? byteData =
-        await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
-    final Uint8List uint8List = byteData!.buffer.asUint8List();
-
-    return uint8List;
-  }
-
-
-
-  Future<ui.Image> loadImage(Uint8List img) async {
-    final Completer<ui.Image> completer = new Completer();
-    ui.decodeImageFromList(img, (ui.Image img) {
-      return completer.complete(img);
-    });
-    return completer.future;
-  }
+  //
+  // Future<ui.Image> loadImage(Uint8List img) async {
+  //   final Completer<ui.Image> completer = new Completer();
+  //   ui.decodeImageFromList(img, (ui.Image img) {
+  //     return completer.complete(img);
+  //   });
+  //   return completer.future;
+  // }
 
   Future<void> _determinePosition() async {
     bool serviceEnabled;
@@ -183,24 +181,23 @@ class UserHomePageState extends State<UserHomePage>
     // Get the current location.
     currentLocation = await location.getLocation();
 
-    String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    DocumentSnapshot userDoc =
-        await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    String userName =
-        userDoc['name']; // Replace 'name' with your Firestore field
-    String userAvatar = userDoc['avatar'];
+    // String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    // DocumentSnapshot userDoc =
+    //     await FirebaseFirestore.instance.collection('users').doc(userId).get();
+    // String userName =
+    //     userDoc['name']; // Replace 'name' with your Firestore field
+    // String userAvatar = userDoc['avatar'];
 
     // Create the custom marker
-    final Uint8List markerIcon =
-        await createCustomMarker(userName, _currentZoomLevel);
-
+    // final Uint8List markerIcon =
+    //     await createCustomMarker(userName, _currentZoomLevel);
     // Update the location on the map.
     mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target:
               LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-          zoom: 15.0,
+          zoom: 17.0,
         ),
       ),
     );
@@ -212,16 +209,14 @@ class UserHomePageState extends State<UserHomePage>
           markerId: const MarkerId("current_location"),
           position:
               LatLng(currentLocation!.latitude!, currentLocation!.longitude!),
-          icon: BitmapDescriptor.fromBytes(markerIcon),
+          // icon: BitmapDescriptor.fromBytes(markerIcon),
         ),
       );
     });
   }
 
   Future<void> getUserLocationForWeb() async {
-    if (kDebugMode) {
-      print("getuserlocationforweb is called");
-    }
+    if (kDebugMode) {}
     try {
       loc.Location location = loc.Location();
       bool _serviceEnabled;
@@ -264,7 +259,6 @@ class UserHomePageState extends State<UserHomePage>
           print('Error getting location for web: ${e.toString()}');
         });
       }
-
     }
   }
 
@@ -277,9 +271,6 @@ class UserHomePageState extends State<UserHomePage>
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
     fetchedUserProfiles;
-
-    print('UserHomePage: initState');
-
 
     _loadMapStyle();
     _determinePosition().then((_) {
@@ -633,11 +624,13 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-
   void setupUserListener() {
     String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
-    FirebaseFirestore.instance.collection('users').snapshots().listen((snapshot) {
+    FirebaseFirestore.instance
+        .collection('users')
+        .snapshots()
+        .listen((snapshot) {
       List<Map<String, dynamic>> updatedUserProfiles = [];
 
       for (var change in snapshot.docChanges) {
@@ -647,7 +640,8 @@ class UserHomePageState extends State<UserHomePage>
         }
         if (change.type == DocumentChangeType.added ||
             change.type == DocumentChangeType.modified) {
-          int index = updatedUserProfiles.indexWhere((user) => user['uid'] == userData['uid']);
+          int index = updatedUserProfiles
+              .indexWhere((user) => user['uid'] == userData['uid']);
           if (index >= 0) {
             updatedUserProfiles[index] = userData; // Update existing user
           } else {
@@ -662,10 +656,8 @@ class UserHomePageState extends State<UserHomePage>
           searchUserProfiles = List.from(updatedUserProfiles);
         });
       }
-
     });
   }
-
 
   void navigateToUserDetails(BuildContext context, String userId) {
     Navigator.of(context).push(MaterialPageRoute(
@@ -679,14 +671,12 @@ class UserHomePageState extends State<UserHomePage>
     challengeRequestsSubscription.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _debounce?.cancel();
-    print('UserHomePage: dispose');
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
-    print('UserHomePage: AppLifecycleState changed to $state');
     if (state == AppLifecycleState.paused) {
       setUserOnlineStatus(false);
     } else if (state == AppLifecycleState.resumed) {
@@ -728,15 +718,14 @@ class UserHomePageState extends State<UserHomePage>
         .snapshots()
         .map((snapshot) {
       return snapshot.docs.where((doc) {
-
         var userData = doc.data();
         if (userData['uid'] == currentUserId) {
           return false;
         }
 
-        var distance = calculateDistance(userLat, userLon, userData['latitude'], userData['longitude']);
+        var distance = calculateDistance(
+            userLat, userLon, userData['latitude'], userData['longitude']);
         return distance <= radiusInKm;
-
       }).toList();
     });
   }
@@ -750,14 +739,13 @@ class UserHomePageState extends State<UserHomePage>
 
         // Now call fetchNearbyOpponents with the actual latitude and longitude
         fetchNearbyOpponents(
-                userLat, userLon, 10.0) // Adjust the radius as needed
+                userLat, userLon, 20.0) // Adjust the radius as needed
             .listen((userDocs) {
           updateMarkers(userDocs);
         });
       }
     });
   }
-
 
   Stream<List<DocumentSnapshot>> fetchOnlineUsersWithLocationName(String city) {
     return FirebaseFirestore.instance
@@ -782,16 +770,24 @@ class UserHomePageState extends State<UserHomePage>
 
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
-        final Uint8List markerIcon =
-            await createCustomMarker(userData['name'], _currentZoomLevel);
+        // final Uint8List markerIcon =
+        //     await createCustomMarker(userData['name'], _currentZoomLevel);
 
+        // var userMarker = Marker(
+        //   markerId: MarkerId(doc.id),
+        //   position: LatLng(lat, lon),
+        //   icon: BitmapDescriptor.fromBytes(markerIcon),
+        //   onTap: () {
+        //     _showChallengeModalFromBottom(context, userData);
+        //   },
+        // );
+        // newMarkers.add(userMarker);
+
+        // Adding marker with default icon
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
           position: LatLng(lat, lon),
-          icon: BitmapDescriptor.fromBytes(markerIcon),
-          onTap: () {
-            _showChallengeModal(context, userData);
-          },
+          // Default icon is used automatically, no need to specify
         );
         newMarkers.add(userMarker);
       }
@@ -799,10 +795,10 @@ class UserHomePageState extends State<UserHomePage>
     if (mounted) {
       setState(() {
         markers.clear();
-        markers = newMarkers;
+        // markers = newMarkers;
+        markers.addAll(newMarkers);
       });
     }
-
   }
 
   void updateUserLocation(LocationData location) async {
@@ -816,13 +812,10 @@ class UserHomePageState extends State<UserHomePage>
     });
   }
 
-
-
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();
     _debounce = Timer(const Duration(milliseconds: 500), () {
       if (query.isEmpty) {
-
         if (mounted) {
           setState(() {
             _isSearching = false;
@@ -834,19 +827,15 @@ class UserHomePageState extends State<UserHomePage>
           return name.contains(query.toLowerCase());
         }).toList();
 
-
         if (mounted) {
           setState(() {
             _filteredPlayers = filteredProfiles;
             _isSearching = true;
           });
         }
-
       }
     });
   }
-
-
 
   Future<List<Map<String, dynamic>>> fetchUsersByName(String searchName) async {
     // Perform a case-insensitive search
@@ -880,256 +869,458 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
-  void _showChallengeModal(
+  void _showChallengeModalFromBottom(
       BuildContext context, Map<String, dynamic> opponentData) {
     final String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
-    // Add this check at the beginning of the method
     if (opponentData['uid'] == currentUserId) {
       return; // Exit the function if the user is trying to challenge themselves
     }
     int currentUserChessCoins = 0;
     int opponentChessCoins = 0;
 
-    String localBetAmount = betAmount; // Local variable for bet amount
-    String localTimerValue =
-        this.localTimerValue; // Initialize with the local value
+    String localBetAmount =
+        betAmount; // Local variable for bet amount, initially set to class level variable
+    String localTimerValue = this
+        .localTimerValue; // Initialize with the local value from class level variable
     bool isChallengeable = !(opponentData['inGame'] ?? false);
     String? currentGameId = opponentData['currentGameId'];
     String opponentId = opponentData['uid'];
     bool isOnline = opponentData['isOnline'] ?? false;
 
+    const double tileWidth = 90.0;
+    const double tileHeight = 55.0;
+
     // Initialize the button state for this user if not already set
     challengeButtonCooldown[opponentId] ??= true;
     bool isButtonEnabled = challengeButtonCooldown[opponentId] ?? true;
 
-    // Fetch and update the current user's and opponent's Chess Coins
+    // Define bet amount and timer options
+    List<Map<String, dynamic>> betAmountOptions = [
+      {'value': '5', 'asset': 'assets/NBC-token.png'},
+      {'value': '10', 'asset': 'assets/NBC-token.png'},
+      {'value': '15', 'asset': 'assets/NBC-token.png'},
+    ];
+    List<String> timerOptions = ['5', '10', '15'];
+
+    // Function to fetch and update Chess Coins
     Future<void> fetchAndUpdateChessCoins() async {
       currentUserChessCoins = await getUserChessCoins(currentUserId);
       opponentChessCoins = await getUserChessCoins(opponentId);
     }
 
-    showModalBottomSheet(
+    showGeneralDialog(
       context: context,
-      builder: (BuildContext context) {
+      pageBuilder: (BuildContext buildContext, Animation<double> animation,
+          Animation<double> secondaryAnimation) {
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
-            return Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16.0, vertical: 32.0),
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    // ... existing code for modal layout ...
-                    const Text(
-                      "Set your Stake",
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        // fontFamily: 'Poppins',
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundImage: NetworkImage(opponentData['avatar']),
-                          onBackgroundImageError: (exception, stackTrace) {
-                          },
+            return Align(
+              alignment: Alignment.bottomRight, // Aligns the modal to the right
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.4,
+                // 40% of screen width
+                // height: MediaQuery.of(context).size.height * 0.6,
+                height: isOnline && isChallengeable
+                    ? MediaQuery.of(context).size.height * 0.6 // Original height for challengeable and online
+                    : MediaQuery.of(context).size.height * 0.4,
+                // Full screen height
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0, vertical: 32.0),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF272727),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(20), // Adjust the radius as needed
+                    topRight: Radius.circular(20),
+                  ),
+                ),
+                // Modal background color
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: <Widget>[
+                      // Your existing modal content goes here
+                      // For example, starting with the "Set your Stake" Text widget
+                      const Text(
+                        "SET YOUR STAKE",
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          decoration: TextDecoration.none,
                         ),
-                        const SizedBox(width: 2),
-                        Expanded(
-                          child: Text(
-                            opponentData['name'],
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              fontFamily: 'Poppins',
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Row(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                left:
+                                    20.0), // Adjust the left padding as needed
+                            child: CircleAvatar(
+                              radius: 40,
+                              backgroundImage:
+                                  NetworkImage(opponentData['avatar']),
+                              onBackgroundImageError:
+                                  (exception, stackTrace) {},
                             ),
                           ),
-                        ),
-
-                        // Message Icon Button
-                        IconButton(
-                          icon: const Icon(Icons.message),
-                          color: Colors.blue,
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MessageScreen(opponentUId: opponentData['uid']),
+                          const SizedBox(width: 2),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.only(left: 15.0),
+                              // Add padding to the username
+                              child: Text(
+                                opponentData['name'],
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'Poppins',
+                                  color: Colors.white, // Username text color
+                                  decoration: TextDecoration.none,
+                                ),
                               ),
-                            );
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {
-                            String? userId = opponentData['uid'];
-                            if (userId != null) {
-                              navigateToUserDetails(context, userId);
-                            } else {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                    content: Text("Error: User ID is null")),
-                              );
-                            }
-                          },
-                          child: const Text('Visit'),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          IconButton(
+                            icon: Stack(
+                              children: [
+                                const Icon(
+                                  Icons.message,
+                                  color: Colors.blue,
+                                  size: 30,
+                                ), // Your existing icon
+                                Positioned(
+                                  // Position the unread indicator
+                                  top: 0,
+                                  right: 0,
+                                  child: StreamBuilder<int>(
+                                    stream: getUnreadMessageCountStream(
+                                        opponentData['uid']),
+                                    builder: (context, snapshot) {
+                                      if (snapshot.hasData &&
+                                          snapshot.data! > 0) {
+                                        // Show a simple red dot for any number of unread messages
+                                        return Container(
+                                          width: 12, // Small dot size
+                                          height: 12, // Small dot size
+                                          decoration: const BoxDecoration(
+                                            color: Colors.red,
+                                            shape: BoxShape.circle,
+                                          ),
+                                        );
+                                      }
+                                      return const SizedBox
+                                          .shrink(); // No indicator if no unread messages
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MessageScreen(
+                                      opponentUId: opponentData['uid']),
+                                ),
+                              ).then((_) {
+                                // Optionally reset the unread count after visiting the message screen
+                              });
+                            },
+                          ),
+                          const SizedBox(width: 12),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                                right:
+                                    20.0), // Adjust the right padding as needed
+                            child: ElevatedButton(
+                              onPressed: () {
+                                String? userId = opponentData['uid'];
+                                if (userId != null) {
+                                  navigateToUserDetails(context, userId);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Error: User ID is null"),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                primary:
+                                    const Color(0xFF40c759), // Background color
+                                onPrimary: Colors.white, // Text color
+                              ),
+                              child: const Text('Visit'),
+                            ),
+                          ),
+                        ],
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          DropdownButtonHideUnderline(
-                            child: DropdownButtonFormField<String>(
-                              value: localBetAmount,
-                              items: [
-                                {'value': '5', 'image': 'assets/NBC-token.png'},
-                                {'value': '10', 'image': 'assets/NBC-token.png'},
-                                {'value': '15', 'image': 'assets/NBC-token.png'},
-                              ].map((Map<String, String> item) {
-                                return DropdownMenuItem<String>(
-                                  value: item['value'],
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text('${item['value']}'),
-                                      const SizedBox(width: 8),
-                                      Image.asset(item['image']!, width: 20, height: 20),
-                                    ],
+                      const SizedBox(height: 10),
+                      const Divider(
+                        thickness: 2,
+                        // Thickness of the divider line
+                        indent: 20,
+                        // Starting space of the divider (left padding)
+                        endIndent: 20,
+                        // Ending space of the divider (right padding)
+                        color: Colors.grey, // Color of the divider line
+                      ),
+                      const SizedBox(height: 10),
+
+// Bet Amount Selectors
+                      Visibility(
+                        visible: isChallengeable &&
+                            isOnline, // Show only if challengeable and online
+                        child: Column(
+                          children: [
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding:
+                                    EdgeInsets.only(left: 50.0, bottom: 10.0),
+                                child: Text(
+                                  "Bet Amount",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                    decoration: TextDecoration.none,
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            // Bet Amount Selectors
+                            Wrap(
+                              spacing: 100.0,
+                              runSpacing: 8.0,
+                              children: betAmountOptions.map((option) {
+                                bool isSelected =
+                                    option['value'] == localBetAmount;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setModalState(() {
+                                      localBetAmount = option['value'];
+                                    });
+                                  },
+                                  child: Container(
+                                    width: tileWidth,
+                                    height: tileHeight,
+                                    padding: EdgeInsets.all(isSelected ? 6 : 8),
+                                    decoration: BoxDecoration(
+                                      // color: isSelected ? Colors.blue : Colors.grey[200],
+                                      color: isSelected
+                                          ? const Color(0xFF272727)
+                                          : const Color(0xFF8E8E93),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: isSelected
+                                          ? Border.all(
+                                              color: const Color(0xFF40c759),
+                                              width: 2)
+                                          : null,
+                                    ),
+                                    child: Row(
+                                      // Use Row for horizontal layout
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: <Widget>[
+                                        const SizedBox(width: 20),
+                                        Padding(
+                                          padding: const EdgeInsets.only(
+                                              right:
+                                                  5), // Adjust the padding to control the space
+                                          child: Text(
+                                            option['value'],
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 16,
+                                              decoration: TextDecoration.none,
+                                            ),
+                                          ),
+                                        ),
+                                        Image.asset(option['asset'],
+                                            width: 15, height: 15),
+                                      ],
+                                    ),
                                   ),
                                 );
                               }).toList(),
-                              onChanged: (newValue) {
-                                if (newValue != null) {
-                                  setModalState(() {
-                                    localBetAmount = newValue;
-                                  });
-                                }
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Bet Amount',
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  borderSide: const BorderSide(color: Colors.black54, width: 1.0),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // const Align(
+                      //   alignment: Alignment
+                      //       .centerLeft, // Adjusts alignment to the left
+                      //   child: Padding(
+                      //     padding: EdgeInsets.only(
+                      //         left: 50.0,
+                      //         bottom: 10.0), // Adds padding to the left
+                      //     child: Text(
+                      //       "Timer",
+                      //       style: TextStyle(
+                      //         fontWeight: FontWeight.bold,
+                      //         fontSize: 16,
+                      //         color: Colors.white,
+                      //         decoration: TextDecoration.none,
+                      //       ),
+                      //     ),
+                      //   ),
+                      // ),
+
+                      Visibility(
+                        visible: isChallengeable &&
+                            isOnline, // Show only if challengeable and online
+                        child: Column(
+                          children: [
+                            const Align(
+                              alignment: Alignment.centerLeft,
+                              child: Padding(
+                                padding:
+                                    EdgeInsets.only(left: 50.0, bottom: 10.0),
+                                child: Text(
+                                  "Timer",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                    decoration: TextDecoration.none,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-
-                          const SizedBox(height: 20),
-                          DropdownButtonFormField<String>(
-                            value: localTimerValue,
-                            items: ['5', '10', '15'].map((String value) {
-                              return DropdownMenuItem<String>(
-                                value: value,
-                                child: Text('$value min'),
-                              );
-                            }).toList(),
-                            onChanged: (newValue) {
-                              if (newValue != null) {
-                                setModalState(() {
-                                  localTimerValue = newValue;
-                                });
-                              }
-                            },
-                            decoration: InputDecoration(
-                              labelText: 'Timer',
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10), // Adjust padding as needed
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Colors.black54, width: 1.0), // Use a lighter color for the enabled border if you prefer
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: const BorderSide(color: Colors.blue, width: 2.0), // Use a more prominent color when the field is focused
-                              ),
-                            ),
-                          ),
-
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 20),
-
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: isChallengeable ? Colors.green : Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 30, vertical: 20),
-                      ),
-                      onPressed: isOnline &&
-                              (isChallengeable || currentGameId != null) &&
-                              (isChallengeable ? isButtonEnabled : true)
-                          ? () async {
-                              // Only perform the coin check if the user is challenging, not watching
-                              if (isChallengeable) {
-                                int betAmountInt = int.parse(
-                                    localBetAmount.replaceAll('\$', ''));
-                                await fetchAndUpdateChessCoins();
-                                if (currentUserChessCoins < betAmountInt) {
-                                  showInsufficientFundsDialog(
-                                      "You do not have enough Chess Coins to place this bet.");
-                                } else if (opponentChessCoins < betAmountInt) {
-                                  showInsufficientFundsDialog(
-                                      "Opponent does not have enough Chess Coins for this bet.");
-                                } else {
-                                  // Rest of the challenge logic
-                                  setModalState(() =>
-                                      challengeButtonCooldown[opponentId] =
-                                          false);
-                                  await _sendChallenge(opponentData['uid'],
-                                      localBetAmount, localTimerValue);
-                                  Navigator.pop(context);
-                                  Timer(const Duration(seconds: 30), () {
-                                  if (mounted) {
-                                    setState(() => challengeButtonCooldown[opponentId] = true);
-                                   }
-                                  });
-                                }
-                              } else if (currentGameId != null) {
-                                // Bypass the coin check for watching
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        // ChessBoard(gameId: currentGameId, isSpectator: true),
-                                        ChessBoard(
-                                            gameId: currentGameId,
-                                            isSpectator: true,
-                                            opponentUID: player1Id),
+                            // Timer Value Selectors
+                            Wrap(
+                              spacing: 100.0, // Space between chips
+                              runSpacing: 12.0,
+                              children: timerOptions.map((option) {
+                                bool isSelected = option == localTimerValue;
+                                return GestureDetector(
+                                  onTap: () {
+                                    setModalState(() {
+                                      localTimerValue = option;
+                                    });
+                                  },
+                                  child: Container(
+                                    width: tileWidth,
+                                    height: tileHeight,
+                                    padding: EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      // color: isSelected ? Colors.blue : Colors.grey[200],
+                                      color: isSelected
+                                          ? const Color(0xFF272727)
+                                          : Color(0xFF8E8E93),
+                                      borderRadius: BorderRadius.circular(8),
+                                      border: isSelected
+                                          ? Border.all(
+                                              color: Color(0xFF40c759),
+                                              width: 2)
+                                          : null,
+                                    ),
+                                    child: Text(
+                                      '$option min',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        decoration: TextDecoration.none,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
                                   ),
                                 );
+                              }).toList(),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      // Rest of the challenge logic and buttons...
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: isChallengeable
+                              ? Colors.green
+                              : Colors.deepPurple,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 30, vertical: 20),
+                        ),
+                        onPressed: isOnline &&
+                                (isChallengeable || currentGameId != null) &&
+                                (isChallengeable ? isButtonEnabled : true)
+                            ? () async {
+                                // Only perform the coin check if the user is challenging, not watching
+                                if (isChallengeable) {
+                                  int betAmountInt = int.parse(
+                                      localBetAmount.replaceAll('\$', ''));
+                                  await fetchAndUpdateChessCoins();
+                                  if (currentUserChessCoins < betAmountInt) {
+                                    showInsufficientFundsDialog(
+                                        "You do not have enough Chess Coins to place this bet.");
+                                  } else if (opponentChessCoins <
+                                      betAmountInt) {
+                                    showInsufficientFundsDialog(
+                                        "Opponent does not have enough Chess Coins for this bet.");
+                                  } else {
+                                    // Rest of the challenge logic
+                                    setModalState(() =>
+                                        challengeButtonCooldown[opponentId] =
+                                            false);
+                                    await _sendChallenge(opponentData['uid'],
+                                        localBetAmount, localTimerValue);
+                                    Navigator.pop(context);
+                                    Timer(const Duration(seconds: 30), () {
+                                      if (mounted) {
+                                        setState(() => challengeButtonCooldown[
+                                            opponentId] = true);
+                                      }
+                                    });
+                                  }
+                                } else if (currentGameId != null) {
+                                  // Bypass the coin check for watching
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          // ChessBoard(gameId: currentGameId, isSpectator: true),
+                                          ChessBoard(
+                                              gameId: currentGameId,
+                                              isSpectator: true,
+                                              opponentUID: player1Id),
+                                    ),
+                                  );
+                                }
                               }
-                            }
-                          : null,
-                      // Disable the button if conditions are not met
-                      child: Text(isOnline
-                          ? (isChallengeable ? 'Challenge' : 'Watch Game')
-                          : 'Player Offline'),
-                    ),
-                  ],
+                            : null,
+                        child: Text(isOnline
+                            ? (isChallengeable ? 'Challenge' : 'Watch Game')
+                            : 'Player Offline',style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                      // Include the rest of your widgets that make up the modal
+                    ],
+                  ),
                 ),
               ),
             );
           },
+        );
+      },
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      transitionDuration: const Duration(milliseconds: 300),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(0, 1), // Start from the right
+            end: Offset.zero, // End at its final position
+          ).animate(animation),
+          child: child,
         );
       },
     );
@@ -1143,7 +1334,6 @@ class UserHomePageState extends State<UserHomePage>
         String opponentName = await getUserName(opponentId);
         String currentUserName = await getUserName(currentUserId);
 
-
         DocumentReference challengeDocRef = await FirebaseFirestore.instance
             .collection('challengeRequests')
             .add({
@@ -1154,7 +1344,6 @@ class UserHomePageState extends State<UserHomePage>
           'status': 'pending',
           'timestamp': FieldValue.serverTimestamp(),
         });
-
 
         WidgetsBinding.instance.addPostFrameCallback((_) {
           navigatorKey.currentState?.push(
@@ -1223,7 +1412,7 @@ class UserHomePageState extends State<UserHomePage>
 
     return FirebaseFirestore.instance
         .collection('userChats')
-        .doc(userId)
+        .doc(myUserId)
         .snapshots()
         .map((doc) {
       if (doc.exists) {
@@ -1238,7 +1427,6 @@ class UserHomePageState extends State<UserHomePage>
     var sortedIds = [user1, user2]..sort();
     return sortedIds.join('_');
   }
-
 
   void _initiateDataStreams() {
     setupUserListener();
@@ -1273,207 +1461,217 @@ class UserHomePageState extends State<UserHomePage>
     return Scaffold(
       body: RefreshIndicator(
         onRefresh: _refreshData,
-      backgroundColor: const Color.fromARGB(255, 223, 225, 237),
-      child: SafeArea(
-        child: Stack(
-          // Use Stack to overlay widgets
-          children: [
-            Row(
-              // Use Row to divide the screen into two sections
-              children: [
-                // Left section - Google Map (60% width)
-                Expanded(
-                    flex: 6,
-                    child: Padding(
-                      padding: const EdgeInsets.only(
-                          left: 13.0, top: 13.0, bottom: 13.0),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(
-                            40), // Adjust the radius as needed
-                        child: GoogleMap(
-                          // Your GoogleMap properties here
-                          // padding: const EdgeInsets.all(20),
-                          onMapCreated: _onMapCreated,
-                          initialCameraPosition: const CameraPosition(
-                            target: LatLng(0, 0),
-                            zoom: 45,
-                          ),
-                          markers: markers,
-                        ),
-                      ),
-                    )),
-
-                // Right section - User Avatar, Search, and List (40% width)
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    children: [
-                      if (currentUser != null)
-                        UserProfileHeader(userId: currentUser.uid),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 20),
-                        child: TextField(
-                          onChanged: _onSearchChanged,
-                          decoration: InputDecoration(
-                            hintText: 'Enter player name...',
-                            prefixIcon: const Icon(Icons.search),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                              borderSide:
-                                  BorderSide(color: Colors.blueGrey.shade800),
+        backgroundColor: const Color.fromARGB(255, 223, 225, 237),
+        child: SafeArea(
+          child: Stack(
+            // Use Stack to overlay widgets
+            children: [
+              Row(
+                // Use Row to divide the screen into two sections
+                children: [
+                  // Left section - Google Map (60% width)
+                  Expanded(
+                      flex: 6,
+                      child: Padding(
+                        padding: const EdgeInsets.only(
+                            left: 13.0, top: 13.0, bottom: 13.0),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(
+                              40), // Adjust the radius as needed
+                          child: GoogleMap(
+                            // Your GoogleMap properties here
+                            // padding: const EdgeInsets.all(20),
+                            onMapCreated: _onMapCreated,
+                            initialCameraPosition: const CameraPosition(
+                              target: LatLng(0, 0),
+                              zoom: 20.0,
                             ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 10, horizontal: 10),
-                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            markers: markers,
                           ),
                         ),
-                      ),
-                      Text(
-                        'Players in $userLocation',
-                        // 'Players in $cityName',
-                        style: const TextStyle(
-                          fontFamily: 'Poppins',
-                          color: Color.fromARGB(255, 12, 4, 4),
-                          fontSize: 30,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      )),
 
-
-                      Expanded(
-                        child: StreamBuilder<List<DocumentSnapshot>>(
-                          stream: onlineUsersStream,
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                              return const Center(child: Text('No players here.'));
-                            }
-
-                            // Populate or update fetchedUserProfiles with snapshot data if not searching
-                            if (!_isSearching && snapshot.data!.isNotEmpty) {
-                              fetchedUserProfiles = snapshot.data!
-                                  .map((doc) => doc.data() as Map<String, dynamic>)
-                                  .where((user) => user['uid'] != FirebaseAuth.instance.currentUser?.uid)
-                                  .toList();
-
-                              fetchedUserProfiles.sort((a, b) {
-                                // Ensure we have valid booleans for comparison
-                                bool aIsOnline = a['isOnline'] as bool? ?? false;
-                                bool bIsOnline = b['isOnline'] as bool? ?? false;
-
-                                // Convert booleans to integers for comparison (true > false)
-                                int aInt = aIsOnline ? 1 : 0;
-                                int bInt = bIsOnline ? 1 : 0;
-
-                                // Compare the integer representations
-                                return bInt.compareTo(aInt);
-                              });
-                            }
-
-
-                            List<Map<String, dynamic>> usersToShow = _isSearching ? _filteredPlayers : fetchedUserProfiles;
-
-                            // Update the logic to handle an empty list after filtering
-                            if (usersToShow.isEmpty) {
-                              // This condition checks if the list is empty after filtering
-                              return Center(
-                                child: Text(
-                                  _isSearching ? 'oops! there is no players.' : 'oops! there is no players.',
-                                  style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
-                                ),
-                              );
-                            }
-
-
-                            return GridView.builder(
-                              key: UniqueKey(),
-                              padding: const EdgeInsets.all(16),
-                              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: 4,
-                                crossAxisSpacing: 5,
-                                mainAxisSpacing: 5,
-                                childAspectRatio: 1,
-                              ),
-                              // GridView.builder properties...
-                              itemCount: usersToShow.length,
-                              itemBuilder: (context, index) {
-                                var userData = usersToShow[index];
-                                return buildPlayerTile(userData, context);
-                              },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-
-            Positioned(
-              top: 10,
-              right: 10,
-              child: StreamBuilder<DocumentSnapshot>(
-                stream: FirebaseFirestore.instance
-                    .collection('users')
-                    .doc(userId)
-                    .snapshots(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return Container();
-                  }
-
-                  if (!snapshot.hasData || !snapshot.data!.exists) {
-                    return const Text('Loading...');
-                  }
-
-                  int chessCoins = (snapshot.data!.data()
-                          as Map<String, dynamic>)['chessCoins'] ??
-                      0;
-
-                  return Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.white, // Background color for the container
-                      borderRadius: BorderRadius.circular(10),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 1,
-                          blurRadius: 1,
-                          offset: const Offset(0, 1), // changes position of shadow
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  // Right section - User Avatar, Search, and List (40% width)
+                  Expanded(
+                    flex: 4,
+                    child: Column(
                       children: [
+                        if (currentUser != null)
+                          UserProfileHeader(userId: currentUser.uid),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 20),
+                          child: TextField(
+                            onChanged: _onSearchChanged,
+                            decoration: InputDecoration(
+                              hintText: 'Enter player name...',
+                              prefixIcon: const Icon(Icons.search),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(10),
+                                borderSide:
+                                    BorderSide(color: Colors.blueGrey.shade800),
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 10, horizontal: 10),
+                              hintStyle: TextStyle(color: Colors.grey.shade500),
+                            ),
+                          ),
+                        ),
                         Text(
-                          '$chessCoins',
+                          'Players in $userLocation',
+                          // 'Players in $cityName',
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontFamily: 'Poppins',
+                            color: Color.fromARGB(255, 12, 4, 4),
+                            fontSize: 30,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        const CircleAvatar(
-                          backgroundImage: AssetImage('assets/NBC-token.png'),
-                          radius: 10,
+                        Expanded(
+                          child: StreamBuilder<List<DocumentSnapshot>>(
+                            stream: onlineUsersStream,
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return const Center(
+                                    child: Text('No players here.'));
+                              }
+
+                              // Populate or update fetchedUserProfiles with snapshot data if not searching
+                              if (!_isSearching && snapshot.data!.isNotEmpty) {
+                                fetchedUserProfiles = snapshot.data!
+                                    .map((doc) =>
+                                        doc.data() as Map<String, dynamic>)
+                                    .where((user) =>
+                                        user['uid'] !=
+                                        FirebaseAuth.instance.currentUser?.uid)
+                                    .toList();
+
+                                fetchedUserProfiles.sort((a, b) {
+                                  // Ensure we have valid booleans for comparison
+                                  bool aIsOnline =
+                                      a['isOnline'] as bool? ?? false;
+                                  bool bIsOnline =
+                                      b['isOnline'] as bool? ?? false;
+
+                                  // Convert booleans to integers for comparison (true > false)
+                                  int aInt = aIsOnline ? 1 : 0;
+                                  int bInt = bIsOnline ? 1 : 0;
+
+                                  // Compare the integer representations
+                                  return bInt.compareTo(aInt);
+                                });
+                              }
+
+                              List<Map<String, dynamic>> usersToShow =
+                                  _isSearching
+                                      ? _filteredPlayers
+                                      : fetchedUserProfiles;
+
+                              // Update the logic to handle an empty list after filtering
+                              if (usersToShow.isEmpty) {
+                                // This condition checks if the list is empty after filtering
+                                return Center(
+                                  child: Text(
+                                    _isSearching
+                                        ? 'oops! there is no players.'
+                                        : 'oops! there is no players.',
+                                    style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey.shade600),
+                                  ),
+                                );
+                              }
+
+                              return GridView.builder(
+                                key: UniqueKey(),
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate:
+                                    const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 4,
+                                  crossAxisSpacing: 5,
+                                  mainAxisSpacing: 5,
+                                  childAspectRatio: 1,
+                                ),
+                                // GridView.builder properties...
+                                itemCount: usersToShow.length,
+                                itemBuilder: (context, index) {
+                                  var userData = usersToShow[index];
+                                  return buildPlayerTile(userData, context);
+                                },
+                              );
+                            },
+                          ),
                         ),
                       ],
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
-            ),
-          ],
+              Positioned(
+                top: 10,
+                right: 10,
+                child: StreamBuilder<DocumentSnapshot>(
+                  stream: FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(userId)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return Container();
+                    }
+
+                    if (!snapshot.hasData || !snapshot.data!.exists) {
+                      return const Text('Loading...');
+                    }
+
+                    int chessCoins = (snapshot.data!.data()
+                            as Map<String, dynamic>)['chessCoins'] ??
+                        0;
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color:
+                            Colors.white, // Background color for the container
+                        borderRadius: BorderRadius.circular(10),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.grey.withOpacity(0.5),
+                            spreadRadius: 1,
+                            blurRadius: 1,
+                            offset: const Offset(
+                                0, 1), // changes position of shadow
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            '$chessCoins',
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          const CircleAvatar(
+                            backgroundImage: AssetImage('assets/NBC-token.png'),
+                            radius: 10,
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-    ),
     );
   }
-
 
   Widget buildPlayerTile(Map<String, dynamic> userData, BuildContext context) {
     String avatarUrl = userData['avatar'];
@@ -1487,7 +1685,7 @@ class UserHomePageState extends State<UserHomePage>
     }
 
     return GestureDetector(
-      onTap: () => _showChallengeModal(context, userData),
+      onTap: () => _showChallengeModalFromBottom(context, userData),
       child: Column(
         children: <Widget>[
           Stack(
@@ -1515,7 +1713,6 @@ class UserHomePageState extends State<UserHomePage>
                   ),
                 ),
               ),
-
               StreamBuilder<int>(
                 stream: getUnreadMessageCountStream(userId),
                 builder: (context, snapshot) {
@@ -1540,8 +1737,6 @@ class UserHomePageState extends State<UserHomePage>
                   return const SizedBox.shrink();
                 },
               ),
-
-
             ],
           ),
           const SizedBox(height: 6),
@@ -1549,7 +1744,8 @@ class UserHomePageState extends State<UserHomePage>
             userData['name'] ?? 'Username',
             style: TextStyle(
               fontFamily: 'Poppins',
-              color: isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
+              color:
+                  isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -1579,7 +1775,7 @@ class _UserProfileHeaderState extends State<UserProfileHeader> {
 
   Future<Map<String, dynamic>?> fetchCurrentUserProfile(String userId) async {
     var doc =
-    await FirebaseFirestore.instance.collection('users').doc(userId).get();
+        await FirebaseFirestore.instance.collection('users').doc(userId).get();
     return doc.exists ? doc.data() as Map<String, dynamic> : null;
   }
 
@@ -1590,22 +1786,20 @@ class _UserProfileHeaderState extends State<UserProfileHeader> {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData) {
-          String avatarUrl = snapshot.data!['avatar'] ??
-              'path/to/default/avatar.png';
+          String avatarUrl =
+              snapshot.data!['avatar'] ?? 'path/to/default/avatar.png';
           String userName = snapshot.data!['name'] ?? 'Unknown User';
-
 
           return Padding(
             padding: const EdgeInsets.only(top: 5.0, bottom: 5.0),
             child: Column(
               children: [
                 GestureDetector(
-                  onTap: () =>
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const UserProfileDetailsPage(),
-                        ),
-                      ),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => const UserProfileDetailsPage(),
+                    ),
+                  ),
                   child: CircleAvatar(
                     radius: 40,
                     backgroundImage: NetworkImage(

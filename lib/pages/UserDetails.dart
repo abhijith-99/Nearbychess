@@ -148,10 +148,19 @@
     @override
     Widget build(BuildContext context) {
       return Scaffold(
-        appBar: AppBar(title: const Text('User Details', style: TextStyle(fontSize: 16))),
+        // appBar: AppBar(title: const Text('User Details', style: TextStyle(fontSize: 16))),
+        appBar: AppBar(
+          backgroundColor: Color(0xFF272727), // Set the background color using the hex code
+          title: const Text(
+            'User Details',
+            style: TextStyle(fontSize: 16, color: Colors.white), // Set the text color to white
+          ),
+          iconTheme: IconThemeData(color: Colors.white), // Set the back arrow icon to white
+        ),
+
         backgroundColor: Colors.grey[200],
         body: userDetails == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const Center()
             : Column(
           children: [
             // User details section
@@ -215,7 +224,7 @@
                     builder: (context, snapshot) {
 
                       if (!snapshot.hasData) {
-                        return const CircularProgressIndicator();
+                        return Container();
                       }
                       var stats = snapshot.data!;
                       return Column(
@@ -333,7 +342,7 @@
               FutureBuilder<List<MatchRecord>>(
                 future: fetchUserMatches(widget.userId),
                 builder: (context, snapshot) {
-                  if (!snapshot.hasData) return const CircularProgressIndicator();
+                  if (!snapshot.hasData) return Container();
                   if (snapshot.data!.isEmpty) return const Text('No match history available');
                   return ListView.builder(
                     physics: const NeverScrollableScrollPhysics(),

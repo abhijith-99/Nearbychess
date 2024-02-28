@@ -58,15 +58,15 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
             child: Container(
               decoration: BoxDecoration(
                 color: Colors.red, // Background color
-                borderRadius: BorderRadius.circular(4.0), // Rounded corners
+                borderRadius: BorderRadius.circular(6.0), // Rounded corners
               ),
               child: TextButton(
                 onPressed: signOut,
                 style: TextButton.styleFrom(
                   primary: Colors.white, // Text color
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
                 ),
-                child: const Text('Logout'),
+                child: const Text('SIGN OUT', style: TextStyle(fontSize: 16),),
               ),
             ),
           ),
@@ -132,7 +132,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                             // Games Played
                             Text(
                               'Games Played: ${stats['totalMatches']}',
-                              style: TextStyle(
+                              style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.black87,
@@ -274,12 +274,12 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
           }
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: shareReferralCode,
-        label: const Text('Share And Win 100'),
-        icon: const Icon(Icons.share),
-        backgroundColor: Colors.blue,
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: shareReferralCode,
+      //   label: const Text('Share And Win 100'),
+      //   icon: const Icon(Icons.share),
+      //   backgroundColor: Colors.blue,
+      // ),
     );
   }
 
@@ -353,75 +353,69 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
     await FirebaseFirestore.instance.collection('users').doc(userId).update({'name': newUsername});
     setState(() {}); // This will refresh the UI with the updated username
   }
+
+
   Future<void> editUsername(String currentUsername) async {
     TextEditingController usernameController = TextEditingController(text: currentUsername);
 
     return showDialog<void>(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.5),
+      barrierColor: Colors.black.withOpacity(0.75),
       builder: (BuildContext context) {
-
         return AlertDialog(
-          backgroundColor: Colors.brown.shade300, // Matching the chessboard-themed background color.
+          backgroundColor: Colors.white, // Matching the chessboard-themed background color.
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15), // Rounded shape.
-            side: BorderSide(color: Colors.black, width: 2), // Black border for consistency.
+            side: const BorderSide(color: Colors.black, width: 1), // Black border for consistency.
           ),
-          title: const Text(
-            'Edit Username',
-            style: TextStyle(
-              color: Colors.white, // Text color changed to white for consistency.
-              fontWeight: FontWeight.bold,
+          content: Container(
+            width: MediaQuery.of(context).size.width * 0.5, // Set dialog width to 70% of screen width
+            child: Row( // Row for horizontal alignment
+              children: [
+                Expanded( // Expanded to take available space
+                  child: TextField(
+                    controller: usernameController,
+                    autofocus: true,
+                    decoration: InputDecoration(
+                      hintText: 'Enter new username',
+                      errorText: validateUsername(usernameController.text),
+                      border: const OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white), // Adjusted for theme consistency.
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      hintStyle: TextStyle(color: Colors.black.withOpacity(0.7)), // Hint text style for visibility.
+                    ),
+                    style: const TextStyle(color: Colors.black), // Text input color for visibility.
+                    cursorColor: Colors.black, // Cursor color for visibility.
+                    onChanged: (value) {
+                      // Trigger UI update for error message without using setState as it is a stateful builder
+                      (context as Element).markNeedsBuild();
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8), // SizedBox for spacing between TextField and TextButton
+                TextButton(
+                  style: TextButton.styleFrom(
+                    primary: Colors.white, // Text color for "Update".
+                    backgroundColor: Colors.green, // Button color.
+                  ),
+                  onPressed: () {
+                    if (validateUsername(usernameController.text) == null) {
+                      updateUsername(usernameController.text);
+                      Navigator.of(context).pop();
+                    }
+                  },
+                  child: const Text('SAVE'),
+                ),
+              ],
             ),
           ),
-          content: TextField(
-            controller: usernameController,
-            autofocus: true,
-            decoration: InputDecoration(
-              hintText: 'Enter new username',
-              errorText: validateUsername(usernameController.text),
-              border: const OutlineInputBorder(
-                borderSide: BorderSide(color: Colors.white), // Adjusted for theme consistency.
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.7)), // Hint text style for visibility.
-            ),
-            style: const TextStyle(color: Colors.white), // Text input color for visibility.
-            cursorColor: Colors.white, // Cursor color for visibility.
-            onChanged: (value) {
-              // Trigger UI update for error message without using setState as it is a stateful builder
-              (context as Element).markNeedsBuild();
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                primary: Colors.black, // Text color.
-                backgroundColor: Colors.white, // Button color for "Cancel".
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(
-                primary: Colors.white, // Text color for "Update".
-                backgroundColor: Colors.black, // Button color.
-              ),
-              onPressed: () {
-                if (validateUsername(usernameController.text) == null) {
-                  updateUsername(usernameController.text);
-                  Navigator.of(context).pop();
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
         );
-
       },
     );
 
   }
+
 
   String? validateUsername(String username) {
     if (username.length > 10) {
@@ -444,32 +438,84 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   }
 
 
+
   void showAvatarSelection() {
-    showModalBottomSheet(
+    String? selectedAvatar; // Temporarily store the selected avatar URL
+
+    showDialog(
       context: context,
       builder: (BuildContext context) {
-        return GridView.builder(
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 3,
-            childAspectRatio: 1.0,
+        // Calculate the number of items per row based on the dialog width
+        var dialogWidth = MediaQuery.of(context).size.width * 0.5; // Dialog width is 80% of screen width
+        var itemPadding = 10.0; // Padding around each item
+        var spacing = 8.0; // Spacing between items
+        var itemCount = 6; // Number of items per row
+        var totalPadding = itemPadding * 2 * itemCount; // Total padding for all items
+        var totalSpacing = spacing * (itemCount - 1); // Total spacing between items
+        var itemWidth = (dialogWidth - totalPadding - totalSpacing) / itemCount; // Calculate adjusted item width
+
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20), // Rounded corners for the dialog
           ),
-          itemCount: avatarImages.length,
-          itemBuilder: (context, index) {
-            return GestureDetector(
-              onTap: () {
-                updateAvatar(avatarImages[index]);
-                Navigator.pop(context);
+          child: Container(
+            width: dialogWidth, // Use the calculated dialog width
+            padding: const EdgeInsets.all(8.0), // Adjust padding for the container
+            child: StatefulBuilder(
+              builder: (context, setState) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min, // To make the dialog height wrap its content
+                  children: [
+                    GridView.builder(
+                      shrinkWrap: true, // Ensure the GridView only takes needed space
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: itemCount, // Dynamic count based on screen size
+                        crossAxisSpacing: spacing, // Spacing between items on the cross axis
+                        mainAxisSpacing: spacing, // Spacing between items on the main axis
+                        childAspectRatio: (itemWidth / itemWidth), // Maintain square aspect ratio
+                      ),
+                      itemCount: avatarImages.length,
+                      itemBuilder: (context, index) {
+                        return GestureDetector(
+                          onTap: () => setState(() {
+                            selectedAvatar = avatarImages[index]; // Update the selected avatar
+                          }),
+                          child: Padding(
+                            padding: EdgeInsets.all(itemPadding), // Padding around each image
+                            child: Image.network(
+                              avatarImages[index],
+                              fit: BoxFit.cover, // Cover the area without distorting the image
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    TextButton(
+                      style: TextButton.styleFrom(
+                        primary: Colors.white, // Text color
+                        backgroundColor: Colors.blue, // Button background color
+                      ),
+                      onPressed: selectedAvatar != null ? () {
+                        updateAvatar(selectedAvatar!);
+                        Navigator.pop(context);
+                      } : null, // Disable the button if no avatar is selected
+                      child: const Text('Set Avatar'),
+                    ),
+                  ],
+                );
               },
-              child: Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Image.network(avatarImages[index]),
-              ),
-            );
-          },
+            ),
+          ),
         );
       },
     );
   }
+
+
+
+
+
+
   final List<String> avatarImages = [
     "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar1.png?alt=media&token=7fc8ed85-7d37-43b7-bd46-a11f6d80ae7e",
     "https://firebasestorage.googleapis.com/v0/b/chessapp-68652.appspot.com/o/avatar2.png?alt=media&token=7d77108b-91a3-451a-b633-da1e03df1ea8",
@@ -480,23 +526,23 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
   ];
 
 
-  Future<void> shareReferralCode() async {
-    try {
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
-      if (userDoc.exists) {
-        var userData = userDoc.data() as Map<String, dynamic>;
-        String referralCode = userData['referralCode'];
-
-        String shareMessage = "Join me on the ultimate chess battleground! Use my code $referralCode to start your journey with extra 100 NBC rewards. Download now: https://example.com/download";
-        Share.share(shareMessage);
-        print("Referral Code: $referralCode");
-        print("Share Message: $shareMessage");
-      }
-    } catch (error) {
-      print('Failed to share: $error');
-    }
-  }
+  // Future<void> shareReferralCode() async {
+  //   try {
+  //     String userId = FirebaseAuth.instance.currentUser!.uid;
+  //     var userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+  //     if (userDoc.exists) {
+  //       var userData = userDoc.data() as Map<String, dynamic>;
+  //       String referralCode = userData['referralCode'];
+  //
+  //       String shareMessage = "Join me on the ultimate chess battleground! Use my code $referralCode to start your journey with extra 100 NBC rewards. Download now: https://example.com/download";
+  //       Share.share(shareMessage);
+  //       print("Referral Code: $referralCode");
+  //       print("Share Message: $shareMessage");
+  //     }
+  //   } catch (error) {
+  //     print('Failed to share: $error');
+  //   }
+  // }
 }
 
 
