@@ -223,7 +223,7 @@ class _ChessBoardState extends State<ChessBoard> {
     String result = '';
     if (game.in_checkmate) {
       // If checkmate, determine the winner
-      result = game.turn == chess.Color.WHITE ? 'lose' : 'win';
+      result = game.turn == chess.Color.WHITE ? 'loss' : 'win';
       statusMessage = game.turn == chess.Color.WHITE
           ? "$player2Name wins by checkmate!"
           : "$player1Name wins by checkmate!";
@@ -601,8 +601,7 @@ class _ChessBoardState extends State<ChessBoard> {
           // Button to accept the draw offer.
           TextButton(
             style: TextButton.styleFrom(
-              primary: Colors.black, // Text color
-              backgroundColor: Colors.white, // Button background color
+              foregroundColor: Colors.black, backgroundColor: Colors.white, // Button background color
             ),
             onPressed: () {
               // Handle the acceptance of the draw.
@@ -614,8 +613,7 @@ class _ChessBoardState extends State<ChessBoard> {
           // Button to decline the draw offer.
           TextButton(
             style: TextButton.styleFrom(
-              primary: Colors.white, // Text color
-              backgroundColor: Colors.black, // Button background color
+              foregroundColor: Colors.white, backgroundColor: Colors.black, // Button background color
             ),
             onPressed: () {
               // Handle the decline of the draw.
@@ -736,7 +734,7 @@ class _ChessBoardState extends State<ChessBoard> {
             child: TextButton(
               style: TextButton.styleFrom(
                 backgroundColor: Colors.black,
-                primary: Colors.white,
+                foregroundColor: Colors.white,
               ),
               onPressed: () {
                 // Handle the press action.
@@ -917,7 +915,7 @@ class _ChessBoardState extends State<ChessBoard> {
               // Button to continue the game.
               TextButton(
                 style: TextButton.styleFrom(
-                  primary: Colors.black, // Text color.
+                  foregroundColor: Colors.black, // Text color.
                   backgroundColor: Colors.white, // Button color.
                 ),
                 onPressed: () => Navigator.of(context).pop(false),
@@ -927,7 +925,7 @@ class _ChessBoardState extends State<ChessBoard> {
               // Button to resign from the game.
               TextButton(
                 style: TextButton.styleFrom(
-                  primary: Colors.white, // Text color.
+                  foregroundColor: Colors.white, // Text color.
                   backgroundColor: Colors.black, // Button color.
                 ),
                 onPressed: _handleUserResignation, // Handle game resignation.
@@ -936,7 +934,7 @@ class _ChessBoardState extends State<ChessBoard> {
               // Button to offer a draw.
               TextButton(
                 style: TextButton.styleFrom(
-                  primary: Colors.black, // Text color.
+                  foregroundColor: Colors.black, // Text color.
                   backgroundColor: Colors.white, // Button color.
                 ),
                 onPressed: _handleOfferDraw, // Handle offering a draw.
@@ -1332,7 +1330,7 @@ class _ChessBoardState extends State<ChessBoard> {
                                             // Assign result based on who is in checkmate.
                                             result =
                                                 game.turn == chess.Color.WHITE
-                                                    ? 'lose'
+                                                    ? 'loss'
                                                     : 'win';
                                             // Assign status message for checkmate.
                                             status = game.turn ==
@@ -1374,13 +1372,13 @@ class _ChessBoardState extends State<ChessBoard> {
                                           // Determine the winner and loser UIDs based on the result.
                                           String winnerUID = result == 'win'
                                               ? currentUserUID
-                                              : (result == 'lose'
+                                              : (result == 'loss'
                                                   ? (currentUserUID ==
                                                           player1UID
                                                       ? player2UID
                                                       : player1UID)
                                                   : "");
-                                          String loserUID = result == 'lose'
+                                          String loserUID = result == 'loss'
                                               ? currentUserUID
                                               : (result == 'win'
                                                   ? (currentUserUID ==

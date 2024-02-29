@@ -127,7 +127,7 @@
 
       int totalMatches = matchesQuerySnapshot.docs.length;
       int wins = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'win').length;
-      int losses = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'lose').length;
+      int losses = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'loss').length;
       int draws = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'draw').length;
 
       double winPercentage = totalMatches > 0 ? (wins / totalMatches) * 100 : 0;
@@ -386,16 +386,16 @@
                                     Container(
                                       padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
                                       decoration: BoxDecoration(
-                                        color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
+                                        color: match.result == 'win' ? Colors.green : match.result == 'loss' ? Colors.red : Colors.grey,
                                         borderRadius: BorderRadius.circular(20.0),
                                       ),
                                       child: Text(match.result.toUpperCase(), style: const TextStyle(color: Colors.white)),
                                     ),
                                     const SizedBox(width: 8.0),
                                     Text(
-                                      match.result == 'win' ? '+ ${match.bet.toStringAsFixed(2)} NBC' : match.result == 'lose' ? '- ${match.bet.toStringAsFixed(2)} NBC' : '₹0.00 NBC',
+                                      match.result == 'win' ? '+ ${match.bet.toStringAsFixed(2)} NBC' : match.result == 'loss' ? '- ${match.bet.toStringAsFixed(2)} NBC' : '₹0.00 NBC',
                                       style: TextStyle(
-                                          color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
+                                          color: match.result == 'win' ? Colors.green : match.result == 'loss' ? Colors.red : Colors.grey,
                                           fontWeight: FontWeight.bold
                                       ),
                                     ),

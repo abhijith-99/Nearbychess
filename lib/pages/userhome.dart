@@ -67,95 +67,6 @@ class UserHomePageState extends State<UserHomePage>
   get player1Id => null; // To store search results
   get player2Id => null;
 
-//   Future<Uint8List> createCustomMarker(
-//       String userName, double zoomLevel) async {
-//     final ui.PictureRecorder pictureRecorder = ui.PictureRecorder();
-//     final Canvas canvas = Canvas(pictureRecorder);
-//
-//     // Adjust the size based on the zoom level
-//     final double iconSize = 50.0 * zoomLevel / 20.0; // Example scaling factor
-//     const double fontSize = 20.0; // Adjust font size based on zoom level
-//
-//     final double textMaxWidth = iconSize - 10.0;
-//
-//     // Define paint for the pin
-//     final Paint paintPin = Paint()..color = Colors.red;
-//     final double pinWidth = iconSize / 2; // Width of the pin body
-//     final double pinHeight = iconSize; // Total height of the pin
-//     final double circleRadius = pinWidth / 2; // Radius of the circular head
-//
-// // Center of the circular head
-//     final Offset circleCenter = Offset(iconSize / 2, circleRadius);
-// // Tip of the pin
-//     final Offset pinTip = Offset(iconSize / 2, iconSize);
-//
-//     final Path pinPath = Path()
-//       // Start at the center top of the circular head
-//       ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius))
-//       // Draw the smaller circle (hole of the pin)
-//       ..addOval(Rect.fromCircle(center: circleCenter, radius: circleRadius / 2))
-//       // Move to the bottom of the circular head
-//       ..moveTo(circleCenter.dx + circleRadius, circleCenter.dy)
-//       // Draw the body of the pin down to the tip
-//       ..lineTo(pinTip.dx, pinTip.dy)
-//       // Draw the left side of the pin body up to the bottom of the head
-//       ..lineTo(circleCenter.dx - circleRadius, circleCenter.dy)
-//       ..close();
-//
-// // Create a paint for the pin hole (same as the background)
-//     final Paint paintHole = Paint()..color = Colors.white;
-//
-// // Draw the pin path
-//     canvas.drawPath(pinPath, paintPin);
-//
-// // Draw the hole path
-//     final Path holePath = Path()
-//       ..addOval(
-//           Rect.fromCircle(center: circleCenter, radius: circleRadius / 2));
-//     canvas.drawPath(holePath, paintHole);
-//     // Calculate the total height of the canvas to fit the icon and the text
-//     final double canvasHeight = iconSize + fontSize; // Space for text
-//
-//     // Draw the text
-//     final TextPainter textPainter = TextPainter(
-//       text: TextSpan(
-//         text: userName,
-//         style: const TextStyle(
-//           fontSize: 20,
-//           color: Colors.yellowAccent, // Text color
-//           fontWeight: FontWeight.bold,
-//         ),
-//       ),
-//       textDirection: ui.TextDirection.ltr,
-//       maxLines: 1, // Allow text to wrap to the second line
-//     );
-//     textPainter.layout(
-//         maxWidth: textMaxWidth); // Set the maximum width for text
-//     final Offset textOffset =
-//         Offset((iconSize - textPainter.width) / 2, iconSize);
-//     textPainter.paint(canvas, textOffset);
-//     // Convert canvas to image
-//     final ui.Image markerAsImage = await pictureRecorder
-//         .endRecording()
-//         .toImage(iconSize.toInt(), canvasHeight.toInt());
-//
-//     // Convert image to bytes
-//     final ByteData? byteData =
-//         await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
-//     final Uint8List uint8List = byteData!.buffer.asUint8List();
-//
-//     return uint8List;
-//   }
-
-  //
-  // Future<ui.Image> loadImage(Uint8List img) async {
-  //   final Completer<ui.Image> completer = new Completer();
-  //   ui.decodeImageFromList(img, (ui.Image img) {
-  //     return completer.complete(img);
-  //   });
-  //   return completer.future;
-  // }
-
   Future<void> _determinePosition() async {
     bool serviceEnabled;
     loc.PermissionStatus permissionGranted;
@@ -181,16 +92,6 @@ class UserHomePageState extends State<UserHomePage>
     // Get the current location.
     currentLocation = await location.getLocation();
 
-    // String userId = FirebaseAuth.instance.currentUser?.uid ?? '';
-    // DocumentSnapshot userDoc =
-    //     await FirebaseFirestore.instance.collection('users').doc(userId).get();
-    // String userName =
-    //     userDoc['name']; // Replace 'name' with your Firestore field
-    // String userAvatar = userDoc['avatar'];
-
-    // Create the custom marker
-    // final Uint8List markerIcon =
-    //     await createCustomMarker(userName, _currentZoomLevel);
     // Update the location on the map.
     mapController?.animateCamera(
       CameraUpdate.newCameraPosition(
@@ -770,24 +671,16 @@ class UserHomePageState extends State<UserHomePage>
 
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
-        // final Uint8List markerIcon =
-        //     await createCustomMarker(userData['name'], _currentZoomLevel);
-
-        // var userMarker = Marker(
-        //   markerId: MarkerId(doc.id),
-        //   position: LatLng(lat, lon),
-        //   icon: BitmapDescriptor.fromBytes(markerIcon),
-        //   onTap: () {
-        //     _showChallengeModalFromBottom(context, userData);
-        //   },
-        // );
-        // newMarkers.add(userMarker);
 
         // Adding marker with default icon
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
           position: LatLng(lat, lon),
           // Default icon is used automatically, no need to specify
+
+            onTap: () {
+              _showChallengeModalFromBottom(context, userData);
+            },
         );
         newMarkers.add(userMarker);
       }
@@ -800,6 +693,10 @@ class UserHomePageState extends State<UserHomePage>
       });
     }
   }
+
+
+
+
 
   void updateUserLocation(LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -987,9 +884,9 @@ class UserHomePageState extends State<UserHomePage>
                             icon: Stack(
                               children: [
                                 const Icon(
-                                  Icons.message,
-                                  color: Colors.blue,
-                                  size: 30,
+                                  Icons.email,
+                                  color: Colors.white,
+                                  size: 22,
                                 ), // Your existing icon
                                 Positioned(
                                   // Position the unread indicator
@@ -1031,31 +928,27 @@ class UserHomePageState extends State<UserHomePage>
                             },
                           ),
                           const SizedBox(width: 12),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                                right:
-                                    20.0), // Adjust the right padding as needed
-                            child: ElevatedButton(
-                              onPressed: () {
-                                String? userId = opponentData['uid'];
-                                if (userId != null) {
-                                  navigateToUserDetails(context, userId);
-                                } else {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text("Error: User ID is null"),
-                                    ),
-                                  );
-                                }
-                              },
-                              style: ElevatedButton.styleFrom(
-                                primary:
-                                    const Color(0xFF40c759), // Background color
-                                onPrimary: Colors.white, // Text color
-                              ),
-                              child: const Text('Visit'),
+
+                          IconButton(
+                            icon: const Icon(
+                              Icons.visibility, // Eye icon
+                              color: Color(0xEAEEECFF), // Icon color
                             ),
+                            onPressed: () {
+                              // Your onPressed code here, for example, navigating to user details
+                              String? userId = opponentData['uid'];
+                              if (userId != null) {
+                                navigateToUserDetails(context, userId);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Error: User ID is null"),
+                                  ),
+                                );
+                              }
+                            },
                           ),
+
                         ],
                       ),
                       const SizedBox(height: 10),
@@ -1155,24 +1048,6 @@ class UserHomePageState extends State<UserHomePage>
 
                       const SizedBox(height: 20),
 
-                      // const Align(
-                      //   alignment: Alignment
-                      //       .centerLeft, // Adjusts alignment to the left
-                      //   child: Padding(
-                      //     padding: EdgeInsets.only(
-                      //         left: 50.0,
-                      //         bottom: 10.0), // Adds padding to the left
-                      //     child: Text(
-                      //       "Timer",
-                      //       style: TextStyle(
-                      //         fontWeight: FontWeight.bold,
-                      //         fontSize: 16,
-                      //         color: Colors.white,
-                      //         decoration: TextDecoration.none,
-                      //       ),
-                      //     ),
-                      //   ),
-                      // ),
 
                       Visibility(
                         visible: isChallengeable &&

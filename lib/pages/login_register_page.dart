@@ -305,8 +305,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     return ElevatedButton(
       onPressed: signInWithGoogle,
       style: ElevatedButton.styleFrom(
-        primary: Colors.white, // Fill color: white
-        onPrimary: Colors.black, // Text color (will be overridden by TextStyle below)
+        foregroundColor: Colors.black, backgroundColor: Colors.white, // Text color (will be overridden by TextStyle below)
         // minimumSize: Size(400, 50), // Width and height
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(50), // Rounded corners
@@ -416,8 +415,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.transparent,
-                                onPrimary: Colors.white,
+                                primary: Colors.white, onPrimary: Colors.transparent,
                                 shape: const CircleBorder(
                                   side: BorderSide(color: Colors.white),
                                 ),

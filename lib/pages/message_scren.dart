@@ -132,8 +132,7 @@ class _MessageScreenState extends State<MessageScreen> {
                     child: ElevatedButton(
                       child: const Text("SEND GIFT"),
                       style: ElevatedButton.styleFrom(
-                        primary: Color(0xFF40C759), // Adjust button color
-                          onPrimary: Colors.white,
+                        foregroundColor: Colors.white, backgroundColor: Color(0xFF40C759),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8), // Make button edges square
                         ),

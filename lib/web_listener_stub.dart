@@ -1,3 +1,4 @@
 void setupBeforeUnloadListener(Function callback) {
-  // No operation for non-web platforms
+  // Implementation for non-web platforms can be empty
+  // as there's no equivalent of 'beforeunload' event
 }

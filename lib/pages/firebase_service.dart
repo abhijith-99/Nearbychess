@@ -59,7 +59,7 @@ class FirebaseServices {
     // Create and save the match record for user2 (inverse result of user1's).
     Map<String, dynamic> matchForUser2 = {
       'opponentUid': userId1,
-      'result': result == 'win' ? 'lose' : (result == 'lose' ? 'win' : 'draw'),
+      'result': result == 'win' ? 'loss' : (result == 'loss' ? 'win' : 'draw'),
       'time': matchForUser1['time'],
       'bet': bet,
     };

@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:mychessapp/pages/access_denial.dart';
 import 'package:mychessapp/pages/login_register_page.dart';
 import 'package:mychessapp/pages/user_profile.dart';
 import 'package:mychessapp/pages/userhome.dart';
@@ -9,11 +10,14 @@ import 'package:mychessapp/splash_screen.dart';
 import 'package:mychessapp/userprofiledetails.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'web_listener_stub.dart' if (dart.library.html) 'web_listener.dart';
+import 'web_listener_stub.dart'
+  if (dart.library.html) 'web_listener.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+
 Future<void> main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
       options: const FirebaseOptions(
@@ -33,6 +37,9 @@ class ChessApp extends StatefulWidget {
 }
 
 class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
+
+  bool _isDialogShown = false;
+
   @override
   void initState() {
     super.initState();
@@ -65,15 +72,17 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
       CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
+      FirebaseFirestore.instance.collection('users');
       await users.doc(userId).update({'isOnline': isOnline, 'inGame': false});
     } catch (e) {
       print('Error updating user status: $e');
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
+    // Your existing theme data and MaterialApp setup
     MaterialColor primaryBlack = const MaterialColor(0xFF000000, {
       50: Color(0xFF000000),
       100: Color(0xFF000000),
@@ -86,17 +95,27 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       800: Color(0xFF000000),
       900: Color(0xFF000000),
     });
-
     return MaterialApp(
       title: 'Chess Game',
       theme: ThemeData(
-          primarySwatch:
-              primaryBlack), // Use the custom primaryBlack MaterialColor
-      home: const ChessSplashScreen(),
-      debugShowCheckedModeBanner: false,
-      navigatorKey: navigatorKey, // Assign the global navigator key here
+          primarySwatch: primaryBlack),
+      home: Builder(
+        builder: (context) {
 
+
+          if (MediaQuery.of(context).size.width < 1200) {
+            // Instead of showing a dialog, navigate to the AccessDeniedPage
+            Future.microtask(() => Navigator.of(context).pushReplacement(
+              MaterialPageRoute(builder: (context) => const AccessDeniedPage()),
+            ));
+          }
+          return ChessSplashScreen(); // Adjust based on your initial screen
+        },
+      ),
+      debugShowCheckedModeBanner: false,
+      navigatorKey: navigatorKey,
       routes: {
+        // Your routes
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
         '/login_register': (context) => const LoginRegisterPage(),
 // other routes...
@@ -106,4 +125,11 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       },
     );
   }
+
+
+
+
+
+
+
 }

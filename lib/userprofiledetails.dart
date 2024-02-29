@@ -25,7 +25,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
 
     int totalMatches = matchesQuerySnapshot.docs.length;
     int wins = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'win').length;
-    int losses = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'lose').length;
+    int losses = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'loss').length;
     int draws = matchesQuerySnapshot.docs.where((doc) => doc.data()['result'] == 'draw').length;
     double totalBetAmount = matchesQuerySnapshot.docs.fold(0, (sum, doc) => sum + (doc.data()['betAmount'] ?? 0));
 
@@ -63,8 +63,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
               child: TextButton(
                 onPressed: signOut,
                 style: TextButton.styleFrom(
-                  primary: Colors.white, // Text color
-                  padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
+                  foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(horizontal: 17, vertical: 10),
                 ),
                 child: const Text('SIGN OUT', style: TextStyle(fontSize: 16),),
               ),
@@ -155,10 +154,9 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                                   color: Colors.grey,
                                 ),
                                 StatisticText(
-                                  label: '${stats['losses']} Lost',
+                                  label: '${stats['losses']} Loss',
                                   value: stats['lossPercentage'].toStringAsFixed(1) + '%',
                                   color: Colors.red,
-
                                 ),
                               ],
                             ),
@@ -233,7 +231,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                                         Container(
                                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                                           decoration: BoxDecoration(
-                                            color: match.result == 'win' ? Colors.green : match.result == 'lose' ? Colors.red : Colors.grey,
+                                            color: match.result == 'win' ? Colors.green : match.result == 'loss' ? Colors.red : Colors.grey,
                                             borderRadius: BorderRadius.circular(20),
                                           ),
                                           child: Text(
@@ -248,7 +246,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                                           "${match.bet.toStringAsFixed(2)}NBC",
                                           style: TextStyle(
                                             color: match.result == 'win' ? Colors.green :
-                                            match.result == 'lose' ? Colors.red :
+                                            match.result == 'loss' ? Colors.red :
                                             Colors.grey,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -314,8 +312,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
           // Cancel button.
           TextButton(
             style: TextButton.styleFrom(
-              primary: Colors.black, // Text color.
-              backgroundColor: Colors.white, // Button color.
+              foregroundColor: Colors.black, backgroundColor: Colors.white, // Button color.
             ),
             onPressed: () => Navigator.of(context).pop(false), // Close dialog without signing out.
             child: const Text('Cancel'),
@@ -323,8 +320,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
           // Sign Out button.
           TextButton(
             style: TextButton.styleFrom(
-              primary: Colors.white, // Text color.
-              backgroundColor: Colors.black, // Button color.
+              foregroundColor: Colors.white, backgroundColor: Colors.black, // Button color.
             ),
             onPressed: () => Navigator.of(context).pop(true), // Proceed with sign out.
             child: const Text('Sign Out'),
@@ -396,8 +392,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                 const SizedBox(width: 8), // SizedBox for spacing between TextField and TextButton
                 TextButton(
                   style: TextButton.styleFrom(
-                    primary: Colors.white, // Text color for "Update".
-                    backgroundColor: Colors.green, // Button color.
+                    foregroundColor: Colors.white, backgroundColor: Colors.green, // Button color.
                   ),
                   onPressed: () {
                     if (validateUsername(usernameController.text) == null) {
@@ -492,8 +487,7 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
                     ),
                     TextButton(
                       style: TextButton.styleFrom(
-                        primary: Colors.white, // Text color
-                        backgroundColor: Colors.blue, // Button background color
+                        foregroundColor: Colors.white, backgroundColor: Colors.blue, // Button background color
                       ),
                       onPressed: selectedAvatar != null ? () {
                         updateAvatar(selectedAvatar!);

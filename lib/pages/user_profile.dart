@@ -566,8 +566,7 @@ class _UserProfilePageState extends State<UserProfilePage> {
                               child: TextButton(
                                 onPressed: createUserProfile,
                                 style: TextButton.styleFrom(
-                                  primary: Colors.black, // Text color
-                                  padding: const EdgeInsets.symmetric(
+                                  foregroundColor: Colors.black, padding: const EdgeInsets.symmetric(
                                       vertical: 20, horizontal: 20),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(10.0),
