@@ -519,7 +519,6 @@ class _ChessBoardState extends State<ChessBoard> {
     // Assuming localTimerValue is in minutes; convert to milliseconds
     final int localTimerValue = int.tryParse(localTimerValueString) ?? 10;
 
-    print("localimerdddddd$localTimerValue");
 
     final timerValueInMilliseconds = (localTimerValue) * 60 * 1000;
     if (mounted) {
@@ -529,10 +528,6 @@ class _ChessBoardState extends State<ChessBoard> {
       });
     }
 
-    print("witetimeremaind  $_whiteTimeRemaining");
-
-    print("bltimeremaind $_blackTimeRemaining");
-    print("dfdsatimervalieinmillief $timerValueInMilliseconds");
   }
 
   Future<void> fetchPlayerDetails() async {
@@ -811,39 +806,26 @@ class _ChessBoardState extends State<ChessBoard> {
 
     // Check if a move was successful
     // Determine if the move is a pawn moving diagonally to an empty square
-    print("preveps$prevEpSquare");
     bool isDiagonalMove = from[0] != to[0] && game.get(to)?.type == chess.PieceType.PAWN;
     bool isEnPassantCapture = prevEpSquare == -1 && isDiagonalMove && game.get(to) != null;
 
-
-    print("encapsulate $isEnPassantCapture");
-    print("isdiagonal$isDiagonalMove");
     print("to${game.get(to)}");
 
     if (isEnPassantCapture) {
       // Log en passant capture
-      print("En passant capture at $to!");
 
       // Update captured pieces list based on pawn color
       if (game.turn == chess.Color.WHITE) {
         // If it's now white's turn, black pawn was captured
         capturedPiecesWhite.add("P");
-        print("Black pawn captured by white via en passant.");
       } else {
         // If it's now black's turn, white pawn was captured
         capturedPiecesBlack.add("P");
-        print("White pawn captured by black via en passant.");
       }
       firebaseServices.updateCapturedPiecesInRealTimeDatabase(capturedPiecesWhite, capturedPiecesBlack);
     }
 
     }
-
-
-
-
-
-
 
 
 
@@ -1260,50 +1242,19 @@ class _ChessBoardState extends State<ChessBoard> {
 
 
 
-
-                                      //   if (pieceBeforeMove != null) {
-                                      //     final capturedPiece = ChessBoardUI.getPieceAsset(pieceBeforeMove.type, pieceBeforeMove.color);
-                                      //     final capturedPieceCode = getPieceCode(pieceBeforeMove.type);
-                                      //
-                                      //
-                                      //     print('Captured piece: $capturedPieceCode, Color: ${pieceBeforeMove.color}');
-                                      //     if (pieceBeforeMove.color == chess.Color.BLACK) {
-                                      //     // If the captured piece is black, add to white's captured pieces list.
-                                      //       capturedPiecesBlack.add(capturedPieceCode);
-                                      //       print('Adding to whiteCapturedPieces: $capturedPieceCode');
-                                      //     } else {
-                                      //     // If the captured piece is white, add to black's captured pieces list.
-                                      //       print('Adding to blackCapturedPieces: $capturedPieceCode');
-                                      //       capturedPiecesWhite.add(capturedPieceCode);
-                                      //     }
-                                      //
-                                      //
-                                      //     firebaseServices.updateCapturedPiecesInRealTimeDatabase(capturedPiecesWhite, capturedPiecesBlack);
-                                      //     print('Updating Firebase: whiteCapturedPieces: $capturedPiecesWhite, blackCapturedPieces: $capturedPiecesBlack');
-                                      //
-                                      // }
-
-
-
-
                                         if (pieceBeforeMove != null) {
                                           // Check if the moving piece is a pawn and the captured piece is also a pawn
                                           bool isPawnCapturingPawn = pieceAfterMove?.type == chess.PieceType.PAWN && pieceBeforeMove.type == chess.PieceType.PAWN;
-                                          print("from${pieceAfterMove?.type}");
-                                          print("to${pieceBeforeMove.type}");
                                           // Only proceed if it's not a pawn capturing another pawn
                                           if (!isPawnCapturingPawn) {
                                             final capturedPiece = ChessBoardUI.getPieceAsset(pieceBeforeMove.type, pieceBeforeMove.color);
                                             final capturedPieceCode = getPieceCode(pieceBeforeMove.type);
 
-                                            print('Captured piece: $capturedPieceCode, Color: ${pieceBeforeMove.color}');
                                             if (pieceBeforeMove.color == chess.Color.BLACK) {
                                               // If the captured piece is black, add to white's captured pieces list.
                                               capturedPiecesBlack.add(capturedPieceCode);
-                                              print('Adding to whiteCapturedPieces: $capturedPieceCode');
                                             } else {
                                               // If the captured piece is white, add to black's captured pieces list.
-                                              print('Adding to blackCapturedPieces: $capturedPieceCode');
                                               capturedPiecesWhite.add(capturedPieceCode);
                                             }
 

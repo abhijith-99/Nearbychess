@@ -17,7 +17,7 @@ class AccessDeniedPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('oopss😢'),
+        title: const Text('😢'),
         centerTitle: true,
         leading: Container(), // This removes the back button
       ),

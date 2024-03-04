@@ -5,8 +5,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
 import 'package:mychessapp/main.dart';
 import 'package:mychessapp/pages/challengewaitingscreen.dart';
@@ -21,6 +24,9 @@ import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'geocoding_web.dart';
 import 'message_scren.dart';
+import 'dart:math' as math;
+import 'package:flutter_svg/flutter_svg.dart';
+
 
 class UserHomePage extends StatefulWidget {
   const UserHomePage({super.key});
@@ -31,6 +37,10 @@ class UserHomePage extends StatefulWidget {
 
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
+
+  double _zoomThreshold = 10.0;
+
+
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
   String userLocation = 'nowhere';
 
@@ -56,6 +66,7 @@ class UserHomePageState extends State<UserHomePage>
   // Add GoogleMapController
   GoogleMapController? mapController;
   Set<Marker> markers = {};
+  double _currentZoomLevel = 30.0;
   LocationData? currentLocation;
   loc.Location location = loc.Location();
 
@@ -586,11 +597,31 @@ class UserHomePageState extends State<UserHomePage>
   }
 
   Future<void> setUserOnlineStatus(bool isOnline) async {
+    // try {
+    //   String userId = FirebaseAuth.instance.currentUser!.uid;
+    //   CollectionReference users =
+    //       FirebaseFirestore.instance.collection('users');
+    //   await users.doc(userId).update({'isOnline': isOnline});
+    // } catch (e) {
+    //   print('Error updating online status: $e');
+    // }
+
+
     try {
       String userId = FirebaseAuth.instance.currentUser!.uid;
-      CollectionReference users =
-          FirebaseFirestore.instance.collection('users');
-      await users.doc(userId).update({'isOnline': isOnline});
+      CollectionReference users = FirebaseFirestore.instance.collection('users');
+      if (isOnline) {
+        // When the user comes online, update both the isOnline flag and the lastSeen timestamp
+        await users.doc(userId).update({
+          'isOnline': true,
+          'lastSeen': FieldValue.serverTimestamp(),
+        });
+      } else {
+        // or set isOnline to false explicitly depending on your app's needs
+        await users.doc(userId).update({
+          'isOnline': false,
+        });
+      }
     } catch (e) {
       print('Error updating online status: $e');
     }
@@ -656,13 +687,113 @@ class UserHomePageState extends State<UserHomePage>
         .map((snapshot) => snapshot.docs); // Keep it as DocumentSnapshot
   }
 
-  double _currentZoomLevel = 30.0; // Starting with a default zoom level
+
+  Future<BitmapDescriptor> createCustomMarkerIcon(String userName, String avatarUrl) async {
+    final ui.PictureRecorder recorder = ui.PictureRecorder();
+    // Correct canvas size to 100x150
+    final Canvas canvas = Canvas(recorder, const Rect.fromLTWH(0, 0, 100, 150));
+
+    final Uint8List avatarData = await _downloadImage(avatarUrl);
+    final ui.Codec codec = await ui.instantiateImageCodec(avatarData);
+    final ui.FrameInfo fi = await codec.getNextFrame();
+    final ui.Image avatarImage = fi.image;
+
+    // Your existing code for scaling and drawing the avatar...
+
+    // Calculate the scaling factor to achieve 'object-fit: cover' effect
+    final double avatarAspectRatio = avatarImage.width / avatarImage.height;
+    const double targetAspectRatio = 10 / 10; // Assuming a square target area for simplicity
+    double scale;
+    Offset offset;
+
+    if (avatarAspectRatio > targetAspectRatio) {
+      // Image is wider than target, scale by height
+      scale = 50 / avatarImage.height;
+      double croppedWidth = avatarImage.width * scale;
+      // Center horizontally
+      offset = Offset((50 - croppedWidth) / 2, 0);
+    } else {
+      // Image is taller than target, scale by width
+      scale = 50 / avatarImage.width;
+      double croppedHeight = avatarImage.height * scale;
+      // Center vertically
+      offset = Offset(0, (50 - croppedHeight) / 3);
+    }
+
+
+    // Transform canvas to scale image
+    canvas.save();
+
+
+    // Clip path for circular avatar
+    final Path clipPath = Path()..addOval(Rect.fromCircle(center: Offset(50, 35), radius: 25));
+    canvas.clipPath(clipPath);
+    //
+    canvas.translate(25 + offset.dx, 10 + offset.dy);
+    canvas.scale(scale, scale);
+
+    // Now draw the image within the clipped and scaled area
+    canvas.drawImage(avatarImage, Offset.zero, Paint());
+
+    // Make sure the canvas state is restored after drawing the avatar to remove the clipping effect
+    canvas.restore(); // This should match an existing canvas.save() call before the clipping and avatar drawing
+
+
+    String displayName = userName.length > 7 ? '${userName.substring(0, 7)}...' : userName;
+    // Now draw the name without being affected by the previous clipping path
+    final textPainter = TextPainter(
+      text: TextSpan(
+        text: displayName,
+        style: const TextStyle(color: Colors.amberAccent, fontSize: 14),
+      ),
+      textAlign: TextAlign.center,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(maxWidth: 90);
+
+    // Adjust the Y-offset to ensure the name is positioned correctly within the canvas bounds
+    textPainter.paint(canvas, Offset((100 - textPainter.width) / 2,60));
+
+    final ui.Image markerAsImage = await recorder.endRecording().toImage(100, 150);
+    final ByteData? byteData = await markerAsImage.toByteData(format: ui.ImageByteFormat.png);
+    final Uint8List pngBytes = byteData!.buffer.asUint8List();
+
+    return BitmapDescriptor.fromBytes(pngBytes);
+  }
+
+
+
+
+
+
+
+
+  Future<Uint8List> _downloadImage(String url) async {
+    try {
+      final http.Response response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+
+      } else {
+        throw Exception('Failed to load image');
+      }
+    }
+    catch (e) {
+      // Load default image from assets if fetching fails
+      final ByteData byteData = await rootBundle.load('assets/NBC-token.png');
+      return byteData.buffer.asUint8List();
+    }
+
+  }
+
+
 
   void updateMarkers(List<DocumentSnapshot> userDocs) async {
     Set<Marker> newMarkers = {};
     String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? '';
 
     for (var doc in userDocs) {
+
       var userData = doc.data() as Map<String, dynamic>;
       if (userData['uid'] == currentUserId) continue;
 
@@ -672,12 +803,15 @@ class UserHomePageState extends State<UserHomePage>
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
 
+        // print("userdata$userData");
+        BitmapDescriptor icon = await createCustomMarkerIcon(userData['name'], userData['avatar'],);
+
         // Adding marker with default icon
         var userMarker = Marker(
           markerId: MarkerId(doc.id),
           position: LatLng(lat, lon),
+          icon: icon,
           // Default icon is used automatically, no need to specify
-
             onTap: () {
               _showChallengeModalFromBottom(context, userData);
             },
@@ -692,6 +826,7 @@ class UserHomePageState extends State<UserHomePage>
         markers.addAll(newMarkers);
       });
     }
+
   }
 
 
@@ -809,17 +944,39 @@ class UserHomePageState extends State<UserHomePage>
       context: context,
       pageBuilder: (BuildContext buildContext, Animation<double> animation,
           Animation<double> secondaryAnimation) {
+
+
+        double screenWidth = MediaQuery.of(context).size.width;
+        double containerWidth = screenWidth < 1300 ? screenWidth * 0.8 : screenWidth * 0.4;
+        double screenHeight = MediaQuery.of(context).size.height;
+
+
+
+        double modalHeight;
+        if (screenWidth >= 600 && screenWidth < 900) {
+          // Adjust height for screens 600px to 799px
+          modalHeight = isOnline && isChallengeable ? screenHeight * 0.50 : screenHeight * 0.30;
+        } else if (screenWidth >= 900 && screenWidth <= 1024) {
+          // Adjust height for screens 800px to 1024px
+          modalHeight = isOnline && isChallengeable ? screenHeight * 0.40 : screenHeight * 0.25;
+        } else if (screenWidth > 1024 && screenWidth < 1300) {
+          // Adjust height for screens 1025px to 1299px
+          modalHeight = isOnline && isChallengeable ? screenHeight * 0.53 : screenHeight * 0.45;
+        } else {
+          // For wider screens, keep the original logic or adjust as needed
+          modalHeight = isOnline && isChallengeable ? screenHeight * 0.6 : screenHeight * 0.4;
+        }
+
+
         return StatefulBuilder(
           builder: (BuildContext context, StateSetter setModalState) {
             return Align(
-              alignment: Alignment.bottomRight, // Aligns the modal to the right
+              // alignment: Alignment.bottomRight,
+              alignment: screenWidth < 1300 ? Alignment.bottomCenter : Alignment.bottomRight,
               child: Container(
-                width: MediaQuery.of(context).size.width * 0.4,
-                // 40% of screen width
-                // height: MediaQuery.of(context).size.height * 0.6,
-                height: isOnline && isChallengeable
-                    ? MediaQuery.of(context).size.height * 0.6 // Original height for challengeable and online
-                    : MediaQuery.of(context).size.height * 0.4,
+                // width: MediaQuery.of(context).size.width * 0.4,
+                width: containerWidth,
+                height: modalHeight,
                 // Full screen height
                 padding: const EdgeInsets.symmetric(
                     horizontal: 12.0, vertical: 32.0),
@@ -963,7 +1120,7 @@ class UserHomePageState extends State<UserHomePage>
                       ),
                       const SizedBox(height: 10),
 
-// Bet Amount Selectors
+                      // Bet Amount Selectors
                       Visibility(
                         visible: isChallengeable &&
                             isOnline, // Show only if challengeable and online
@@ -1002,6 +1159,7 @@ class UserHomePageState extends State<UserHomePage>
                                   child: Container(
                                     width: tileWidth,
                                     height: tileHeight,
+
                                     padding: EdgeInsets.all(isSelected ? 6 : 8),
                                     decoration: BoxDecoration(
                                       // color: isSelected ? Colors.blue : Colors.grey[200],
@@ -1085,6 +1243,7 @@ class UserHomePageState extends State<UserHomePage>
                                   child: Container(
                                     width: tileWidth,
                                     height: tileHeight,
+
                                     padding: EdgeInsets.all(16),
                                     decoration: BoxDecoration(
                                       // color: isSelected ? Colors.blue : Colors.grey[200],
@@ -1327,6 +1486,16 @@ class UserHomePageState extends State<UserHomePage>
     }
   }
 
+
+
+
+
+
+
+
+
+
+
   @override
   Widget build(BuildContext context) {
     final FirebaseAuth auth = FirebaseAuth.instance;
@@ -1354,15 +1523,16 @@ class UserHomePageState extends State<UserHomePage>
                           borderRadius: BorderRadius.circular(
                               40), // Adjust the radius as needed
                           child: GoogleMap(
-                            // Your GoogleMap properties here
-                            // padding: const EdgeInsets.all(20),
                             onMapCreated: _onMapCreated,
                             initialCameraPosition: const CameraPosition(
                               target: LatLng(0, 0),
-                              zoom: 20.0,
+                              zoom: 15.0,
                             ),
                             markers: markers,
                           ),
+
+
+
                         ),
                       )),
 
@@ -1394,6 +1564,7 @@ class UserHomePageState extends State<UserHomePage>
                         ),
                         Text(
                           'Players in $userLocation',
+                          textAlign: TextAlign.center,
                           // 'Players in $cityName',
                           style: const TextStyle(
                             fontFamily: 'Poppins',
@@ -1402,6 +1573,10 @@ class UserHomePageState extends State<UserHomePage>
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+
+
+
+
                         Expanded(
                           child: StreamBuilder<List<DocumentSnapshot>>(
                             stream: onlineUsersStream,
@@ -1457,23 +1632,52 @@ class UserHomePageState extends State<UserHomePage>
                                 );
                               }
 
-                              return GridView.builder(
-                                key: UniqueKey(),
-                                padding: const EdgeInsets.all(16),
-                                gridDelegate:
-                                    const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 4,
-                                  crossAxisSpacing: 5,
-                                  mainAxisSpacing: 5,
-                                  childAspectRatio: 1,
-                                ),
-                                // GridView.builder properties...
-                                itemCount: usersToShow.length,
-                                itemBuilder: (context, index) {
-                                  var userData = usersToShow[index];
-                                  return buildPlayerTile(userData, context);
+
+
+                              return LayoutBuilder(
+                                builder: (BuildContext context, BoxConstraints constraints) {
+                                  double screenWidth = MediaQuery.of(context).size.width;
+                                  // Calculate the number of columns based on screen width
+                                  // int crossAxisCount = constraints.maxWidth < 1000 ?  4: 3;
+
+                                  int crossAxisCount;
+                                  if (screenWidth >= 600 && screenWidth < 900) {
+                                    crossAxisCount = 2; // For screens between 600px and 799px
+                                  } else if (screenWidth >= 900 && screenWidth <= 1024) {
+                                    crossAxisCount = 3; // For screens between 800px and 1024px
+                                  } else {
+                                    crossAxisCount = 4; // For screens above 1024px
+                                  }
+
+
+                                  crossAxisCount = crossAxisCount;
+                                  double crossAxisSpacing = screenWidth < 1110 ?2 : 5;
+                                  double mainAxisSpacing = screenWidth < 1110 ? 2 :5;
+                                  double childAspectRatio = screenWidth < 1110 ? 1 : 1;
+
+
+                                  return GridView.builder(
+                                    key: UniqueKey(),
+                                    padding: const EdgeInsets.all(16),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: crossAxisCount,
+                                      crossAxisSpacing: crossAxisSpacing,
+                                      mainAxisSpacing: mainAxisSpacing,
+                                      childAspectRatio: childAspectRatio,
+                                    ),
+                                    itemCount: usersToShow.length,
+                                    itemBuilder: (context, index) {
+                                      var userData = usersToShow[index];
+                                      return buildPlayerTile(userData, context);
+                                    },
+                                  );
                                 },
                               );
+
+
+
+
+
                             },
                           ),
                         ),
@@ -1615,15 +1819,27 @@ class UserHomePageState extends State<UserHomePage>
             ],
           ),
           const SizedBox(height: 6),
-          Text(
-            userData['name'] ?? 'Username',
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              color:
-                  isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
-              fontWeight: FontWeight.bold,
+
+
+          Container(
+            width: 80, // Adjust based on your UI needs
+            height: 20, // Adjust based on your UI needs
+            child: Align(
+              alignment: Alignment.center, // Align the child to the center of the container
+              child: Text(
+                userData['name'] ?? 'Username',
+                style: TextStyle(
+                  fontFamily: 'Poppins',
+                  color: isOnline ? const Color.fromARGB(255, 12, 6, 6) : Colors.grey,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
+          )
+
+
         ],
       ),
     );

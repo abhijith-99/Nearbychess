@@ -13,6 +13,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'web_listener_stub.dart'
   if (dart.library.html) 'web_listener.dart';
 
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 
@@ -38,7 +39,28 @@ class ChessApp extends StatefulWidget {
 
 class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
 
-  bool _isDialogShown = false;
+
+
+  Future<void> _sendHeartbeat() async {
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    CollectionReference users = FirebaseFirestore.instance.collection('users');
+    await users.doc(userId).update({
+      'lastSeen': FieldValue.serverTimestamp(), // Update with current timestamp
+    });
+  }
+
+  Timer? _heartbeatTimer;
+
+  void _startHeartbeat() {
+    // Call _sendHeartbeat every minute
+    _heartbeatTimer = Timer.periodic(Duration(minutes: 1), (timer) {
+      _sendHeartbeat();
+    });
+  }
+
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+  }
 
   @override
   void initState() {
@@ -49,6 +71,7 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
         await _updateUserStatus(false);
       });
     }
+
   }
 
   @override
@@ -103,13 +126,14 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
         builder: (context) {
 
 
-          if (MediaQuery.of(context).size.width < 1200) {
+          if (MediaQuery.of(context).size.width < 700) {
             // Instead of showing a dialog, navigate to the AccessDeniedPage
             Future.microtask(() => Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const AccessDeniedPage()),
             ));
           }
-          return ChessSplashScreen(); // Adjust based on your initial screen
+
+          return const ChessSplashScreen(); // Adjust based on your initial screen
         },
       ),
       debugShowCheckedModeBanner: false,

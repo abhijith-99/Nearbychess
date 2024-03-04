@@ -21,7 +21,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController otpController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
+  bool showGoogleSignInButton = true; // Initially, the Google sign-in button is visible
   final double buttonHeight = 50.0; // Standard height for buttons
 
 
@@ -77,9 +77,25 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     super.dispose();
   }
 
+
+
+  String formatPhoneNumber(String number) {
+    // Check if the number already starts with '+91'
+    if (!number.startsWith('+91')) {
+      // If not, prepend '+91' to the number
+      return '+91$number';
+    }
+    // If the number already starts with '+91', return it as is
+    return number;
+  }
+
+
   void verifyPhoneNumber() async {
+    String formattedNumber = formatPhoneNumber(phoneController.text);
+
     await _auth.verifyPhoneNumber(
-      phoneNumber: phoneController.text,
+      // phoneNumber: phoneController.text,
+      phoneNumber: formattedNumber,
       verificationCompleted: (PhoneAuthCredential credential) async {
         await _auth.signInWithCredential(credential);
         // Navigate to the home page on automatic verification success
@@ -150,6 +166,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
           onPressed: () {
             setState(() {
               showPhoneNumberInput = true;
+              showGoogleSignInButton = false;
             });
           },
           style: sharedButtonStyle.copyWith(
@@ -217,7 +234,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       ],
     );
   }
-
 
 
 
@@ -403,7 +419,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                         child: Row(
                           children: [
                             Expanded(
-                              child: entryField('Enter phone number with +91', phoneController),
+                              child: entryField('Enter phone number', phoneController),
                             ),
                             const SizedBox(width: 1),
                             ElevatedButton(
@@ -415,9 +431,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                                 });
                               },
                               style: ElevatedButton.styleFrom(
-                                primary: Colors.white, onPrimary: Colors.transparent,
+                                primary: Colors.transparent, onPrimary: Colors.transparent,
                                 shape: const CircleBorder(
-                                  side: BorderSide(color: Colors.white),
+                                  side: BorderSide(color: Colors.black),
                                 ),
                                 padding: EdgeInsets.all(12),
                                 elevation: 2,
@@ -446,10 +462,20 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                     const SizedBox(height: 10),
                     customDividerWithText(),
                     const SizedBox(height: 10),
-                    SizedBox(
-                      width: width,
-                      child: googleSignInButton(),
+                    // SizedBox(
+                    //   width: width,
+                    //   child: googleSignInButton(),
+                    // ),
+
+
+                    Visibility(
+                      visible: showGoogleSignInButton, // This controls the visibility
+                      child: SizedBox(
+                        width: width,
+                        child: googleSignInButton(),
+                      ),
                     ),
+
                     const SizedBox(height: 10),
                     toggleSignUpSignInText(),
                     if (errorMessage.isNotEmpty)
@@ -481,6 +507,14 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
 
-
-
 }
+
+
+
+
+
+
+
+
+
+

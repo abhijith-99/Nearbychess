@@ -205,14 +205,19 @@ class _MessageScreenState extends State<MessageScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return WillPopScope(
         onWillPop: _onBackPressed,
-
     child: Scaffold(
-        appBar: AppBar(
+        // appBar: AppBar(
+        //   backgroundColor: Colors.black,
+        //   leading: widget.fromChessBoard ? Container() : IconButton(
+        //     icon: const Icon(Icons.arrow_back, color: Colors.white),
+        //     onPressed: () => Navigator.of(context).pop(),
+
+
+        appBar: widget.fromChessBoard ? null : AppBar(
           backgroundColor: Colors.black,
-          leading: widget.fromChessBoard ? Container() : IconButton(
+          leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.of(context).pop(),
           ),
