@@ -69,6 +69,7 @@ class FirebaseServices {
   // Updates the chess coins balance of a user in Firestore based on the game outcome.
   Future<void> updateChessCoinsBalance(
       String userId, double betAmount, bool didWin) async {
+    print("inside updatechesscoins");
     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
 
     FirebaseFirestore.instance.runTransaction((transaction) async {
@@ -119,4 +120,25 @@ class FirebaseServices {
       'pgnNotation': pgnNotation,
     });
   }
+
+
+
+
+
+  // void updateUserWins(String userId) {
+  //   print("inside update win");
+  //   final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+  //
+  //   userRef.get().then((DocumentSnapshot documentSnapshot) {
+  //     if (documentSnapshot.exists && documentSnapshot.data() is Map) {
+  //       Map<String, dynamic> userData = documentSnapshot.data() as Map<String, dynamic>;
+  //       int currentWins = userData['wins'] ?? 0;
+  //       userRef.update({'wins': currentWins + 1});
+  //     }
+  //   });
+  // }
+
+
+
 }
+

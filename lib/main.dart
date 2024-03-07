@@ -40,28 +40,6 @@ class ChessApp extends StatefulWidget {
 class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
 
 
-
-  Future<void> _sendHeartbeat() async {
-    String userId = FirebaseAuth.instance.currentUser!.uid;
-    CollectionReference users = FirebaseFirestore.instance.collection('users');
-    await users.doc(userId).update({
-      'lastSeen': FieldValue.serverTimestamp(), // Update with current timestamp
-    });
-  }
-
-  Timer? _heartbeatTimer;
-
-  void _startHeartbeat() {
-    // Call _sendHeartbeat every minute
-    _heartbeatTimer = Timer.periodic(Duration(minutes: 1), (timer) {
-      _sendHeartbeat();
-    });
-  }
-
-  void _stopHeartbeat() {
-    _heartbeatTimer?.cancel();
-  }
-
   @override
   void initState() {
     super.initState();
@@ -93,14 +71,31 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
 
   Future<void> _updateUserStatus(bool isOnline) async {
     try {
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      CollectionReference users =
-      FirebaseFirestore.instance.collection('users');
-      await users.doc(userId).update({'isOnline': isOnline, 'inGame': false});
+      String? userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null)
+        // return;
+        {
+        var usersRef = FirebaseFirestore.instance.collection('users');
+        var doc = await usersRef.doc(userId).get();
+
+        // Check if the user is in a game before setting them offline
+        if (doc.exists) {
+          var data = doc.data();
+          bool inGame = data?['inGame'] ?? false;
+
+          // Only update online status if the user is not in a game or if setting them online
+          if (isOnline || !inGame) {
+            await usersRef.doc(userId).update({'isOnline': isOnline});
+          }
+        }
+      }
+
+
     } catch (e) {
       print('Error updating user status: $e');
     }
   }
+
 
 
   @override
@@ -124,15 +119,12 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
           primarySwatch: primaryBlack),
       home: Builder(
         builder: (context) {
-
-
           if (MediaQuery.of(context).size.width < 700) {
             // Instead of showing a dialog, navigate to the AccessDeniedPage
             Future.microtask(() => Navigator.of(context).pushReplacement(
               MaterialPageRoute(builder: (context) => const AccessDeniedPage()),
             ));
           }
-
           return const ChessSplashScreen(); // Adjust based on your initial screen
         },
       ),
@@ -141,19 +133,11 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
       routes: {
         // Your routes
         '/user_profile_details': (context) => const UserProfileDetailsPage(),
-        '/login_register': (context) => const LoginRegisterPage(),
-// other routes...
-
+        '/login_register': (context) => const LoginRegisterPage(), // other routes...
         '/home': (context) => const UserHomePage(),
         '/profile': (context) => const UserProfilePage(),
       },
     );
   }
-
-
-
-
-
-
 
 }

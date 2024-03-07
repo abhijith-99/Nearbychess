@@ -625,6 +625,11 @@ class _ChessBoardState extends State<ChessBoard> {
     );
   }
 
+
+
+
+
+
 // Description: Updates the match history and chess coins balance, if the game has not already been marked as ended.
   void updateMatchHistoryIfNeeded({
     required String userId1, //   - userId1: UID of the first player.
@@ -639,6 +644,9 @@ class _ChessBoardState extends State<ChessBoard> {
       String winnerUID = (result == 'win') ? userId1 : userId2;
       String loserUID = (winnerUID == userId1) ? userId2 : userId1;
 
+      print("winner uid$winnerUID");
+      print("loseruid$loserUID");
+
       // Update the match history in the database.
       firebaseServices.updateMatchHistory(
         userId1: userId1,
@@ -646,6 +654,31 @@ class _ChessBoardState extends State<ChessBoard> {
         result: result,
         bet: bet,
       );
+
+
+      if (winnerUID.isNotEmpty) {
+        FirebaseFirestore.instance.collection('users').doc(winnerUID).get().then((doc) {
+          if (doc.exists) {
+            int currentWins = doc.data()?['wins'] ?? 0;
+            int currentWeeklyWins = doc.data()?['weeklyWins'] ?? 0;
+            // If it's the first win, initialize the 'wins' field and set it to 1.
+            if (currentWins == 0) {
+              FirebaseFirestore.instance.collection('users').doc(winnerUID).update({
+                'wins': 1,
+                'weeklyWins': 1,
+              });
+            } else {
+              // Otherwise, increment the value of 'wins'.
+              FirebaseFirestore.instance.collection('users').doc(winnerUID).update({
+                'wins': currentWins + 1,
+                'weeklyWins': currentWeeklyWins + 1,
+              });
+            }
+          }
+        });
+      }
+
+
 
       // Update the chess coins balance for both players, except in case of a draw.
       if (result != 'draw') {
@@ -656,6 +689,8 @@ class _ChessBoardState extends State<ChessBoard> {
       }
     }
   }
+
+
 
 //   - newStatus: The new status of the game (e.g., 'draw', 'win', 'lose').
   void _updateGameStatus(String newStatus) {
@@ -962,6 +997,7 @@ class _ChessBoardState extends State<ChessBoard> {
       // Case when Player 1 resigns, implying Player 2 wins.
       statusMessage = "$player2Name wins by resignation!";
       result = 'win';
+      print("result in handleuserreg$result");
       // Update the match history to reflect Player 2's win and Player 1's loss.
       updateMatchHistoryIfNeeded(
         userId1: player2UID,

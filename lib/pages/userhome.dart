@@ -23,6 +23,7 @@ import 'dart:math' show asin, cos, max, sqrt;
 import 'package:geocoding/geocoding.dart';
 import 'package:location/location.dart';
 import 'geocoding_web.dart';
+import 'leader_board.dart';
 import 'message_scren.dart';
 import 'dart:math' as math;
 import 'package:flutter_svg/flutter_svg.dart';
@@ -125,6 +126,8 @@ class UserHomePageState extends State<UserHomePage>
         ),
       );
     });
+
+
   }
 
   Future<void> getUserLocationForWeb() async {
@@ -155,6 +158,7 @@ class UserHomePageState extends State<UserHomePage>
       String cityName = await getPlaceFromCoordinates(
         _locationData.latitude!,
         _locationData.longitude!,
+
       );
 
       if (mounted) {
@@ -833,14 +837,16 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-  void updateUserLocation(LocationData location) async {
+  void updateUserLocation(String cityName, LocationData location) async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
+
     if (userId == null) return;
 
     final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
     await userRef.update({
       'latitude': location.latitude,
       'longitude': location.longitude,
+      // 'city': cityName,
     });
   }
 
@@ -1321,7 +1327,6 @@ class UserHomePageState extends State<UserHomePage>
                                     context,
                                     MaterialPageRoute(
                                       builder: (context) =>
-                                          // ChessBoard(gameId: currentGameId, isSpectator: true),
                                           ChessBoard(
                                               gameId: currentGameId,
                                               isSpectator: true,
@@ -1564,8 +1569,9 @@ class UserHomePageState extends State<UserHomePage>
                         ),
                         Text(
                           'Players in $userLocation',
-                          textAlign: TextAlign.center,
                           // 'Players in $cityName',
+                          textAlign: TextAlign.center,
+
                           style: const TextStyle(
                             fontFamily: 'Poppins',
                             color: Color.fromARGB(255, 12, 4, 4),
@@ -1673,11 +1679,6 @@ class UserHomePageState extends State<UserHomePage>
                                   );
                                 },
                               );
-
-
-
-
-
                             },
                           ),
                         ),
@@ -1686,6 +1687,24 @@ class UserHomePageState extends State<UserHomePage>
                   ),
                 ],
               ),
+
+
+
+              Positioned(
+                top: 10,
+                right: 100, // Adjust this value as needed to place it before the NBC asset
+                child: IconButton(
+                  icon: Icon(Icons.leaderboard, size: 30, color: Colors.black),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => LeaderboardScreen()),
+                    );
+                  },
+                ),
+              ),
+
+
               Positioned(
                 top: 10,
                 right: 10,
