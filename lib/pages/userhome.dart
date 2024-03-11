@@ -187,6 +187,7 @@ class UserHomePageState extends State<UserHomePage>
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
     fetchedUserProfiles;
+    setUserOnlineStatus(true);
 
     _loadMapStyle();
     _determinePosition().then((_) {
@@ -590,46 +591,27 @@ class UserHomePageState extends State<UserHomePage>
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.paused) {
-      setUserOnlineStatus(false);
-    } else if (state == AppLifecycleState.resumed) {
-      setUserOnlineStatus(true);
-    }
-  }
 
   Future<void> setUserOnlineStatus(bool isOnline) async {
-    // try {
-    //   String userId = FirebaseAuth.instance.currentUser!.uid;
-    //   CollectionReference users =
-    //       FirebaseFirestore.instance.collection('users');
-    //   await users.doc(userId).update({'isOnline': isOnline});
-    // } catch (e) {
-    //   print('Error updating online status: $e');
-    // }
+    String userId = FirebaseAuth.instance.currentUser!.uid;
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
 
-
-    try {
-      String userId = FirebaseAuth.instance.currentUser!.uid;
-      CollectionReference users = FirebaseFirestore.instance.collection('users');
-      if (isOnline) {
-        // When the user comes online, update both the isOnline flag and the lastSeen timestamp
-        await users.doc(userId).update({
-          'isOnline': true,
-          'lastSeen': FieldValue.serverTimestamp(),
-        });
-      } else {
-        // or set isOnline to false explicitly depending on your app's needs
-        await users.doc(userId).update({
-          'isOnline': false,
+    // Using transactions to ensure atomic read-write operations
+    FirebaseFirestore.instance.runTransaction((transaction) async {
+      DocumentSnapshot snapshot = await transaction.get(userRef);
+      if (snapshot.exists) {
+        // Update user status based on isOnline parameter
+        transaction.update(userRef, {
+          'isOnline': isOnline,
+          'lastSeen': FieldValue.serverTimestamp(), // Update lastSeen only when coming online
         });
       }
-    } catch (e) {
-      print('Error updating online status: $e');
-    }
+    }).catchError((error) {
+      print("Error updating user online status: $error");
+    });
   }
+
+
 
   double calculateDistance(lat1, lon1, lat2, lon2) {
     if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) {
@@ -767,11 +749,6 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
-
-
-
-
-
   Future<Uint8List> _downloadImage(String url) async {
     try {
       final http.Response response = await http.get(Uri.parse(url));
@@ -784,10 +761,9 @@ class UserHomePageState extends State<UserHomePage>
     }
     catch (e) {
       // Load default image from assets if fetching fails
-      final ByteData byteData = await rootBundle.load('assets/NBC-token.png');
+      final ByteData byteData = await rootBundle.load('assets/avatars/avatar-default.png');
       return byteData.buffer.asUint8List();
     }
-
   }
 
 
@@ -807,7 +783,6 @@ class UserHomePageState extends State<UserHomePage>
       if (lat != null && lon != null) {
         // Pass the current zoom level to createCustomMarker
 
-        // print("userdata$userData");
         BitmapDescriptor icon = await createCustomMarkerIcon(userData['name'], userData['avatar'],);
 
         // Adding marker with default icon
@@ -1694,7 +1669,13 @@ class UserHomePageState extends State<UserHomePage>
                 top: 10,
                 right: 100, // Adjust this value as needed to place it before the NBC asset
                 child: IconButton(
-                  icon: Icon(Icons.leaderboard, size: 30, color: Colors.black),
+                  // Use a Container to control the size of the SVG if necessary.
+                  icon: SvgPicture.asset(
+                    'assets/ranking-star-solid.svg',
+                    color: Colors.black, // Optional: if you want to apply color to your SVG
+                    width: 30, // Specify the size of your SVG
+                    height: 30,
+                  ),
                   onPressed: () {
                     Navigator.push(
                       context,
@@ -1703,6 +1684,7 @@ class UserHomePageState extends State<UserHomePage>
                   },
                 ),
               ),
+
 
 
               Positioned(

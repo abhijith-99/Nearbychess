@@ -22,6 +22,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   final TextEditingController otpController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool showGoogleSignInButton = true; // Initially, the Google sign-in button is visible
+
+  bool showSignInOptions = true; // Initially, show the sign-in options
+
   final double buttonHeight = 50.0; // Standard height for buttons
 
 
@@ -159,18 +162,20 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
   Widget mobileNumberButton() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 22.0), // Ensure this matches other buttons
+      padding: const EdgeInsets.symmetric(horizontal: 0.0), // Ensure this matches other buttons
       child: Container(
-        width: 10, // Set the width of the button (adjust as needed)
         child: ElevatedButton(
           onPressed: () {
             setState(() {
               showPhoneNumberInput = true;
               showGoogleSignInButton = false;
+
+
+              showSignInOptions = false;
             });
           },
           style: sharedButtonStyle.copyWith(
-            minimumSize: MaterialStateProperty.all(Size(16, buttonHeight)), // Adjust the width as needed
+            minimumSize: MaterialStateProperty.all(Size(0, buttonHeight)), // Adjust the width as needed
           ),
           child: Text(isSignUp ? "Sign up with OTP" : "Sign in with OTP"),
         ),
@@ -179,9 +184,9 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   }
 
 
-  Widget submitButton(String text, VoidCallback onPressed) {
+  Widget submitButton(String text, VoidCallback onPressed, {double buttonHeight = 50.0}) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 25.0),
       child: ElevatedButton(
         onPressed: onPressed,
         style: ElevatedButton.styleFrom(
@@ -190,7 +195,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
             borderRadius: BorderRadius.circular(30),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-          minimumSize: Size(double.infinity, buttonHeight * 0.8),
+          minimumSize: Size(double.infinity, buttonHeight * 0.9),
         ),
         child: Text(
           text,
@@ -428,6 +433,8 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                                 setState(() {
                                   showPhoneNumberInput = false;
                                   showOtpInput = true;
+
+                                  showSignInOptions = false;
                                 });
                               },
                               style: ElevatedButton.styleFrom(
@@ -453,19 +460,21 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                       ),
                     if (_verificationId.isNotEmpty)
                       Padding(
-                        padding: const EdgeInsets.only(top: 10.0), // Optional: Added to ensure consistent spacing
+                        padding: const EdgeInsets.only(top: 15.0), // Optional: Added to ensure consistent spacing
                         child: SizedBox(
                           width: MediaQuery.of(context).size.width * 0.427, // Increased width to 70%
-                          child: submitButton('Verify OTP', signInWithOTP),
+                          child: submitButton('Verify OTP', signInWithOTP, buttonHeight: 60.0),
                         ),
                       ),
                     const SizedBox(height: 10),
-                    customDividerWithText(),
+
+                    Visibility(
+                      visible: showSignInOptions,
+                      child: customDividerWithText(),
+                    ),
+
                     const SizedBox(height: 10),
-                    // SizedBox(
-                    //   width: width,
-                    //   child: googleSignInButton(),
-                    // ),
+
 
 
                     Visibility(
@@ -477,7 +486,12 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
                     ),
 
                     const SizedBox(height: 10),
-                    toggleSignUpSignInText(),
+
+                    // toggleSignUpSignInText(),
+                    Visibility(
+                      visible: showSignInOptions,
+                      child: toggleSignUpSignInText(),
+                    ),
                     if (errorMessage.isNotEmpty)
                       Padding(
                         padding: const EdgeInsets.only(top: 20),

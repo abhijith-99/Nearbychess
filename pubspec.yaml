@@ -70,6 +70,10 @@ flutter:
     - assets/NBC-token.png
     - assets/location-pin-solid.png
     - assets/location-pin-solid.webp
+    - assets/trophy-solid.svg
+    - assets/ranking-star-solid.svg
+    - assets/trophy-solid.png
+    - assets/trophy-solid.svg
 
 
   fonts:
