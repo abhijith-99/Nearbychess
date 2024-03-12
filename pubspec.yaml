@@ -38,6 +38,9 @@ dependencies:
   emoji_picker_flutter: ^1.6.3
   flutter_spinkit: ^5.2.0
   url_launcher: ^6.2.5
+  font_awesome_flutter: ^10.7.0
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
 
 
 dev_dependencies:

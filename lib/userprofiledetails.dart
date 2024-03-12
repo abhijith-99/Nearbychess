@@ -283,19 +283,31 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
 
 
 
-
   Future<void> signOut() async {
     // Show confirmation dialog
     bool confirm = await showSignOutConfirmationDialog();
     if (confirm) {
       try {
+        // Assuming the user's ID is stored in FirebaseAuth
+        String userId = FirebaseAuth.instance.currentUser!.uid;
+
+        // Update the user's online status to 'offline' in Firestore
+        await FirebaseFirestore.instance.collection('users').doc(userId).update({
+          'isOnline': false, // Adjust the field name and value as necessary
+          'lastOnline': FieldValue.serverTimestamp(), // Optional: record last online timestamp
+        });
+
+        // Sign out the user from FirebaseAuth
         await FirebaseAuth.instance.signOut();
+
+        // Navigate to the login/register screen and remove all routes from the stack
         Navigator.of(context).pushNamedAndRemoveUntil('/login_register', (Route<dynamic> route) => false);
       } catch (error) {
         print(error.toString());
       }
     }
   }
+
 
   Future<bool> showSignOutConfirmationDialog() async {
     return await showDialog(

@@ -9,6 +9,7 @@ import 'package:mychessapp/pages/userhome.dart'; // Import your custom user home
 import '../utils.dart';
 import 'firebase_service.dart';
 import 'message_scren.dart'; // Import utilities from the parent directory.
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 // statefulWidget is a flutter class
 // creates the ChessBoard object
@@ -1052,13 +1053,15 @@ class _ChessBoardState extends State<ChessBoard> {
           actions: [
             if (!widget.isSpectator)
               IconButton(
-                icon: const Icon(Icons.message, color: Colors.blue),
+                icon: const Icon(FontAwesomeIcons.comments, color: Colors.white,),
                 onPressed: _toggleMessageArea, // Use the updated function
+                iconSize: 27.0,
               ),
+            const SizedBox(width: 13),
             IconButton(
-              icon: const Icon(Icons.exit_to_app, color: Colors.red),
+                icon: const Icon(FontAwesomeIcons.list, color: Colors.white,),
               onPressed: _onBackPressed,
-              iconSize: 30.0, // Increase the icon size
+              iconSize: 27.0, // Increase the icon size
             ),
           ],
 

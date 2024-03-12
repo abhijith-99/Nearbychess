@@ -146,7 +146,8 @@ class _UserProfilePageState extends State<UserProfilePage> {
             'bonusReadyToClaim': false,
             'referralCode': referralCode,
             'appliedReferralCode': _referralCodeController.text.trim(),
-          });
+          }, SetOptions(merge: true));
+
           // Check if a referral code was applied and is valid
           if (_referralCodeController.text.trim().isNotEmpty && isReferralCodeValid) {
             await applyReferralBonus(userId, _referralCodeController.text.trim());

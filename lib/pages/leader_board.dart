@@ -148,6 +148,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       if (currentUserRanking != null) // Check if currentUserRanking is not null
                         Row(
                           children: [
+                            const SizedBox(width: 20),
                             SvgPicture.asset('assets/ranking-star-solid.svg', width: 20, color: Colors.black), // Adjust size as needed
                             const SizedBox(width: 10), // Provide some spacing between the icon and the text
                             Text(
@@ -156,6 +157,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             ),
                             const SizedBox(width: 20), // Spacing between rank and wins
                             Image.asset('assets/trophy-solid.png', width: 20, color: Colors.black), // Adjust size as needed
+                            const SizedBox(width: 10),
                             Text(
                               '${currentUserRanking!.weeklyWins}',
                               style: const TextStyle(fontSize: 14, color: Colors.grey),
@@ -171,6 +173,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                       if (currentUserRanking != null) // Check if currentUserRanking is not null
                         Row(
                           children: [
+                            const SizedBox(width: 20),
                             SvgPicture.asset('assets/ranking-star-solid.svg', width: 20, color: Colors.black), // Rank icon
                             const SizedBox(width: 10), // Provide some spacing
                             Text(
@@ -179,6 +182,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
                             ),
                             const SizedBox(width: 20), // Spacing between rank and wins
                             Image.asset('assets/trophy-solid.png', width: 20, color: Colors.black), // Wins icon
+                            const SizedBox(width: 10),
                             Text(
                               '${currentUserRanking!.wins}',
                               style: const TextStyle(fontSize: 14, color: Colors.grey),

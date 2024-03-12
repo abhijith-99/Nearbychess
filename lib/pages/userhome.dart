@@ -13,6 +13,7 @@ import 'package:http/http.dart' as http;
 import 'package:location/location.dart';
 import 'package:mychessapp/main.dart';
 import 'package:mychessapp/pages/challengewaitingscreen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../userprofiledetails.dart';
 import '../utils.dart';
 import 'ChessBoard.dart';
@@ -39,7 +40,8 @@ class UserHomePage extends StatefulWidget {
 class UserHomePageState extends State<UserHomePage>
     with WidgetsBindingObserver {
 
-  double _zoomThreshold = 10.0;
+
+  Timer? _sessionCheckTimer;
 
 
   late Stream<List<DocumentSnapshot>> onlineUsersStream;
@@ -181,8 +183,20 @@ class UserHomePageState extends State<UserHomePage>
   @override
   void initState() {
     super.initState();
+
+
+
+
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
+
+
+    _sessionCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
+      _checkSessionValidity();
+    });
+
+
+
     listenToChallengeRequests();
     fetchCurrentUserChessCoins();
     onlineUsersStream = const Stream<List<DocumentSnapshot>>.empty();
@@ -198,6 +212,87 @@ class UserHomePageState extends State<UserHomePage>
       getUserLocationForWeb();
     }
   }
+
+
+
+
+  Future<void> _checkSessionValidity() async {
+    bool isValidSession = await isSessionValid();
+    if (!isValidSession) {
+      _showSessionInvalidDialog();
+    }
+  }
+
+
+  Future<bool> isSessionValid() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final prefs = await SharedPreferences.getInstance();
+      final localSessionToken = prefs.getString('sessionToken');
+      final docSnapshot = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      final sessionTokenInFirestore = docSnapshot.data()?['sessionToken'] as String?;
+
+      return sessionTokenInFirestore == localSessionToken;
+    }
+    return false;
+  }
+
+
+
+  Future<void> _showSessionInvalidDialog() async {
+    // Show dialog to inform the user
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Ensures the dialog is not dismissible by tapping outside
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20.0), // Rounded corners
+          ),
+          title: const Row(
+            children: [
+              Icon(Icons.warning_rounded, color: Colors.red), // An icon for visual emphasis
+              SizedBox(width: 10), // Spacing between icon and title text
+              Text('Session Ended', style: TextStyle(color: Colors.red)), // Custom title style
+            ],
+          ),
+          content: const SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                Text('Your session has ended because your account was accessed from another device. Please log in again to continue using the app.', style: TextStyle(fontSize: 16)), // Detailed explanation
+              ],
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.red, // Button background color
+                primary: Colors.white, // Button text color
+              ),
+              child: const Text('OK', style: TextStyle(fontSize: 16)),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.of(context).pop(); // Close the dialog
+                _navigateToLoginPage();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
+
+  void _navigateToLoginPage() {
+    // Logic to navigate back to the login page
+    // For example:
+    Navigator.of(context).pushReplacementNamed('/login_register');
+    // Or use a more suitable navigation method depending on your app's structure
+  }
+
+
+
 
   Future<void> _loadMapStyle() async {
     _mapStyle = await rootBundle.loadString('assets/new_map.json');
@@ -592,6 +687,10 @@ class UserHomePageState extends State<UserHomePage>
   }
 
 
+
+
+
+
   Future<void> setUserOnlineStatus(bool isOnline) async {
     String userId = FirebaseAuth.instance.currentUser!.uid;
     DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
@@ -609,6 +708,29 @@ class UserHomePageState extends State<UserHomePage>
     }).catchError((error) {
       print("Error updating user online status: $error");
     });
+  }
+
+
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
+    if (state == AppLifecycleState.detached) {
+      // The app is about to close
+      _setUserOffline();
+    }
+  }
+
+  void _setUserOffline() {
+    final String userId = FirebaseAuth.instance.currentUser?.uid ?? "";
+    if (userId.isNotEmpty) {
+      FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'isOnline': false,
+        'lastSeen': FieldValue.serverTimestamp(),
+      }).catchError((error) {
+        print("Error setting user offline: $error");
+      });
+    }
   }
 
 
@@ -824,6 +946,13 @@ class UserHomePageState extends State<UserHomePage>
       // 'city': cityName,
     });
   }
+
+
+
+
+
+
+
 
   void _onSearchChanged(String query) {
     if (_debounce?.isActive ?? false) _debounce?.cancel();

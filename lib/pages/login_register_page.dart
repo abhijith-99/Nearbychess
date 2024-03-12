@@ -5,6 +5,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
+import 'package:uuid/uuid.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
 
 void main() {
   runApp(const LoginRegisterPage());
@@ -65,7 +69,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
   bool showPhoneNumberInput = false;
   bool showOtpInput = false;
   bool isSignUp = false; // Default to sign up mode4
-
   bool _isSigningIn = false;
 
 
@@ -79,6 +82,15 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     otpController.dispose();
     super.dispose();
   }
+
+
+
+
+
+
+
+
+
 
 
 
@@ -136,6 +148,24 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
 
       UserCredential userCredential = await _auth.signInWithCredential(credential);
 
+
+
+
+
+      final prefs = await SharedPreferences.getInstance();
+      String sessionToken = const Uuid().v4(); // Generate a new session token
+
+      // Store session token in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+        'sessionToken': sessionToken,
+      });
+
+      // Store session token locally using SharedPreferences
+      await prefs.setString('sessionToken', sessionToken);
+
+
+
+
       // Check if the user exists in your Firestore database
       DocumentSnapshot userProfile = await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).get();
 
@@ -169,7 +199,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
             setState(() {
               showPhoneNumberInput = true;
               showGoogleSignInButton = false;
-
 
               showSignInOptions = false;
             });
@@ -285,6 +314,40 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       );
 
       UserCredential userCredential = await _auth.signInWithCredential(credential);
+
+
+      final userDocRef = FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid);
+      final docSnapshot = await userDocRef.get();
+
+
+
+
+      // After successful sign-in and obtaining the userCredential:
+      final prefs = await SharedPreferences.getInstance();
+      String newSessionToken = const Uuid().v4(); // Generate a new session token
+
+      await prefs.setString('sessionToken', newSessionToken);
+
+
+
+      //
+      // await userDocRef.set({
+      //   'sessionToken': newSessionToken,
+      // }).then((_) async {
+      //   final prefs = await SharedPreferences.getInstance();
+      //   await prefs.setString('sessionToken', newSessionToken);
+      // }).catchError((error) {
+      //   // Handle Firestore update error
+      //   print("Error updating session token: $error");
+      // });
+      //
+
+
+      await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
+        'sessionToken': newSessionToken,
+      }, SetOptions(merge: true));  // Use merge to avoid overwriting other fields
+
+
 
       // Check if the user exists in your Firestore database
       DocumentSnapshot userProfile = await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).get();
