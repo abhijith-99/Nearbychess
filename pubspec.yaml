@@ -19,8 +19,8 @@ dependencies:
   cloud_firestore: ^4.12.2 # Original version causing conflict
   firebase_core: ^2.23.0 # Original version causing conflict
   firebase_storage: ^11.4.1
+  firebase_analytics: 10.7.2
   flutter_launcher_icons: ^0.13.1
-#  flutter_svg: ^2.0.9
   flutter_svg: ^2.0.10+1
   intl: ^0.18.1
   google_sign_in: ^6.1.6

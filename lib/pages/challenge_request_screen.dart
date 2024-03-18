@@ -91,7 +91,7 @@ class _ChallengeRequestScreenState extends State<ChallengeRequestScreen> {
             Text(widget.challengerName, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 20),
             Text(
-              'Wants to play for ${widget.betAmount} in ${widget.localTimerValue} minutes',
+              'Wants to play for ${widget.betAmount}NBC, in ${widget.localTimerValue} minutes',
               style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w600, // Added weight for the bet amount

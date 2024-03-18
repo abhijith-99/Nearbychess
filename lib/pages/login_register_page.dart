@@ -149,19 +149,14 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       UserCredential userCredential = await _auth.signInWithCredential(credential);
 
 
-
-
-
+      // After successful sign-in and obtaining the userCredential:
       final prefs = await SharedPreferences.getInstance();
-      String sessionToken = const Uuid().v4(); // Generate a new session token
+      String newSessionToken = const Uuid().v4(); // Generate a new session token
+      await prefs.setString('sessionToken', newSessionToken);
 
-      // Store session token in Firestore
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({
-        'sessionToken': sessionToken,
-      });
-
-      // Store session token locally using SharedPreferences
-      await prefs.setString('sessionToken', sessionToken);
+        'sessionToken': newSessionToken,
+      }, SetOptions(merge: true));
 
 
 
@@ -329,18 +324,6 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
       await prefs.setString('sessionToken', newSessionToken);
 
 
-
-      //
-      // await userDocRef.set({
-      //   'sessionToken': newSessionToken,
-      // }).then((_) async {
-      //   final prefs = await SharedPreferences.getInstance();
-      //   await prefs.setString('sessionToken', newSessionToken);
-      // }).catchError((error) {
-      //   // Handle Firestore update error
-      //   print("Error updating session token: $error");
-      // });
-      //
 
 
       await FirebaseFirestore.instance.collection('users').doc(userCredential.user?.uid).set({

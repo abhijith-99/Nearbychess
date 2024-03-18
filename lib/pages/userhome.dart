@@ -239,8 +239,9 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
+
+
   Future<void> _showSessionInvalidDialog() async {
-    // Show dialog to inform the user
     showDialog(
       context: context,
       barrierDismissible: false, // Ensures the dialog is not dismissible by tapping outside
@@ -259,28 +260,23 @@ class UserHomePageState extends State<UserHomePage>
           content: const SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
-                Text('Your session has ended because your account was accessed from another device. Please log in again to continue using the app.', style: TextStyle(fontSize: 16)), // Detailed explanation
+                Text('Your session has ended because your account was accessed from another device, You are being signed out.', style: TextStyle(fontSize: 16)),
+                SizedBox(height: 20), // Provides some spacing before the progress indicator// Shows a loading indicator
               ],
             ),
           ),
-          actions: <Widget>[
-            TextButton(
-              style: TextButton.styleFrom(
-                backgroundColor: Colors.red, // Button background color
-                primary: Colors.white, // Button text color
-              ),
-              child: const Text('OK', style: TextStyle(fontSize: 16)),
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-                Navigator.of(context).pop(); // Close the dialog
-                _navigateToLoginPage();
-              },
-            ),
-          ],
         );
       },
     );
+
+    // Give the user a bit of time to read the dialog message before signing them out
+    await Future.delayed(Duration(seconds: 2), () async {
+      await FirebaseAuth.instance.signOut();
+      Navigator.of(context).pop(); // Close the dialog
+      _navigateToLoginPage();
+    });
   }
+
 
 
 
@@ -603,13 +599,11 @@ class UserHomePageState extends State<UserHomePage>
           String player2Id = challengeData['opponentId']; // Example
           String currentUserId = FirebaseAuth.instance.currentUser?.uid ?? "";
 
-          bool userIsSpectator =
-              currentUserId != player1Id && currentUserId != player2Id;
+          bool userIsSpectator = currentUserId != player1Id && currentUserId != player2Id;
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) =>
-                  // ChessBoard(gameId: gameId, isSpectator: true),
                   ChessBoard(
                       gameId: gameId,
                       isSpectator: userIsSpectator,
@@ -619,6 +613,10 @@ class UserHomePageState extends State<UserHomePage>
             // User has left the Chessboard, update the inGame status
             updateInGameState(false);
           });
+
+
+
+
         }
       }
     });
@@ -1437,6 +1435,7 @@ class UserHomePageState extends State<UserHomePage>
                                               opponentUID: player1Id),
                                     ),
                                   );
+
                                 }
                               }
                             : null,
@@ -1565,6 +1564,11 @@ class UserHomePageState extends State<UserHomePage>
       return 0;
     });
   }
+
+
+
+
+
 
   String getChatId(String user1, String user2) {
     var sortedIds = [user1, user2]..sort();
@@ -1801,7 +1805,6 @@ class UserHomePageState extends State<UserHomePage>
                   // Use a Container to control the size of the SVG if necessary.
                   icon: SvgPicture.asset(
                     'assets/ranking-star-solid.svg',
-                    color: Colors.black, // Optional: if you want to apply color to your SVG
                     width: 30, // Specify the size of your SVG
                     height: 30,
                   ),
@@ -1885,16 +1888,25 @@ class UserHomePageState extends State<UserHomePage>
   Widget buildPlayerTile(Map<String, dynamic> userData, BuildContext context) {
     String avatarUrl = userData['avatar'];
     bool isOnline = userData['isOnline'] ?? false;
-    String userId = userData['uid']; // Assuming each user has a unique 'uid'
+    String userId = userData['uid']; // Assuming each user has a unique 'uid'44
+
+
+    double? lat = userData['latitude'] as double?;
+    double? lon = userData['longitude'] as double?;
 
     // Check if the tile is for the current user
-    if (userData['uid'] == FirebaseAuth.instance.currentUser?.uid) {
+    if (userData['uid'] == FirebaseAuth.instance.currentUser?.uid || lat == null || lon == null) {
       // Return an empty container or some other appropriate widget
       return Container();
     }
 
     return GestureDetector(
-      onTap: () => _showChallengeModalFromBottom(context, userData),
+      // onTap: () => _showChallengeModalFromBottom(context, userData),
+
+      onTap: () {
+        _showChallengeModalFromBottom(context, userData);
+        _zoomInUserOnMap(lat, lon);
+      },
       child: Column(
         children: <Widget>[
           Stack(
@@ -1974,6 +1986,24 @@ class UserHomePageState extends State<UserHomePage>
       ),
     );
   }
+
+
+
+
+
+  void _zoomInUserOnMap(double lat, double lon) {
+    mapController?.animateCamera(
+      CameraUpdate.newCameraPosition(
+        CameraPosition(
+          target: LatLng(lat, lon),
+          zoom: 18.0, // Adjust the zoom level as needed
+        ),
+      ),
+    );
+  }
+
+
+
 }
 
 class UserProfileHeader extends StatefulWidget {

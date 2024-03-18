@@ -1055,13 +1055,13 @@ class _ChessBoardState extends State<ChessBoard> {
               IconButton(
                 icon: const Icon(FontAwesomeIcons.comments, color: Colors.white,),
                 onPressed: _toggleMessageArea, // Use the updated function
-                iconSize: 27.0,
+                iconSize: 30.0,
               ),
-            const SizedBox(width: 13),
+            SizedBox(width: 10),
             IconButton(
-                icon: const Icon(FontAwesomeIcons.list, color: Colors.white,),
+                icon: const Icon(FontAwesomeIcons.rightFromBracket, color: Colors.white,),
               onPressed: _onBackPressed,
-              iconSize: 27.0, // Increase the icon size
+              iconSize: 30.0, // Increase the icon size
             ),
           ],
 
@@ -1158,8 +1158,8 @@ class _ChessBoardState extends State<ChessBoard> {
                                   const Color(0xFF8BA1B9); // Dark square color.
 
                               // Determine the color of each square.
-                              var squareColor =
-                                  (file + rank) % 2 == 0 ? colorA : colorB;
+                              // var squareColor = (file + rank) % 2 == 0 ? colorA : colorB;\
+                              var squareColor = (file + rank) % 2 == 0 ? colorB : colorA;
 
                               // Determine the label color (opposite of the square color).
                               Color labelColor =
