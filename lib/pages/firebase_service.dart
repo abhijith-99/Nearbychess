@@ -121,24 +121,5 @@ class FirebaseServices {
     });
   }
 
-
-
-
-
-  // void updateUserWins(String userId) {
-  //   print("inside update win");
-  //   final userRef = FirebaseFirestore.instance.collection('users').doc(userId);
-  //
-  //   userRef.get().then((DocumentSnapshot documentSnapshot) {
-  //     if (documentSnapshot.exists && documentSnapshot.data() is Map) {
-  //       Map<String, dynamic> userData = documentSnapshot.data() as Map<String, dynamic>;
-  //       int currentWins = userData['wins'] ?? 0;
-  //       userRef.update({'wins': currentWins + 1});
-  //     }
-  //   });
-  // }
-
-
-
 }
 

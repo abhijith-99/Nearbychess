@@ -427,7 +427,7 @@ class _LoginRegisterPageState extends State<LoginRegisterPage> {
     double width = MediaQuery.of(context).size.width * 0.4; // 60% of screen width
 
     return MaterialApp(
-      title: 'Account Creation',
+      title: 'NearbyChess',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,

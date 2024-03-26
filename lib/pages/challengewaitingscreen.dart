@@ -107,7 +107,7 @@ class ChallengeWaitingScreen extends StatelessWidget {
           ),
           padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
         ),
-        child: Text(
+        child: const Text(
           'Cancel Challenge',
           style: TextStyle(fontSize: 18,
           color: Colors.white),

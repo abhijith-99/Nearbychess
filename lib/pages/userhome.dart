@@ -157,6 +157,10 @@ class UserHomePageState extends State<UserHomePage>
       }
 
       _locationData = await location.getLocation();
+
+      // Once location is fetched, update city name in Firestore.
+      await updateUsersCity(_locationData.latitude!, _locationData.longitude!);
+
       String cityName = await getPlaceFromCoordinates(
         _locationData.latitude!,
         _locationData.longitude!,
@@ -187,6 +191,10 @@ class UserHomePageState extends State<UserHomePage>
 
 
 
+
+
+
+
     WidgetsBinding.instance.addObserver(this);
     setupUserListener();
 
@@ -194,6 +202,9 @@ class UserHomePageState extends State<UserHomePage>
     _sessionCheckTimer = Timer.periodic(const Duration(seconds: 10), (timer) {
       _checkSessionValidity();
     });
+
+
+
 
 
 
@@ -211,6 +222,8 @@ class UserHomePageState extends State<UserHomePage>
     if (kIsWeb) {
       getUserLocationForWeb();
     }
+
+    updateInGameState(false);
   }
 
 
@@ -235,6 +248,42 @@ class UserHomePageState extends State<UserHomePage>
       return sessionTokenInFirestore == localSessionToken;
     }
     return false;
+  }
+
+
+
+
+
+
+
+  Future<void> updateUsersCity(double latitude, double longitude) async {
+    // Obtain the current user's ID. Ensure the user is logged in before calling this.
+    final String userId = FirebaseAuth.instance.currentUser?.uid ?? "";
+
+    if (userId.isEmpty) {
+      print("User is not logged in.");
+      return;
+    }
+
+    try {
+      // Fetch the city name from the coordinates
+      String cityName = await getPlaceFromCoordinates(latitude, longitude);
+      String locationName = await getPlaceFromCoordinates(latitude, longitude);
+
+      // Update the user's document in Firestore
+      await FirebaseFirestore.instance.collection('users').doc(userId).update({
+        'city': cityName,
+        'location': locationName,
+        // Optionally, you might want to store the latitude and longitude as well
+        'latitude': latitude,
+        'longitude': longitude,
+        // Consider also updating a 'lastUpdated' timestamp
+        'lastUpdated': FieldValue.serverTimestamp(),
+      });
+      print("User's city updated to $cityName");
+    } catch (error) {
+      print("Failed to update user's city: $error");
+    }
   }
 
 
@@ -614,9 +663,6 @@ class UserHomePageState extends State<UserHomePage>
             updateInGameState(false);
           });
 
-
-
-
         }
       }
     });
@@ -700,7 +746,7 @@ class UserHomePageState extends State<UserHomePage>
         // Update user status based on isOnline parameter
         transaction.update(userRef, {
           'isOnline': isOnline,
-          'lastSeen': FieldValue.serverTimestamp(), // Update lastSeen only when coming online
+          'lastSeen': FieldValue.serverTimestamp(),
         });
       }
     }).catchError((error) {
@@ -716,6 +762,7 @@ class UserHomePageState extends State<UserHomePage>
     if (state == AppLifecycleState.detached) {
       // The app is about to close
       _setUserOffline();
+      print("offline from home");
     }
   }
 

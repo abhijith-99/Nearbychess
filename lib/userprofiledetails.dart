@@ -272,12 +272,6 @@ class _UserProfileDetailsPageState extends State<UserProfileDetailsPage> {
           }
         },
       ),
-      // floatingActionButton: FloatingActionButton.extended(
-      //   onPressed: shareReferralCode,
-      //   label: const Text('Share And Win 100'),
-      //   icon: const Icon(Icons.share),
-      //   backgroundColor: Colors.blue,
-      // ),
     );
   }
 

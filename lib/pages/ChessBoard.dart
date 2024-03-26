@@ -134,7 +134,25 @@ class _ChessBoardState extends State<ChessBoard> {
     }
   }
 
+
+  int pieceOrder(String code) {
+    const order = {
+      'K': 1, // King
+      'Q': 2, // Queen
+      'R': 3, // Rook
+      'B': 4, // Bishop
+      'N': 5, // Knight
+      'P': 6, // Pawn
+    };
+    return order[code] ?? 7; // Default value for unrecognized pieces
+  }
+
+
+
   Widget buildCapturedPieces(List<String> capturedPieces, bool isWhite) {
+    // Sort capturedPieces by piece type using the `pieceOrder` function
+    capturedPieces.sort((a, b) => pieceOrder(a).compareTo(pieceOrder(b)));
+
     return Wrap(
       children: capturedPieces.map((code) {
         String assetPath = getPieceAssetFromCode(code, isWhite);
@@ -145,6 +163,7 @@ class _ChessBoardState extends State<ChessBoard> {
       }).toList(),
     );
   }
+
 
 
 
@@ -200,6 +219,8 @@ class _ChessBoardState extends State<ChessBoard> {
 
     game.put(chess.Piece(type, color), toSquare); // Place the promoted piece
 
+    checkGameEndConditions();
+
     // Update the game turn
     game.turn = (game.turn == chess.Color.WHITE)
         ? chess.Color.BLACK
@@ -212,7 +233,6 @@ class _ChessBoardState extends State<ChessBoard> {
       'lastMoveTimestamp': ServerValue.timestamp,
     });
     print('Promotion: from $fromSquare to $toSquare, FEN: ${game.fen}');
-    checkGameEndConditions();
 
     if (mounted) {
       setState(() {});
@@ -284,9 +304,16 @@ class _ChessBoardState extends State<ChessBoard> {
     if (pieceType == chess.PieceType.KING &&
         (from == 'e1' && (to == 'g1' || to == 'c1') ||
             from == 'e8' && (to == 'g8' || to == 'c8'))) {
+      if (game.turn == chess.Color.BLACK) {
+        moveNumber = moveNumber +
+            1; // Increment move number when it's black's turn (after white's move)
+        pgnNotation += '$moveNumber. ';
+      }
       pgnNotation += (to == 'g1' || to == 'g8')
-          ? 'O-O '
-          : 'O-O-O '; // Append the appropriate castling notation.
+          ? 'O-O'
+          : 'O-O-O'; // Append the appropriate castling notation.
+
+      firebaseServices.updatePGNNotationInRealTimeDatabase(pgnNotation);
       return;
     }
     // This block of code is responsible for generating the notation of a chess move
@@ -354,6 +381,7 @@ class _ChessBoardState extends State<ChessBoard> {
         );
       }
     });
+
   }
 
   void updateTimerInFirebase(
@@ -573,6 +601,11 @@ class _ChessBoardState extends State<ChessBoard> {
 
 // Description: Displays a dialog when a draw offer has been made by the opponent.
   void _showDrawOfferDialog() {
+    // Check if the current user is a spectator.
+    if (widget.isSpectator) {
+      // If the user is a spectator, do not show the draw offer dialog.
+      return;
+    }
     // Show a dialog window on the screen.
     showDialog(
       context: context,

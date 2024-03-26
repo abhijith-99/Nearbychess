@@ -63,9 +63,11 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
 // User is leaving the app, update the user status
       _updateUserStatus(false);
+      print("offline");
     } else if (state == AppLifecycleState.resumed) {
 // App is in the foreground, update the user status to online
       _updateUserStatus(true);
+      print("online");
     }
   }
 
@@ -89,7 +91,6 @@ class _ChessAppState extends State<ChessApp> with WidgetsBindingObserver {
           }
         }
       }
-
 
     } catch (e) {
       print('Error updating user status: $e');
